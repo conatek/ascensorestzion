@@ -1,0 +1,18 @@
+ul.custom-list {
+    margin-top: 10px;
+    padding-left: 0;
+}
+
+.custom-list-item {
+    list-style: none;
+    /* padding-left: 20px; */
+  }
+  
+.custom-list-item::before {
+    content: ""; /* Crear un elemento antes del contenido del li */
+    display: inline-block;
+    width: 30px; /* Ancho del cuadrado */
+    height: 10px; /* Altura del cuadrado */
+    background-color: blue; /* Color del cuadrado */
+    margin-right: 10px; /* Espacio entre el cuadrado y el texto */
+}

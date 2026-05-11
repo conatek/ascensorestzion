@@ -1,0 +1,127 @@
+/* ============================================================
+   COLORES DE MARCA
+   Cyan : #81e8ef
+   Lila : #e288f9
+   ============================================================ */
+:root {
+  --brand-cyan:       #81e8ef;
+  --brand-cyan-dark:  #59bcc4;
+  --brand-lila:       #e288f9;
+  --brand-lila-dark:  #c05dd9;
+}
+
+/* Bootstrap 5: botón primario → lila */
+.btn-primary {
+  --bs-btn-color:                 #000;
+  --bs-btn-bg:                    var(--brand-lila);
+  --bs-btn-border-color:          var(--brand-lila);
+  --bs-btn-hover-color:           #000;
+  --bs-btn-hover-bg:              var(--brand-lila-dark);
+  --bs-btn-hover-border-color:    var(--brand-lila-dark);
+  --bs-btn-active-color:          #000;
+  --bs-btn-active-bg:             var(--brand-lila-dark);
+  --bs-btn-active-border-color:   var(--brand-lila-dark);
+  --bs-btn-disabled-color:        #000;
+  --bs-btn-disabled-bg:           var(--brand-lila);
+  --bs-btn-disabled-border-color: var(--brand-lila);
+}
+
+.btn-outline-primary {
+  --bs-btn-color:              var(--brand-lila-dark);
+  --bs-btn-border-color:       var(--brand-lila-dark);
+  --bs-btn-hover-color:        #000;
+  --bs-btn-hover-bg:           var(--brand-lila);
+  --bs-btn-hover-border-color: var(--brand-lila);
+  --bs-btn-active-color:       #000;
+  --bs-btn-active-bg:          var(--brand-lila-dark);
+}
+
+/* Header: borde inferior cyan como acento de marca */
+.app-header.header-shadow {
+  border-bottom: 2px solid var(--brand-cyan);
+  box-shadow: 0 2px 18px rgba(129, 232, 239, 0.15), 0 1px 4px rgba(226, 136, 249, 0.10);
+}
+
+/* ============================================================ */
+
+table.dataTable {
+    border-collapse: collapse !important;
+    border: 1px solid #e9ecef !important;
+}
+
+table.dataTable td,
+table.dataTable th {
+    border: 1px solid #e9ecef !important;
+}
+
+table.dataTable .td-actions {
+    display: flex;
+    border: none !important;
+    justify-content: end;
+}
+
+/* SIDEBAR */
+/* .app-sidebar {
+    background-color: #e288f9 !important;
+} */
+
+.app-theme-green.app-container {
+    background: #ffffff; }
+
+.app-theme-green .app-sidebar {
+    /* background: #e288f9; */
+    background: linear-gradient(to bottom, #e288f9 60%, white 100%);
+}
+
+.app-theme-green .app-page-title {
+background: rgba(255, 255, 255, 0.45); }
+
+.app-theme-green .app-footer .app-footer__inner,
+.app-theme-green .app-header {
+background: #fafbfc; }
+
+.app-theme-green.fixed-header .app-header__logo {
+background: rgba(250, 251, 252, 0.1); }
+
+.app-theme-green .vertical-nav-menu li a {
+    color: #ffffff;
+    background: #e288f9;
+    font-weight: normal;
+}
+
+.app-theme-green .vertical-nav-menu li a:hover {
+    color: #e288f9;
+    background: #fff;
+    font-weight: normal;
+}
+
+.app-theme-green .vertical-nav-menu li a.mm-active {
+    color: #e288f9;
+    background: #ffffff;
+    font-weight: bold;
+}
+
+/* FIN SIDEBAR */
+
+
+.scrollbar-sidebar {
+    position: relative; /* Necesario para que el logo se posicione en la parte inferior del div */
+    padding-bottom: 20px; /* Espacio extra para el logo en la parte inferior */
+}
+
+.scrollbar-sidebar .btn-sidebar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+}
+
+.logo-mh-sidebar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50%; /* Ajusta el tamaño del logo según sea necesario */
+}
+

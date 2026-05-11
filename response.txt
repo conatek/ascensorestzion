@@ -1,0 +1,108 @@
+# Plan de Trabajo - Expansión de Base de Datos NexosCard
+
+## Resumen de Cambios
+
+### 1. Migración de Companies
+**Archivo:** `database/migrations/2014_10_12_050000_create_companies_table.php`
+
+Agregar columnas (todas nullable):
+- `address` (string) - Dirección física
+- `web` (string) - Sitio web
+- `my_business` (string) - Google My Business URL
+- `facebook` (string) - URL Facebook
+- `instagram` (string) - URL Instagram
+- `twitter` (string) - URL Twitter/X
+- `youtube` (string) - URL YouTube
+
+### 2. Migración de Cards
+**Archivo:** `database/migrations/2026_03_06_100001_create_cards_table.php`
+
+Agregar columnas (todas nullable):
+- `whatsapp_message` (string) - Mensaje predeterminado para WhatsApp
+- `linkedin` (string) - URL LinkedIn
+
+### 3. Modelo Company
+**Archivo:** `app/Models/Company.php`
+
+Actualizar `$fillable` para incluir:
+```php
+'address', 'web', 'my_business', 'facebook', 'instagram', 'twitter', 'youtube'
+```
+
+### 4. Modelo Card
+**Archivo:** `app/Models/Card.php`
+
+Actualizar `$fillable` para incluir:
+```php
+'whatsapp_message', 'linkedin'
+```
+
+### 5. Validación - StoreCompanyRequest
+**Archivo:** `app/Http/Requests/StoreCompanyRequest.php`
+
+Agregar reglas:
+- `address` - nullable, string, max:500
+- `web` - nullable, url, max:255
+- `my_business` - nullable, url, max:255
+- `facebook` - nullable, url, max:255
+- `instagram` - nullable, url, max:255
+- `twitter` - nullable, url, max:255
+- `youtube` - nullable, url, max:255
+
+### 6. Validación - UpdateCompanyRequest
+**Archivo:** `app/Http/Requests/UpdateCompanyRequest.php`
+
+Mismas reglas que StoreCompanyRequest.
+
+### 7. CompanySeeder
+**Archivo:** `database/seeders/CompanySeeder.php`
+
+Actualizar con datos de ejemplo para las nuevas columnas.
+
+### 8. CardSeeder (Nuevo)
+**Archivo:** `database/seeders/CardSeeder.php`
+
+Crear seeder con 2 tarjetas por empresa:
+- CONATEK: 2 empleados
+- MUY HUMANO: 2 empleados
+
+### 9. DatabaseSeeder
+**Archivo:** `database/seeders/DatabaseSeeder.php`
+
+Agregar `CardSeeder::class` al array de llamadas.
+
+---
+
+## Orden de Ejecución
+
+1. ✅ Documentar plan (este archivo)
+2. ✅ Modificar migración companies
+3. ✅ Modificar migración cards
+4. ✅ Actualizar modelo Company
+5. ✅ Actualizar modelo Card
+6. ✅ Actualizar StoreCompanyRequest
+7. ✅ Actualizar UpdateCompanyRequest
+8. ✅ Actualizar CompanySeeder
+9. ✅ Crear CardSeeder
+10. ✅ Actualizar DatabaseSeeder
+11. ✅ Ejecutar `php artisan migrate:fresh --seed`
+
+---
+
+## Resultado
+
+Todos los pasos completados exitosamente. La base de datos ahora incluye:
+
+**Companies:**
+- CONATEK (con datos de redes sociales)
+- MUY HUMANO (con datos de redes sociales)
+
+**Cards:**
+- Carlos Mendoza (CONATEK - Director General)
+- María González (CONATEK - Gerente de Proyectos)
+- Ana Rodríguez (MUY HUMANO - Fundadora y CEO)
+- Pedro Sánchez (MUY HUMANO - Director Creativo)
+
+---
+
+*Generado: Marzo 2026*

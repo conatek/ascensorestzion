@@ -1,0 +1,22 @@
+.components {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    text-align: center;
+}
+
+.hello {
+    background: #ef4444;
+    color: #fff;
+    width: 50%;
+    padding: 1rem;
+}
+
+.world {
+    background: #10b981;
+    color: #fff;
+    width: 50%;
+    padding: 1rem;
+}

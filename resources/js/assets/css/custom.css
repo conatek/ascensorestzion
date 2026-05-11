@@ -1,0 +1,150 @@
+/* BOTONES PERSONALIZADOS */
+.btn-mh-white {
+    background-color: #fff;
+    color: #e288f9;
+    border: none;
+}
+
+.btn-mh-white:hover {
+    background-color: #81e8ef;
+    color: #000;
+}
+
+.btn-mh-fucsia {
+    background-color: #e288f9;
+    color: #fff;
+    border: none;
+}
+
+.btn-mh-fucsia:hover {
+    background-color: #c05dd9;
+    color: #fff;
+}
+
+.btn-mh-cyan {
+    background-color: #81e8ef;
+    color: #000;
+    border: none;
+}
+
+.btn-mh-cyan:hover {
+    background-color: #59bcc4;
+    color: #000;
+}
+/* FIN BOTONES PERSONALIZADOS */
+
+/* ESTILOS DE CARDS */
+.card-profile {
+    height: 230px;
+    background: #fff;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: row;
+    border-radius: 5px;
+    position: relative;
+}
+
+.card-profile .name-profile {
+    margin: 0;
+    padding: 0 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.card-profile .surname-profile {
+    margin: 0;
+    padding: 0 1rem;
+    font-weight: bold;
+    color: #8e8e8e;
+}
+
+.card-profile .email-profile {
+    margin: 0;
+    padding: 0 1rem;
+}
+
+.card-profile .cellphone-profile {
+    margin: 0;
+    padding: 0 1rem;
+}
+
+.card-profile .title {
+    padding: 1rem;
+    text-align: right;
+    color: #e288f9;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.card-profile .desc {
+    padding: 0.5rem 1rem;
+    font-size: 12px;
+}
+
+.card-profile .actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.img-avatar>img {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    border-radius: 50%;
+    border: 6px solid white;
+    background-image: linear-gradient(-60deg, #16a085 0%, #f4d03f 100%);
+    top: 15px;
+    left: 15px;
+    transition:.5s;
+    &:hover{
+        transform: rotate(22deg)
+    }
+}
+
+/* .img-avatar-2>img {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    border-radius: 50%;
+    border: 6px solid white;
+    background-image: linear-gradient(-60deg, #16a085 0%, #f4d03f 100%);
+    top: 160px;
+    left: 30px;
+} */
+
+.card-profile-text {
+    width: 100%;
+    display: flex;
+}
+
+.title-total {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.portada {
+    flex-shrink: 0;
+    width: 110px;
+    height: 100%;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    background: linear-gradient(0deg, #fff, #81e8ef);
+}
+
+.actions>button {
+    border: none;
+    background: none;
+    font-size: 24px;
+    color: #e288f9;
+    cursor: pointer;
+    transition:.5s;
+    &:hover{
+        color: #c05dd9;
+        transform: rotate(22deg)
+    }
+}
+/* FIN ESTILOS DE CARDS */

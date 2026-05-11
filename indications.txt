@@ -1,0 +1,697 @@
+================================================================================
+GUÍA PARA AGREGAR NUEVAS PLANTILLAS DE TARJETA DIGITAL
+================================================================================
+
+Este documento describe el proceso completo para agregar una nueva plantilla
+de tarjeta digital al sistema NexosCard. Sigue estas instrucciones exactamente
+para garantizar el correcto funcionamiento.
+
+================================================================================
+1. ARQUITECTURA DEL SISTEMA DE PLANTILLAS
+================================================================================
+
+El sistema utiliza:
+- Vue 3 con Options API
+- Estilos inline computados (NO CSS variables heredadas)
+- Schema PHP para definir controles del editor
+- LivePreview.vue como contenedor que renderiza la plantilla seleccionada
+
+Flujo de datos:
+  TemplateEditor.vue (editor visual)
+       │
+       ├── Carga schema desde API: GET /api/templates/{name}/schema
+       ├── Carga settings desde API: GET /api/companies/{id}/settings
+       │
+       └── LivePreview.vue (contenedor)
+               │
+               └── Template[Nombre].vue (plantilla específica)
+                   - Recibe prop: customization (objeto con valores)
+                   - Usa computed properties para generar estilos inline
+                   - Aplica estilos via :style="computedStyle"
+
+================================================================================
+2. PLANTILLAS EXISTENTES (REFERENCIA)
+================================================================================
+
+MODERN (TemplateModern.vue)
+- Complejidad: Alta (~45 controles)
+- Características: Acordeón, fondos con patrones, control granular
+- Secciones: general, header, photoBackground, photo, profile, social, accordion, footer
+
+CLASSIC (TemplateClassic.vue)
+- Complejidad: Baja (~10 controles)
+- Características: Tipografías serif, bordes dobles elegantes
+- Secciones: general, avatar, perfil, botones
+- Fuentes: Playfair Display, Merriweather, Lora
+
+MINIMAL (TemplateMinimal.vue)
+- Complejidad: Baja (~10 controles)
+- Características: Diseño ultra-limpio, filtro B&N opcional
+- Secciones: general, avatar, botones
+- Fuentes: Inter, Roboto
+
+CREATIVE (TemplateCreative.vue)
+- Complejidad: Media (~15 controles)
+- Características: Glassmorphism, luces ambientales, tarjeta flotante
+- Secciones: general, header, hero, glass, avatar, profile, acciones
+- Fuentes: Poppins, Inter, Space Grotesk
+
+CYBER (TemplateCyber.vue)
+- Complejidad: Media (~10 controles)
+- Características: Estilo terminal, efectos neón, cursor animado
+- Secciones: general, neon, avatar, botones
+- Fuentes: Space Mono, Fira Code, Roboto Mono
+
+VIBRANT (TemplateVibrant.vue)
+- Complejidad: Media (~12 controles)
+- Características: Bento Box, gradiente animado, animaciones avatar
+- Secciones: general, tarjetas, avatar, botones
+- Fuentes: Outfit, Syne
+
+================================================================================
+3. ARCHIVOS A MODIFICAR/CREAR
+================================================================================
+
+Para agregar una plantilla llamada "ejemplo":
+
+  CREAR:
+  └── resources/js/components/templates/TemplateEjemplo.vue
+
+  MODIFICAR:
+  ├── config/templates.php (agregar metadata y schema)
+  ├── resources/js/components/templates/LivePreview.vue (importar y registrar)
+  └── resources/views/app.blade.php (agregar fuentes Google si es necesario)
+
+================================================================================
+4. ESTRUCTURA DEL COMPONENTE VUE
+================================================================================
+
+El componente debe seguir esta estructura exacta:
+
+```vue
+<template>
+    <div class="card-template ejemplo" :style="containerStyle">
+        <!-- Usar :style="computedStyle" en elementos dinámicos -->
+        <header :style="headerStyle">
+            <img v-if="company?.logo_path" :src="company.logo_path" :style="logoStyle">
+        </header>
+
+        <div class="avatar-container" v-if="showAvatar">
+            <img v-if="card?.photo_path" :src="card.photo_path" :style="avatarStyle">
+            <div v-else class="avatar-placeholder" :style="avatarStyle">
+                <i class="bi bi-person"></i>
+            </div>
+        </div>
+
+        <h1 :style="nameStyle">{{ card?.first_name }} {{ card?.last_name }}</h1>
+        <p :style="jobTitleStyle">{{ card?.job_title }}</p>
+
+        <!-- Botones sociales con método -->
+        <div class="social-buttons">
+            <a v-if="card?.whatsapp" :href="whatsappLink" :style="getSocialBtnStyle('whatsapp')">
+                <i class="bi bi-whatsapp"></i>
+            </a>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+    name: 'TemplateEjemplo',
+
+    props: {
+        customization: { type: Object, default: () => ({}) },
+        company: { type: Object, default: () => ({}) },
+        card: { type: Object, default: () => ({}) },
+        services: { type: Array, default: () => [] },
+        products: { type: Array, default: () => [] }
+    },
+
+    computed: {
+        // Link de WhatsApp (patrón común)
+        whatsappLink() {
+            if (!this.card?.whatsapp) return '#'
+            const phone = this.card.whatsapp.replace(/\D/g, '')
+            return `https://api.whatsapp.com/send?phone=${phone}`
+        },
+
+        // Visibilidad de avatar
+        showAvatar() {
+            return this.customization?.avatar?.mostrar !== false
+        },
+
+        // Estilo del contenedor principal
+        containerStyle() {
+            const gen = this.customization?.general || {}
+            return {
+                backgroundColor: gen.colorFondo || '#ffffff',
+                fontFamily: `'${gen.tipografia || 'Inter'}', sans-serif`,
+                color: gen.colorTexto || '#333333',
+            }
+        },
+
+        // Estilo del avatar (IMPORTANTE: width === height para círculo)
+        avatarStyle() {
+            const avatar = this.customization?.avatar || {}
+            const tamano = avatar.tamano ?? 120  // ?? para numéricos
+            return {
+                width: `${tamano}px`,
+                height: `${tamano}px`,
+                borderRadius: `${avatar.radio ?? 50}%`,
+                objectFit: 'cover',
+            }
+        },
+
+        // Estilo del nombre
+        nameStyle() {
+            const gen = this.customization?.general || {}
+            return {
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                color: gen.colorTexto || '#333333',  // || para strings
+            }
+        },
+
+        // Más computed styles...
+    },
+
+    methods: {
+        // Método para estilos paramétricos (botones)
+        getSocialBtnStyle(type) {
+            const config = this.customization?.botones || {}
+            const estilo = config.estilo || 'solido'
+
+            const base = {
+                borderRadius: `${config.radio ?? 50}%`,
+                transition: 'all 0.3s ease',
+            }
+
+            if (estilo === 'solido') {
+                return {
+                    ...base,
+                    backgroundColor: config.colorBoton || '#333333',
+                    color: config.colorTextoBoton || '#ffffff',
+                }
+            } else if (estilo === 'borde') {
+                return {
+                    ...base,
+                    backgroundColor: 'transparent',
+                    border: `1px solid ${config.colorBoton || '#333333'}`,
+                    color: config.colorBoton || '#333333',
+                }
+            }
+            // fantasma/minimalista
+            return {
+                ...base,
+                backgroundColor: 'transparent',
+                color: config.colorBoton || '#333333',
+            }
+        },
+    }
+}
+</script>
+
+<style scoped>
+/*
+ * IMPORTANTE: Solo estilos ESTÁTICOS aquí
+ * Todos los valores dinámicos via :style="computed"
+ */
+.card-template.ejemplo {
+    min-height: 100vh;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.avatar-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-container img {
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background-color: #f0f0f0;
+}
+
+.social-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.social-buttons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    text-decoration: none;
+}
+
+.social-buttons a:hover {
+    transform: scale(1.1);
+}
+</style>
+```
+
+================================================================================
+5. REGLAS CRÍTICAS PARA ESTILOS
+================================================================================
+
+✅ CORRECTO - Usar estilos inline computados:
+```vue
+<div :style="avatarStyle">
+
+computed: {
+    avatarStyle() {
+        return {
+            width: `${this.customization?.avatar?.tamano ?? 120}px`,
+            borderRadius: `${this.customization?.avatar?.radio ?? 50}%`,
+        }
+    }
+}
+```
+
+❌ INCORRECTO - NO usar CSS variables heredadas:
+```css
+/* ESTO NO FUNCIONA con CSS scoped */
+.avatar {
+    width: var(--avatar-tamano, 120px);
+}
+```
+
+❌ INCORRECTO - NO usar calc() con CSS variables:
+```css
+/* ESTO NO FUNCIONA */
+.avatar {
+    width: calc(var(--avatar-tamano) * 1px);
+}
+```
+
+OPERADORES PARA DEFAULTS:
+- Usar ?? para valores numéricos: avatar.tamano ?? 120
+- Usar || para strings/colores: gen.colorTexto || '#333333'
+
+================================================================================
+6. ESTRUCTURA DEL SCHEMA EN config/templates.php
+================================================================================
+
+Agregar en la sección 'available':
+
+```php
+'available' => [
+    // ... otras plantillas ...
+    'ejemplo' => [
+        'name' => 'Ejemplo',
+        'description' => 'Descripción breve de la plantilla',
+        'component' => 'TemplateEjemplo',
+        'thumbnail' => '/img/templates/ejemplo.png',
+    ],
+],
+```
+
+Agregar en la sección 'schemas':
+
+```php
+'schemas' => [
+    // ... otros schemas ...
+    'ejemplo' => [
+        'general' => [
+            '_label' => 'Ajustes Generales',
+            'colorFondo' => [
+                'type' => 'color',
+                'label' => 'Color de Fondo',
+                'value' => '#ffffff',
+            ],
+            'colorTexto' => [
+                'type' => 'color',
+                'label' => 'Color de Texto',
+                'value' => '#333333',
+            ],
+            'colorAcento' => [
+                'type' => 'color',
+                'label' => 'Color de Acento',
+                'value' => '#6366f1',
+            ],
+            'tipografia' => [
+                'type' => 'select',
+                'label' => 'Tipografía',
+                'value' => 'Inter',
+                'options' => ['Inter', 'Poppins', 'Roboto', 'Montserrat'],
+            ],
+        ],
+        'avatar' => [
+            '_label' => 'Foto de Perfil',
+            'mostrar' => [
+                'type' => 'toggle',
+                'label' => 'Mostrar Foto',
+                'value' => true,
+            ],
+            'tamano' => [
+                'type' => 'range',
+                'label' => 'Tamaño',
+                'value' => 120,
+                'min' => 80,
+                'max' => 200,
+                'step' => 5,
+                'unit' => 'px',
+            ],
+            'radio' => [
+                'type' => 'range',
+                'label' => 'Redondeo',
+                'value' => 50,
+                'min' => 0,
+                'max' => 50,
+                'step' => 1,
+                'unit' => '%',  // Usar % para redondeo (más intuitivo)
+            ],
+        ],
+        'botones' => [
+            '_label' => 'Botones y Redes',
+            'estilo' => [
+                'type' => 'select',
+                'label' => 'Estilo de Botones',
+                'value' => 'solido',
+                'options' => ['solido', 'borde', 'minimalista'],
+            ],
+            'radio' => [
+                'type' => 'range',
+                'label' => 'Redondeo de Botones',
+                'value' => 50,
+                'min' => 0,
+                'max' => 50,
+                'step' => 5,
+                'unit' => '%',
+            ],
+            'colorBoton' => [
+                'type' => 'color',
+                'label' => 'Color de Botones',
+                'value' => '#333333',
+            ],
+            'colorTextoBoton' => [
+                'type' => 'color',
+                'label' => 'Texto en Botones',
+                'value' => '#ffffff',
+            ],
+        ],
+    ],
+],
+```
+
+================================================================================
+7. TIPOS DE CONTROLES DISPONIBLES
+================================================================================
+
+COLOR:
+{
+    'type' => 'color',
+    'label' => 'Etiqueta visible',
+    'value' => '#hexcolor',
+}
+
+RANGE (slider numérico):
+{
+    'type' => 'range',
+    'label' => 'Etiqueta visible',
+    'value' => 100,        // Valor inicial
+    'min' => 0,            // Mínimo
+    'max' => 200,          // Máximo
+    'step' => 5,           // Incremento (opcional, default 1)
+    'unit' => 'px',        // Unidad mostrada (opcional)
+}
+
+SELECT (dropdown):
+{
+    'type' => 'select',
+    'label' => 'Etiqueta visible',
+    'value' => 'opcion1',
+    'options' => ['opcion1', 'opcion2', 'opcion3'],
+}
+
+TOGGLE (checkbox booleano):
+{
+    'type' => 'toggle',
+    'label' => 'Etiqueta visible',
+    'value' => true,       // o false
+}
+
+================================================================================
+8. REGISTRAR EN LivePreview.vue
+================================================================================
+
+Archivo: resources/js/components/templates/LivePreview.vue
+
+1. Agregar import:
+```javascript
+import TemplateModern from './TemplateModern.vue'
+import TemplateClassic from './TemplateClassic.vue'
+import TemplateMinimal from './TemplateMinimal.vue'
+import TemplateCreative from './TemplateCreative.vue'
+import TemplateCyber from './TemplateCyber.vue'
+import TemplateVibrant from './TemplateVibrant.vue'
+import TemplateEjemplo from './TemplateEjemplo.vue'  // <-- AGREGAR
+```
+
+2. Registrar en components:
+```javascript
+components: {
+    TemplateModern,
+    TemplateClassic,
+    TemplateMinimal,
+    TemplateCreative,
+    TemplateCyber,
+    TemplateVibrant,
+    TemplateEjemplo,  // <-- AGREGAR
+},
+```
+
+3. Agregar al mapeo en currentTemplateComponent:
+```javascript
+currentTemplateComponent() {
+    const templates = {
+        modern: 'TemplateModern',
+        classic: 'TemplateClassic',
+        minimal: 'TemplateMinimal',
+        creative: 'TemplateCreative',
+        cyber: 'TemplateCyber',
+        vibrant: 'TemplateVibrant',
+        ejemplo: 'TemplateEjemplo',  // <-- AGREGAR
+    }
+    return templates[this.templateName] || 'TemplateModern'
+},
+```
+
+================================================================================
+9. AGREGAR FUENTES GOOGLE (SI ES NECESARIO)
+================================================================================
+
+Archivo: resources/views/app.blade.php
+
+Fuentes ya cargadas:
+- Crimson Text, Fira Code, Inter, Lato, Libre Baskerville, Lora
+- Merriweather, Montserrat, Open Sans, Outfit, Playfair Display
+- Poppins, Quicksand, Roboto, Roboto Mono, Space Grotesk
+- Space Mono, Syne
+
+Si necesitas agregar nuevas fuentes, editar el link de Google Fonts (línea ~23).
+
+================================================================================
+10. LIMPIAR CACHÉ DESPUÉS DE CAMBIOS
+================================================================================
+
+Ejecutar después de modificar config/templates.php:
+
+```bash
+php artisan config:clear && php artisan cache:clear
+```
+
+================================================================================
+11. CONVENCIONES DE NOMENCLATURA
+================================================================================
+
+NOMBRES DE ARCHIVOS:
+- Componente Vue: TemplateNombreEnPascalCase.vue
+- Key en schemas: nombreEnMinusculas (ej: 'creative', 'modern')
+
+NOMBRES EN SCHEMA (español):
+- Secciones: camelCase (ej: 'general', 'avatar', 'botones')
+- Campos: camelCase (ej: 'colorFondo', 'tamanoFuente')
+- _label: Texto en español para mostrar en el editor
+- Opciones: en español (ej: 'solido', 'borde', 'minimalista')
+
+ACCESO A CUSTOMIZATION:
+- Sección 'avatar', campo 'tamano': this.customization?.avatar?.tamano
+- Usar operador ?? para defaults numéricos
+- Usar operador || para defaults string/color
+
+================================================================================
+12. PROPS DISPONIBLES EN LA PLANTILLA
+================================================================================
+
+customization: {
+    // Objeto con todas las secciones del schema
+    // Estructura: { seccion: { campo: valor, ... }, ... }
+}
+
+company: {
+    id, name, slug, logo_path,
+    facebook, instagram, twitter, youtube, linkedin,
+    web, my_business, address,
+}
+
+card: {
+    id, first_name, last_name, slug, job_title,
+    photo_path, email, mobile_phone, whatsapp,
+    whatsapp_message, description, linkedin,
+}
+
+services: [
+    { id, name, description, image_path, order, is_active },
+]
+
+products: [
+    { id, name, description, price, discount, comment, image_path, order, is_active },
+]
+
+================================================================================
+13. PATRONES COMUNES
+================================================================================
+
+LINK DE WHATSAPP:
+```javascript
+whatsappLink() {
+    if (!this.card?.whatsapp) return '#'
+    const phone = this.card.whatsapp.replace(/\D/g, '')
+    return `https://api.whatsapp.com/send?phone=${phone}`
+}
+```
+
+CLASES DINÁMICAS (para animaciones):
+```javascript
+// En computed
+avatarAnimationClass() {
+    const anim = this.customization?.avatar?.animacion || 'ninguna'
+    if (anim === 'flotar') return 'anim-float'
+    if (anim === 'latir') return 'anim-pulse'
+    return ''
+}
+
+// En template
+<div :class="avatarAnimationClass">
+
+// En CSS
+.anim-float {
+    animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+```
+
+DEGRADADOS DINÁMICOS:
+```javascript
+backgroundStyle() {
+    const gen = this.customization?.general || {}
+    const color1 = gen.color1 || '#ff00cc'
+    const color2 = gen.color2 || '#333399'
+    return {
+        backgroundImage: `linear-gradient(-45deg, ${color1}, ${color2})`,
+    }
+}
+```
+
+BOTONES CON MÚLTIPLES ESTILOS:
+```javascript
+getSocialBtnStyle(type) {
+    const config = this.customization?.botones || {}
+    const estilo = config.estilo || 'solido'
+    const base = { borderRadius: `${config.radio ?? 50}%` }
+
+    if (estilo === 'solido') {
+        return { ...base, backgroundColor: config.color, color: '#fff' }
+    } else if (estilo === 'borde') {
+        return { ...base, backgroundColor: 'transparent', border: `1px solid ${config.color}` }
+    }
+    return { ...base, backgroundColor: 'transparent', color: config.color }
+}
+```
+
+================================================================================
+14. CHECKLIST DE VERIFICACIÓN
+================================================================================
+
+Antes de considerar la plantilla completa, verificar:
+
+[ ] Componente Vue creado en resources/js/components/templates/
+[ ] Todos los estilos dinámicos usan :style="computed" (NO CSS variables)
+[ ] Schema agregado en config/templates.php (sección 'available' y 'schemas')
+[ ] Componente importado y registrado en LivePreview.vue
+[ ] Fuentes Google agregadas si son necesarias
+[ ] Caché de Laravel limpiada (php artisan config:clear && cache:clear)
+[ ] Probar CADA control del editor y verificar que afecte la vista previa
+[ ] Verificar que los valores por defecto se muestren correctamente
+[ ] Verificar que la plantilla no afecte a otras plantillas existentes
+[ ] Avatar usa width === height para mantener proporción
+[ ] Logo y foto centrados si el diseño lo requiere
+
+================================================================================
+15. ERRORES COMUNES Y SOLUCIONES
+================================================================================
+
+ERROR: Los controles del editor no afectan la plantilla
+CAUSA: Usando CSS variables en lugar de estilos inline computados
+SOLUCIÓN: Cambiar de var(--nombre) a :style="computedProperty"
+
+ERROR: Foto aparece como óvalo en lugar de círculo
+CAUSA: width y height diferentes
+SOLUCIÓN: Asegurar width === height en el computed style
+
+ERROR: Fuente no cambia al seleccionar otra tipografía
+CAUSA: Fuente no está cargada en Google Fonts
+SOLUCIÓN: Agregar la fuente al link en app.blade.php
+
+ERROR: Valores numéricos no funcionan (ej: tamaño en px)
+CAUSA: Falta concatenar la unidad en el computed
+SOLUCIÓN: Usar template literals: `${valor}px`
+
+ERROR: Cambios en schema no se reflejan
+CAUSA: Caché de Laravel no limpiada
+SOLUCIÓN: Ejecutar php artisan config:clear && cache:clear
+
+ERROR: undefined cuando accedo a customization
+CAUSA: No usar optional chaining
+SOLUCIÓN: Usar this.customization?.seccion?.campo
+
+================================================================================
+16. ARCHIVOS DE MEMORIA DEL PROYECTO
+================================================================================
+
+Estos archivos contienen información adicional del proyecto:
+
+.claude/templates-inventory.md
+  - Inventario completo de todas las plantillas
+  - Características y secciones de cada una
+  - Fuentes utilizadas
+
+.claude/ux-improvements.md
+  - Mejoras de UX identificadas
+  - Inconsistencias de nomenclatura
+  - Plan de mejoras prioritario
+
+.claude/session-history.md
+  - Historial de trabajo realizado
+  - Patrones técnicos establecidos
+  - Errores resueltos
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

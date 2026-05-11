@@ -1,0 +1,234 @@
+.main-card {
+    border: 1px solid #ddd;
+    border-radius: .25rem;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #127cb3;
+    color: #fff;
+    padding: 10px 15px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.wrapper-basic,
+.wrapper-contact,
+.wrapper-social,
+.wrapper-campus,
+.wrapper-area,
+.wrapper-position {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.data-pair {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.box-label {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.box-value {
+    color: #333;
+}
+
+.box-label p, .box-value p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+
+
+
+@media screen and (min-width: 300px) {
+    .wrapper-basic {
+        grid-template-columns: 1fr;
+    }
+
+    .wrapper-contact,
+    .wrapper-social,
+    .wrapper-campus,
+    .wrapper-area,
+    .wrapper-position {
+        grid-template-columns: 1fr;
+    }
+
+    .wrapper-basic>.full-width {
+        grid-column: span 1;
+    }
+
+    .wrapper-contact>.full-width {
+        grid-column: span 1;
+    }
+
+}
+
+@media screen and (min-width: 768px) {
+    .wrapper-basic {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .wrapper-contact,
+    .wrapper-social,
+    .wrapper-campus,
+    .wrapper-area,
+    .wrapper-position {
+        grid-template-columns: 1fr;
+    }
+
+    .wrapper-basic>.full-width {
+        grid-column: span 2;
+    }
+
+    .wrapper-contact>.full-width {
+        grid-column: span 1;
+    }
+
+}
+
+@media screen and (min-width: 1200px) {
+    .wrapper-basic {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .wrapper-contact, .wrapper-social {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .wrapper-campus, .wrapper-area, .wrapper-position {
+        grid-template-columns: 1fr;
+    }
+
+    .wrapper-basic>.full-width {
+        grid-column: span 2;
+    }
+
+    .wrapper-contact>.full-width {
+        grid-column: span 2;
+    }
+
+}
+
+.wrapper-add-data {
+    border-radius: 8px;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-style: dashed;
+    height: 110px;
+    width: 100%;
+    border-width: 1px;
+    border-color: #127cb3;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wrapper-add-data.selected {
+    border-width: 2px;
+    border-style: dotted;
+}
+
+.wrapper-add-data p {
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 22px;
+    color: #127cb3;
+    margin: 0px;
+}
+
+.wrapper-add-data.disabled-add {
+    border-color: #C7C7C7;
+}
+
+.wrapper-add-data.disabled-add p {
+    color: #C7C7C7;
+}
+
+.wrapper-data {
+    display: grid;
+    grid-template-columns: 90% 10%;
+    height: 110px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #127cb3;
+    border-radius: 8px;
+}
+
+.wrapper-data.selected {
+    border: 2px solid #127cb3;
+    background-color: #e0f3ff;
+}
+
+tr.selected {
+    border: 2px solid #127cb3;
+    background-color: #e0f3ff;
+}
+
+.wrapper-data .box {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
+    width: 100%;
+}
+
+.wrapper-data .box.box1 .preliminary-information {
+    display: flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content: space-between;
+    gap: 5px;
+    width: 90%;
+    cursor: pointer;
+}
+
+.wrapper-data .box.box1 .preliminary-information p {
+    margin: 0px;
+}
+
+.wrapper-data .box.box1 .preliminary-information p.data-position-one {
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 18px;
+    text-decoration: none;
+}
+
+.wrapper-data .box.box2 .edit-data {
+    cursor: pointer
+}
+
+.wrapper-data .box.box2 .delete-data {
+    cursor: pointer
+}
+
+.message-success {
+    width: 100%;
+    background: #D8FFDC;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.message-success .content {
+    align-items: flex-start;
+    justify-content: center;
+    border-left: 5px solid #00660A;
+}
+
+.message-success .content p {
+    font-size: 16px;
+    line-height: 16px;
+}
