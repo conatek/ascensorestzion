@@ -9,8 +9,8 @@
                     <circle cx="40" cy="52" r="2.5" fill="url(#forbiddenGradient)"/>
                     <defs>
                         <linearGradient id="forbiddenGradient" x1="0" y1="0" x2="80" y2="80">
-                            <stop stop-color="#8b5cf6"/>
-                            <stop offset="1" stop-color="#ec4899"/>
+                            <stop stop-color="#30ab0a"/>
+                            <stop offset="1" stop-color="#ba2831"/>
                         </linearGradient>
                     </defs>
                 </svg>
@@ -40,7 +40,7 @@ export default {
     computed: {
         isGuest() {
             const auth = useAuth();
-            return auth.hasRole('Guest');
+            return auth.hasRole('admin');
         },
     },
 };
@@ -82,7 +82,7 @@ export default {
 
 .forbidden-upgrade {
     font-size: 0.95rem;
-    color: #8b5cf6;
+    color: #30ab0a;
     font-weight: 500;
     margin-bottom: 1.5rem;
 }
@@ -95,18 +95,18 @@ export default {
     display: inline-flex;
     align-items: center;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    background: linear-gradient(135deg, #30ab0a, #ba2831);
     color: white;
     font-weight: 600;
     border-radius: 10px;
     text-decoration: none;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(48, 171, 10, 0.3);
 }
 
 .btn-back:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 6px 16px rgba(48, 171, 10, 0.4);
     color: white;
 }
 </style>

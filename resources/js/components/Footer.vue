@@ -6,22 +6,11 @@
         <div class="footer-content">
             <div class="footer-left">
                 <div class="footer-brand">
-                    <svg class="footer-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="24" height="24" rx="6" fill="url(#footer-gradient)"/>
-                        <path d="M7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-                        <circle cx="12" cy="12" r="2.5" fill="white"/>
-                        <defs>
-                            <linearGradient id="footer-gradient" x1="0" y1="0" x2="24" y2="24">
-                                <stop stop-color="#8b5cf6"/>
-                                <stop offset="1" stop-color="#ec4899"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <span class="footer-brand-text">NexosCard</span>
+                    <span class="footer-brand-text">Ascensores Tzion</span>
                 </div>
                 <span class="footer-separator">|</span>
                 <span class="footer-copy">
-                    &copy; {{ currentYear }} Tarjetas de Presentacion Digital
+                    &copy; {{ currentYear }}
                 </span>
             </div>
 
@@ -71,9 +60,9 @@ export default {
     height: 3px;
     background: linear-gradient(90deg,
         transparent 0%,
-        #8b5cf6 20%,
-        #ec4899 50%,
-        #8b5cf6 80%,
+        #30ab0a 20%,
+        #279208 50%,
+        #30ab0a 80%,
         transparent 100%
     );
     opacity: 0.6;
@@ -146,11 +135,11 @@ export default {
 .version-badge {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #8b5cf6;
-    background: linear-gradient(135deg, #f3e8ff, #fce7f3);
+    color: #279208;
+    background: linear-gradient(135deg, #e8f5e4, #d4edda);
     padding: 0.25rem 0.5rem;
     border-radius: 6px;
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(48, 171, 10, 0.2);
 }
 
 /* Decorative elements */
@@ -166,8 +155,8 @@ export default {
     height: 1px;
     background: linear-gradient(90deg,
         transparent,
-        rgba(139, 92, 246, 0.1),
-        rgba(236, 72, 153, 0.1),
+        rgba(48, 171, 10, 0.1),
+        rgba(39, 146, 8, 0.1),
         transparent
     );
 }

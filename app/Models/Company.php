@@ -55,31 +55,6 @@ class Company extends Model
         return $this->hasOne(CompanySetting::class);
     }
 
-    public function subscription()
-    {
-        return $this->hasOne(Subscription::class)->active();
-    }
-
-    public function subscriptions()
-    {
-        return $this->hasMany(Subscription::class);
-    }
-
-    public function payments()
-    {
-        return $this->hasMany(Payment::class);
-    }
-
-    public function activeSubscription(): ?Subscription
-    {
-        return $this->subscriptions()->active()->latest()->first();
-    }
-
-    public function currentPlan(): ?Plan
-    {
-        return $this->activeSubscription()?->plan;
-    }
-
     /**
      * Obtener o crear settings con valores por defecto
      */

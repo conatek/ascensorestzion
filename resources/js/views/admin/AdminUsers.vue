@@ -30,14 +30,15 @@
                 </div>
                 <select v-model="filterRole" class="filter-select">
                     <option value="">Todos los roles</option>
-                    <option value="Master">Master</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Guest">Guest</option>
+                    <option value="master">Master</option>
+                    <option value="coordinator">Coordinador</option>
+                    <option value="technician">Tecnico</option>
+                    <option value="admin">Admin</option>
                 </select>
-                <select v-model="filterCompany" class="filter-select">
-                    <option value="">Todas las empresas</option>
-                    <option value="__none__">Sin empresa</option>
-                    <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
+                <select v-model="filterClient" class="filter-select">
+                    <option value="">Todos los clientes</option>
+                    <option value="__none__">Sin cliente</option>
+                    <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.business_name }}</option>
                 </select>
             </div>
 
@@ -58,13 +59,13 @@
                         </span>
 
                         <span v-else-if="props.column.field === 'role'">
-                            <span class="role-badge" :class="'role-' + roleName(props.row).toLowerCase()">
-                                {{ roleName(props.row) }}
+                            <span class="role-badge" :class="'role-' + roleName(props.row)">
+                                {{ roleLabel(props.row) }}
                             </span>
                         </span>
 
                         <span v-else-if="props.column.field === 'company'">
-                            {{ props.row.company?.name || '-' }}
+                            {{ displayCompany(props.row) }}
                         </span>
 
                         <span v-else-if="props.column.field === 'created_at'">
@@ -115,13 +116,27 @@
                 <div class="modal-body">
                     <div class="detail-row">
                         <span class="detail-label">Rol</span>
-                        <span class="role-badge" :class="'role-' + roleName(selectedUser).toLowerCase()">
-                            {{ roleName(selectedUser) }}
+                        <span class="role-badge" :class="'role-' + roleName(selectedUser)">
+                            {{ roleLabel(selectedUser) }}
                         </span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Empresa</span>
-                        <span class="detail-value">{{ selectedUser.company?.name || 'Sin empresa' }}</span>
+                        <span class="detail-label">Cliente</span>
+                        <span class="detail-value">{{ displayCompany(selectedUser) }}</span>
+                    </div>
+                    <div v-if="selectedUser.phone" class="detail-row">
+                        <span class="detail-label">Telefono</span>
+                        <span class="detail-value">{{ selectedUser.phone }}</span>
+                    </div>
+                    <div v-if="selectedUser.document_number" class="detail-row">
+                        <span class="detail-label">Documento</span>
+                        <span class="detail-value">{{ selectedUser.document_type }} {{ selectedUser.document_number }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado</span>
+                        <span class="status-badge" :class="selectedUser.active ? 'status-active' : 'status-inactive'">
+                            {{ selectedUser.active ? 'Activo' : 'Inactivo' }}
+                        </span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Registro</span>
@@ -130,10 +145,10 @@
                 </div>
 
                 <!-- Footer -->
-                <div v-if="selectedUser.company" class="modal-footer">
-                    <router-link :to="{ name: 'companies.show', params: { id: selectedUser.company_id }, query: { from: 'admin' } }"
+                <div v-if="selectedUser.client" class="modal-footer">
+                    <router-link :to="{ name: 'clients.show', params: { id: selectedUser.client.id } }"
                                  class="modal-link">
-                        <i class="fa fa-building me-1"></i> Ver empresa
+                        <i class="fa fa-building me-1"></i> Ver cliente
                     </router-link>
                 </div>
             </div>
@@ -145,6 +160,7 @@
 import { VueGoodTable } from 'vue-good-table-next';
 import 'vue-good-table-next/dist/vue-good-table-next.css';
 import adminService from '@/services/adminService.js';
+import clientService from '@/services/clientService.js';
 
 export default {
     name: 'AdminUsers',
@@ -156,16 +172,22 @@ export default {
     data() {
         return {
             users: [],
-            companies: [],
+            clients: [],
             loading: true,
             search: '',
             filterRole: '',
-            filterCompany: '',
+            filterClient: '',
             selectedUser: null,
+            roleLabels: {
+                master: 'Master',
+                coordinator: 'Coordinador',
+                technician: 'Tecnico',
+                admin: 'Admin',
+            },
             columns: [
                 { label: 'Usuario', field: 'name', sortable: false },
-                { label: 'Rol', field: 'role', sortable: false, width: '110px' },
-                { label: 'Empresa', field: 'company', sortable: false },
+                { label: 'Rol', field: 'role', sortable: false, width: '130px' },
+                { label: 'Cliente', field: 'company', sortable: false },
                 { label: 'Registro', field: 'created_at', sortable: false },
                 { label: '', field: 'actions', sortable: false, tdClass: 'text-center', width: '60px' },
             ],
@@ -190,10 +212,10 @@ export default {
                 rows = rows.filter(r => this.roleName(r) === this.filterRole);
             }
 
-            if (this.filterCompany === '__none__') {
-                rows = rows.filter(r => !r.company);
-            } else if (this.filterCompany) {
-                rows = rows.filter(r => r.company?.id === Number(this.filterCompany));
+            if (this.filterClient === '__none__') {
+                rows = rows.filter(r => !r.client);
+            } else if (this.filterClient) {
+                rows = rows.filter(r => r.client?.id === Number(this.filterClient));
             }
 
             if (this.search) {
@@ -210,9 +232,9 @@ export default {
 
     async created() {
         try {
-            const { data } = await adminService.getCompanies({ per_page: 999 });
-            this.companies = (data.data || data).sort((a, b) => a.name.localeCompare(b.name));
-        } catch { /* empresas opcionales */ }
+            const { data } = await clientService.all({ per_page: 999 });
+            this.clients = (data.data || data).sort((a, b) => (a.business_name || '').localeCompare(b.business_name || ''));
+        } catch { /* clientes opcionales */ }
         await this.load();
     },
 
@@ -228,7 +250,17 @@ export default {
         },
 
         roleName(user) {
-            return user.roles?.[0]?.name || 'Sin rol';
+            return user.roles?.[0]?.name || 'sin';
+        },
+
+        roleLabel(user) {
+            const name = this.roleName(user);
+            return this.roleLabels[name] || 'Sin rol';
+        },
+
+        displayCompany(user) {
+            if (user.client?.business_name) return user.client.business_name;
+            return '-';
         },
 
         formatDate(d) {
@@ -284,8 +316,8 @@ export default {
 
 .filter-input:focus {
     outline: none;
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
 }
 
 .filter-select {
@@ -301,8 +333,8 @@ export default {
 
 .filter-select:focus {
     outline: none;
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
 }
 
 /* Card */
@@ -319,11 +351,58 @@ export default {
 .text-center { text-align: center; }
 
 /* Badges rol */
-.role-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
-.role-master { background: linear-gradient(135deg, #ede9fe, #f3e8ff); color: #7c3aed; }
-.role-admin { background: linear-gradient(135deg, #dbeafe, #e0f2fe); color: #2563eb; }
-.role-guest { background: #f1f5f9; color: #64748b; }
-.role-sin { background: #fef2f2; color: #dc2626; }
+.role-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.role-master {
+    background: linear-gradient(135deg, #d4edda, #e8f5e4);
+    color: #279208;
+}
+
+.role-coordinator {
+    background: linear-gradient(135deg, #ede9fe, #e8e0fb);
+    color: #7c3aed;
+}
+
+.role-technician {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #b45309;
+}
+
+.role-admin {
+    background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+    color: #2563eb;
+}
+
+.role-sin {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Status badge */
+.status-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+}
+
+.status-active {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+}
 
 /* Boton accion tabla */
 .action-btn {
@@ -342,7 +421,7 @@ export default {
     transition: all 0.2s;
 }
 
-.action-btn:hover { background: #f1f5f9; color: #7c3aed; }
+.action-btn:hover { background: #f1f5f9; color: #279208; }
 
 /* Empty & loading */
 .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
@@ -390,8 +469,8 @@ export default {
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #ede9fe, #f3e8ff);
-    color: #7c3aed;
+    background: linear-gradient(135deg, #d4edda, #e8f5e4);
+    color: #279208;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -456,13 +535,13 @@ export default {
 
 .modal-link {
     font-size: 0.85rem;
-    color: #7c3aed;
+    color: #279208;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s;
 }
 
-.modal-link:hover { color: #6d28d9; text-decoration: underline; }
+.modal-link:hover { color: #1f7506; text-decoration: underline; }
 
 @media (max-width: 640px) {
     .filter-select { flex: 1; min-width: 0; }
@@ -544,7 +623,7 @@ export default {
     appearance: auto !important;
 }
 .vgt-wrap__footer .footer__row-count__select:focus {
-    border-color: #7c3aed !important;
+    border-color: #279208 !important;
     outline: none;
 }
 
@@ -574,9 +653,9 @@ export default {
     margin: 0 0.25rem !important;
 }
 .vgt-wrap__footer .footer__navigation__page-info__current-entry:focus {
-    border-color: #7c3aed !important;
+    border-color: #279208 !important;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+    box-shadow: 0 0 0 2px rgba(39, 146, 8, 0.1);
 }
 
 .vgt-wrap__footer .footer__navigation__page-btn {
@@ -599,14 +678,14 @@ export default {
 }
 .vgt-wrap__footer .footer__navigation__page-btn .chevron.left::after {
     border-right-width: 5px !important;
-    border-right-color: #7c3aed !important;
+    border-right-color: #279208 !important;
 }
 .vgt-wrap__footer .footer__navigation__page-btn .chevron.right::after {
     border-left-width: 5px !important;
-    border-left-color: #7c3aed !important;
+    border-left-color: #279208 !important;
 }
 .vgt-wrap__footer .footer__navigation__page-btn:hover:not(.disabled) {
-    background: #f3e8ff !important;
+    background: #e8f5e4 !important;
     border-color: #c4b5fd !important;
 }
 .vgt-wrap__footer .footer__navigation__page-btn.disabled {

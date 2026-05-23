@@ -27,24 +27,18 @@
 <script>
 import publicCardService from '@/services/publicCardService.js';
 import TemplateModern from '@/components/templates/TemplateModern.vue';
-import TemplateClassic from '@/components/templates/TemplateClassic.vue';
-import TemplateMinimal from '@/components/templates/TemplateMinimal.vue';
 import TemplateCreative from '@/components/templates/TemplateCreative.vue';
 import TemplateCyber from '@/components/templates/TemplateCyber.vue';
 import TemplateVibrant from '@/components/templates/TemplateVibrant.vue';
-import TemplateAction from '@/components/templates/TemplateAction.vue';
 
 export default {
     name: 'CardPublic',
 
     components: {
         TemplateModern,
-        TemplateClassic,
-        TemplateMinimal,
         TemplateCreative,
         TemplateCyber,
         TemplateVibrant,
-        TemplateAction,
     },
 
     data() {
@@ -62,21 +56,18 @@ export default {
         currentTemplateComponent() {
             const templates = {
                 modern: 'TemplateModern',
-                classic: 'TemplateClassic',
-                minimal: 'TemplateMinimal',
                 creative: 'TemplateCreative',
                 cyber: 'TemplateCyber',
                 vibrant: 'TemplateVibrant',
-                action: 'TemplateAction',
             };
             return templates[this.templateName] || 'TemplateModern';
         },
     },
 
     async created() {
-        const { companySlug, cardSlug } = this.$route.params;
+        const { cardSlug } = this.$route.params;
         try {
-            const { data } = await publicCardService.card(companySlug, cardSlug);
+            const { data } = await publicCardService.cardBySlug(cardSlug);
             this.card = data.card;
             this.company = data.company;
             this.templateName = data.template?.name || 'modern';

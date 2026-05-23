@@ -11,8 +11,8 @@
                         <circle cx="20" cy="20" r="4" fill="white"/>
                         <defs>
                             <linearGradient id="mobile-logo-gradient-reg" x1="0" y1="0" x2="40" y2="40">
-                                <stop stop-color="#8b5cf6"/>
-                                <stop offset="1" stop-color="#ec4899"/>
+                                <stop stop-color="#30ab0a"/>
+                                <stop offset="1" stop-color="#ba2831"/>
                             </linearGradient>
                         </defs>
                     </svg>
@@ -20,7 +20,7 @@
 
                 <div class="auth-header">
                     <h1>Crear Cuenta</h1>
-                    <p>Registrate y comienza a crear tus tarjetas digitales</p>
+                    <p>Crea tu cuenta para acceder al sistema</p>
                 </div>
 
                 <!-- Error Alert -->
@@ -179,16 +179,16 @@
                         <rect x="10" y="30" width="120" height="160" rx="12" fill="white" opacity="0.95"/>
 
                         <!-- Avatar Circle -->
-                        <circle cx="70" cy="80" r="35" fill="#f3e8ff"/>
-                        <circle cx="70" cy="70" r="15" fill="#8b5cf6"/>
-                        <ellipse cx="70" cy="95" rx="20" ry="12" fill="#8b5cf6"/>
+                        <circle cx="70" cy="80" r="35" fill="#e8f5e4"/>
+                        <circle cx="70" cy="70" r="15" fill="#30ab0a"/>
+                        <ellipse cx="70" cy="95" rx="20" ry="12" fill="#30ab0a"/>
 
                         <!-- Name lines -->
                         <rect x="35" y="130" width="70" height="8" rx="4" fill="#e2e8f0"/>
                         <rect x="45" y="148" width="50" height="6" rx="3" fill="#f1f5f9"/>
 
                         <!-- Plus badge -->
-                        <circle cx="115" cy="45" r="20" fill="#ec4899"/>
+                        <circle cx="115" cy="45" r="20" fill="#ba2831"/>
                         <path d="M108 45h14M115 38v14" stroke="white" stroke-width="3" stroke-linecap="round"/>
                     </g>
 
@@ -241,12 +241,12 @@
                         <path d="M12 20C12 15.58 15.58 12 20 12C24.42 12 28 15.58 28 20C28 24.42 24.42 28 20 28" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
                         <circle cx="20" cy="20" r="4" fill="white"/>
                     </svg>
-                    <span class="brand-name">NexosCard</span>
+                    <span class="brand-name">Ascensores Tzion</span>
                 </div>
 
                 <div class="illustration-text">
-                    <h2>Unete a nosotros</h2>
-                    <p>Crea tarjetas de presentacion digitales profesionales para tu empresa y equipo.</p>
+                    <h2>Registrate</h2>
+                    <p>Sistema de gestion de ascensores y equipos de transporte vertical.</p>
                 </div>
             </div>
         </div>
@@ -304,7 +304,7 @@ export default {
 .auth-page {
     display: flex;
     min-height: 100vh;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Left Side - Form */
@@ -420,12 +420,12 @@ export default {
 
 .form-input:focus {
     outline: none;
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #30ab0a;
+    box-shadow: 0 0 0 3px rgba(48, 171, 10, 0.1);
 }
 
 .form-input.has-error {
-    border-color: #ef4444;
+    border-color: #ba2831;
 }
 
 .form-input::placeholder {
@@ -454,7 +454,7 @@ export default {
 
 .error-text {
     font-size: 0.8rem;
-    color: #ef4444;
+    color: #ba2831;
 }
 
 /* Submit Button */
@@ -465,7 +465,7 @@ export default {
     gap: 0.5rem;
     width: 100%;
     padding: 0.875rem;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, #30ab0a, #279208);
     color: white;
     font-size: 1rem;
     font-weight: 600;
@@ -473,12 +473,12 @@ export default {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.25);
     margin-top: 0.5rem;
 }
 
 .btn-submit:hover:not(:disabled) {
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
     transform: translateY(-1px);
 }
 
@@ -514,14 +514,14 @@ export default {
 }
 
 .auth-link {
-    color: #8b5cf6;
+    color: #30ab0a;
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .auth-link:hover {
-    color: #7c3aed;
+    color: #279208;
     text-decoration: underline;
 }
 
@@ -537,7 +537,7 @@ export default {
 }
 
 .back-link:hover {
-    color: #8b5cf6;
+    color: #30ab0a;
 }
 
 .back-link svg {
@@ -548,7 +548,7 @@ export default {
 /* Right Side - Illustration */
 .auth-illustration {
     flex: 0 0 45%;
-    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #ba2831 0%, #30ab0a 100%);
     display: flex;
     align-items: center;
     justify-content: center;

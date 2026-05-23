@@ -15,6 +15,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phone', 20)->nullable();
+            $table->string('document_type', 10)->nullable();
+            $table->string('document_number', 30)->nullable();
+            $table->boolean('active')->default(true);
+            $table->unsignedBigInteger('client_id')->nullable();
             $table->string('image_public_id')->nullable();
             $table->string('image_url')->nullable();
             $table->rememberToken();

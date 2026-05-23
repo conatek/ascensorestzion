@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('subscriptions:check-expiry')->daily();
+        $schedule->command('demo:reset --force')->daily()->at('00:05');
     }
 
     /**

@@ -1,45 +1,68 @@
 /* ============================================================
-   COLORES DE MARCA
-   Cyan : #81e8ef
-   Lila : #e288f9
+   COLORES DE MARCA — Ascensores Tzion
+   Verde : #30ab0a
+   Rojo  : #ba2831
+   Gris  : #606060
    ============================================================ */
 :root {
-  --brand-cyan:       #81e8ef;
-  --brand-cyan-dark:  #59bcc4;
-  --brand-lila:       #e288f9;
-  --brand-lila-dark:  #c05dd9;
+  --brand-green:       #30ab0a;
+  --brand-green-dark:  #279208;
+  --brand-red:         #ba2831;
+  --brand-red-dark:    #9e2229;
+  --brand-gray:        #606060;
 }
 
-/* Bootstrap 5: botón primario → lila */
+/* Bootstrap 5: botón primario → verde */
 .btn-primary {
-  --bs-btn-color:                 #000;
-  --bs-btn-bg:                    var(--brand-lila);
-  --bs-btn-border-color:          var(--brand-lila);
-  --bs-btn-hover-color:           #000;
-  --bs-btn-hover-bg:              var(--brand-lila-dark);
-  --bs-btn-hover-border-color:    var(--brand-lila-dark);
-  --bs-btn-active-color:          #000;
-  --bs-btn-active-bg:             var(--brand-lila-dark);
-  --bs-btn-active-border-color:   var(--brand-lila-dark);
-  --bs-btn-disabled-color:        #000;
-  --bs-btn-disabled-bg:           var(--brand-lila);
-  --bs-btn-disabled-border-color: var(--brand-lila);
+  --bs-btn-color:                 #fff;
+  --bs-btn-bg:                    var(--brand-green);
+  --bs-btn-border-color:          var(--brand-green);
+  --bs-btn-hover-color:           #fff;
+  --bs-btn-hover-bg:              var(--brand-green-dark);
+  --bs-btn-hover-border-color:    var(--brand-green-dark);
+  --bs-btn-active-color:          #fff;
+  --bs-btn-active-bg:             var(--brand-green-dark);
+  --bs-btn-active-border-color:   var(--brand-green-dark);
+  --bs-btn-disabled-color:        #fff;
+  --bs-btn-disabled-bg:           var(--brand-green);
+  --bs-btn-disabled-border-color: var(--brand-green);
 }
 
 .btn-outline-primary {
-  --bs-btn-color:              var(--brand-lila-dark);
-  --bs-btn-border-color:       var(--brand-lila-dark);
-  --bs-btn-hover-color:        #000;
-  --bs-btn-hover-bg:           var(--brand-lila);
-  --bs-btn-hover-border-color: var(--brand-lila);
-  --bs-btn-active-color:       #000;
-  --bs-btn-active-bg:          var(--brand-lila-dark);
+  --bs-btn-color:              var(--brand-green);
+  --bs-btn-border-color:       var(--brand-green);
+  --bs-btn-hover-color:        #fff;
+  --bs-btn-hover-bg:           var(--brand-green);
+  --bs-btn-hover-border-color: var(--brand-green);
+  --bs-btn-active-color:       #fff;
+  --bs-btn-active-bg:          var(--brand-green-dark);
 }
 
-/* Header: borde inferior cyan como acento de marca */
+/* Gradientes de iconos → verde Tzion */
+.bg-mean-fruit {
+  background-image: linear-gradient(120deg, #30ab0a 0%, #279208 100%) !important;
+}
+
+.icon-gradient {
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Bootstrap 5: botón danger → rojo Tzion */
+.btn-danger {
+  --bs-btn-bg:                    var(--brand-red);
+  --bs-btn-border-color:          var(--brand-red);
+  --bs-btn-hover-bg:              var(--brand-red-dark);
+  --bs-btn-hover-border-color:    var(--brand-red-dark);
+  --bs-btn-active-bg:             var(--brand-red-dark);
+  --bs-btn-active-border-color:   var(--brand-red-dark);
+}
+
+/* Header: borde inferior verde como acento de marca */
 .app-header.header-shadow {
-  border-bottom: 2px solid var(--brand-cyan);
-  box-shadow: 0 2px 18px rgba(129, 232, 239, 0.15), 0 1px 4px rgba(226, 136, 249, 0.10);
+  border-bottom: 2px solid var(--brand-green);
+  box-shadow: 0 2px 18px rgba(48, 171, 10, 0.12), 0 1px 4px rgba(48, 171, 10, 0.08);
 }
 
 /* ============================================================ */
@@ -60,17 +83,78 @@ table.dataTable .td-actions {
     justify-content: end;
 }
 
-/* SIDEBAR */
-/* .app-sidebar {
-    background-color: #e288f9 !important;
-} */
+/* SIDEBAR — Admin collapsible (same approach as portal) */
+.app-sidebar {
+    width: 260px !important;
+    min-width: 260px !important;
+    flex: 0 0 260px !important;
+    transition: width 0.3s ease, min-width 0.3s ease, flex-basis 0.3s ease !important;
+}
 
+.admin-collapsed .app-sidebar {
+    width: 68px !important;
+    min-width: 68px !important;
+    flex: 0 0 68px !important;
+}
+
+.admin-collapsed .app-sidebar .nav-text,
+.admin-collapsed .app-sidebar .brand-text,
+.admin-collapsed .app-sidebar .separator-text {
+    display: none !important;
+}
+
+.admin-collapsed .app-sidebar .nav-link {
+    justify-content: center !important;
+    padding: 0.7rem !important;
+    text-indent: 0 !important;
+}
+
+.admin-collapsed .app-sidebar .sidebar-brand {
+    justify-content: center !important;
+}
+
+.admin-collapsed .app-sidebar .nav-separator {
+    padding: 0.5rem 0 !important;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 0.25rem 0.5rem;
+}
+
+/* Ensure main content fills available space */
+.app-main {
+    display: flex !important;
+}
+
+.app-main .app-main__outer {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.app-sidebar .sidebar-nav {
+    overflow-x: hidden !important;
+}
+
+.app-sidebar .sidebar-inner {
+    width: 100% !important;
+}
+
+.app-sidebar .sidebar-brand {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.app-sidebar .sidebar-nav .nav-link {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* SIDEBAR — Legacy theme */
 .app-theme-green.app-container {
     background: #ffffff; }
 
 .app-theme-green .app-sidebar {
-    /* background: #e288f9; */
-    background: linear-gradient(to bottom, #e288f9 60%, white 100%);
+    background: linear-gradient(to bottom, #1b5e10 60%, white 100%);
 }
 
 .app-theme-green .app-page-title {
@@ -85,18 +169,18 @@ background: rgba(250, 251, 252, 0.1); }
 
 .app-theme-green .vertical-nav-menu li a {
     color: #ffffff;
-    background: #e288f9;
+    background: #30ab0a;
     font-weight: normal;
 }
 
 .app-theme-green .vertical-nav-menu li a:hover {
-    color: #e288f9;
+    color: #30ab0a;
     background: #fff;
     font-weight: normal;
 }
 
 .app-theme-green .vertical-nav-menu li a.mm-active {
-    color: #e288f9;
+    color: #30ab0a;
     background: #ffffff;
     font-weight: bold;
 }
@@ -105,8 +189,8 @@ background: rgba(250, 251, 252, 0.1); }
 
 
 .scrollbar-sidebar {
-    position: relative; /* Necesario para que el logo se posicione en la parte inferior del div */
-    padding-bottom: 20px; /* Espacio extra para el logo en la parte inferior */
+    position: relative;
+    padding-bottom: 20px;
 }
 
 .scrollbar-sidebar .btn-sidebar {
@@ -122,6 +206,5 @@ background: rgba(250, 251, 252, 0.1); }
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 50%; /* Ajusta el tamaño del logo según sea necesario */
+    width: 50%;
 }
-

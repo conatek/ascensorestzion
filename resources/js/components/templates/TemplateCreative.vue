@@ -99,13 +99,13 @@ export default {
             return this.customization?.general?.colorFondo || '#0f172a'
         },
         accentColor() {
-            return this.customization?.general?.colorAcento || '#38bdf8'
+            return this.customization?.general?.colorAcento || '#30ab0a'
         },
         fontFamily() {
             return this.customization?.general?.fuentePrincipal || 'Poppins'
         },
         secondaryLightColor() {
-            return this.customization?.hero?.colorLuzSecundaria || '#c084fc'
+            return this.customization?.hero?.colorLuzSecundaria || '#ba2831'
         },
         borderRadius() {
             return this.customization?.hero?.radioBorde ?? 24
@@ -318,7 +318,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #334155;
+    background: #3a3a3a;
     font-size: 3rem;
     color: rgba(255,255,255,0.5);
 }
@@ -421,6 +421,6 @@ export default {
 }
 
 .social-link:hover {
-    color: var(--accent-color, #38bdf8);
+    color: var(--accent-color, #30ab0a);
 }
 </style>

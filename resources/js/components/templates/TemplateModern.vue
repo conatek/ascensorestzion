@@ -393,7 +393,7 @@ export default {
             const profile = this.customization?.profile || {}
             return {
                 fontSize: `${profile.cargoTamano || 1}em`,
-                color: profile.cargoColor || '#666666',
+                color: profile.cargoColor || '#606060',
                 fontWeight: profile.cargoPeso || '400',
             }
         },
@@ -423,8 +423,8 @@ export default {
         photoBackgroundStyle() {
             const bg = this.customization?.photoBackground || {}
             const tipo = bg.tipo || 'degradado'
-            const color1 = bg.color1 || '#6366f1'
-            const color2 = bg.color2 || '#8b5cf6'
+            const color1 = bg.color1 || '#30ab0a'
+            const color2 = bg.color2 || '#279208'
             const direccion = bg.direccion || 'diagonal'
             const mostrarPatron = bg.mostrarPatron || false
             const patron = bg.patron || 'circulos'
@@ -564,7 +564,7 @@ export default {
                 web: { key: 'fondoWeb', default: '#4285f4' },
                 location: { key: 'fondoUbicacion', default: '#ff5722' },
             }
-            const config = mapping[type] || { key: '', default: '#666666' }
+            const config = mapping[type] || { key: '', default: '#606060' }
             return {
                 borderRadius: `${social.radio ?? 50}%`,
                 color: social.colorIcono || '#ffffff',
@@ -586,7 +586,7 @@ export default {
 
 .card-template.modern {
     font-family: var(--general-font-family, 'Montserrat', sans-serif);
-    color: var(--general-color-fuente, #333333);
+    color: var(--general-color-fuente, #606060);
     background-color: var(--general-color-fondo, #ffffff);
     min-height: 100%;
     display: flex;
@@ -687,20 +687,20 @@ export default {
 
 .first-name {
     font-size: var(--profile-nombre-tamano, 1.5em);
-    color: var(--profile-nombre-color, #333333);
+    color: var(--profile-nombre-color, #333);
     font-weight: var(--profile-nombre-peso, 600);
 }
 
 .last-name {
     font-size: var(--profile-apellido-tamano, 1.5em);
-    color: var(--profile-apellido-color, #555555);
+    color: var(--profile-apellido-color, #606060);
     font-weight: var(--profile-apellido-peso, 400);
     margin-left: 0.25rem;
 }
 
 .job-title {
     font-size: var(--profile-cargo-tamano, 1em);
-    color: var(--profile-cargo-color, #666666);
+    color: var(--profile-cargo-color, #606060);
     font-weight: var(--profile-cargo-peso, 400);
     margin: 0;
 }
@@ -782,7 +782,7 @@ export default {
     width: 100%;
     padding: 0.75rem 1rem;
     border: none;
-    background: var(--accordion-color-seccion1, #6366f1);
+    background: var(--accordion-color-seccion1, #30ab0a);
     color: var(--accordion-color-fuente-enlace, #ffffff);
     font-size: var(--accordion-tamano-fuente-enlace, 1rem);
     font-weight: var(--accordion-peso-fuente-enlace, 500);
@@ -793,11 +793,11 @@ export default {
     transition: background-color 0.2s;
 }
 
-.accordion-header.section-1 { background: var(--accordion-color-seccion1, #6366f1); }
-.accordion-header.section-2 { background: var(--accordion-color-seccion2, #8b5cf6); }
-.accordion-header.section-3 { background: var(--accordion-color-seccion3, #a855f7); }
-.accordion-header.section-4 { background: var(--accordion-color-seccion4, #d946ef); }
-.accordion-header.section-5 { background: var(--accordion-color-seccion5, #ec4899); }
+.accordion-header.section-1 { background: var(--accordion-color-seccion1, #30ab0a); }
+.accordion-header.section-2 { background: var(--accordion-color-seccion2, #279208); }
+.accordion-header.section-3 { background: var(--accordion-color-seccion3, #3dbf1a); }
+.accordion-header.section-4 { background: var(--accordion-color-seccion4, #ba2831); }
+.accordion-header.section-5 { background: var(--accordion-color-seccion5, #606060); }
 
 /* Redondeo en el primer elemento */
 .accordion-item:first-child .accordion-header {
@@ -814,7 +814,7 @@ export default {
 .accordion-content {
     background: var(--accordion-color-cuerpo, #ffffff);
     padding: 1rem;
-    color: var(--accordion-color-fuente, #333333);
+    color: var(--accordion-color-fuente, #606060);
     border:
         var(--accordion-tamano-borde, 1px)
         var(--accordion-tipo-borde, solid)
@@ -843,7 +843,7 @@ export default {
 .contact-item i {
     width: 20px;
     text-align: center;
-    color: var(--accordion-color-seccion2, #8b5cf6);
+    color: var(--accordion-color-seccion2, #279208);
 }
 
 .service-btn,
@@ -885,7 +885,7 @@ export default {
 
 .footer-company-name {
     margin: 0;
-    color: var(--footer-color-fuente, #666666);
+    color: var(--footer-color-fuente, #606060);
     font-size: var(--footer-tamano-fuente, 0.9em);
     font-weight: var(--footer-peso-fuente, 400);
     text-align: center;
@@ -960,7 +960,7 @@ export default {
 }
 
 .current-price {
-    background: #28a745;
+    background: #30ab0a;
     color: white;
     padding: 0.75rem;
     border-radius: 6px;

@@ -35,7 +35,7 @@ class PublicCardController extends Controller
     }
 
     /**
-     * Tarjeta de presentación individual.
+     * Tarjeta de presentación individual (con companySlug, backward compat).
      * GET /api/public/{companySlug}/{cardSlug}
      */
     public function card(string $companySlug, string $cardSlug): JsonResponse
@@ -53,7 +53,35 @@ class PublicCardController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Obtener customization con valores por defecto aplicados
+        $settings = $company->getOrCreateSettings();
+
+        return response()->json([
+            'card'    => $card,
+            'company' => $company,
+            'template' => [
+                'name' => $settings->template_name,
+                'customization' => $settings->values_only,
+            ],
+        ]);
+    }
+
+    /**
+     * Tarjeta de presentación por slug (single-company).
+     * GET /api/public/card/{cardSlug}
+     */
+    public function cardBySlug(string $cardSlug): JsonResponse
+    {
+        $company = Company::with([
+            'services' => fn($q) => $q->where('is_active', true),
+            'products' => fn($q) => $q->where('is_active', true),
+            'settings',
+        ])->firstOrFail();
+
+        $card = $company->cards()
+            ->where('slug', $cardSlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
         $settings = $company->getOrCreateSettings();
 
         return response()->json([

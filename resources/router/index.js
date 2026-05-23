@@ -1,60 +1,84 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Landing  from '../views/Landing.vue';
+import About    from '../views/About.vue';
+import Services from '../views/Services.vue';
+import Contact  from '../views/Contact.vue';
 import Login    from '../views/Login.vue';
-import Register from '../views/Register.vue';
 import Home     from '../views/Home.vue';
 import NotFound from '../views/NotFound.vue';
 import Forbidden from '../js/views/errors/Forbidden.vue';
 
-// Empresas (admin)
-import CompanyIndex  from '../js/views/company/CompanyIndex.vue';
-import CompanyCreate from '../js/views/company/CompanyCreate.vue';
+// Clientes
+import ClientIndex  from '../js/views/client/ClientIndex.vue';
+import ClientCreate from '../js/views/client/ClientCreate.vue';
+import ClientShow   from '../js/views/client/ClientShow.vue';
+import ClientEdit   from '../js/views/client/ClientEdit.vue';
+
+// Sedes
+import SiteCreate from '../js/views/site/SiteCreate.vue';
+import SiteEdit   from '../js/views/site/SiteEdit.vue';
+
+// Equipos
+import EquipmentIndex  from '../js/views/equipment/EquipmentIndex.vue';
+import EquipmentCreate from '../js/views/equipment/EquipmentCreate.vue';
+import EquipmentEdit   from '../js/views/equipment/EquipmentEdit.vue';
+import EquipmentDetail from '../js/views/equipment/EquipmentDetail.vue';
+
+// Reportes de servicio
+import ServiceReportIndex  from '../js/views/report/ServiceReportIndex.vue';
+import ServiceReportForm   from '../js/views/report/ServiceReportForm.vue';
+import ServiceReportDetail from '../js/views/report/ServiceReportDetail.vue';
+
+// Portal Cliente
+import PortalDashboard from '../js/views/portal/PortalDashboard.vue';
+import PortalEquipment from '../js/views/portal/PortalEquipment.vue';
+import PortalReports   from '../js/views/portal/PortalReports.vue';
+
+// Empresas / Tarjetas (Ascensores Tzion)
 import CompanyShow   from '../js/views/company/CompanyShow.vue';
 import CompanyEdit   from '../js/views/company/CompanyEdit.vue';
-
-// Tarjetas (admin)
 import CardCreate from '../js/views/card/CardCreate.vue';
 import CardEdit   from '../js/views/card/CardEdit.vue';
-
-// Productos (admin)
 import ProductCreate from '../js/views/product/ProductCreate.vue';
 import ProductEdit   from '../js/views/product/ProductEdit.vue';
-
-// Servicios (admin)
 import ServiceCreate from '../js/views/service/ServiceCreate.vue';
 import ServiceEdit   from '../js/views/service/ServiceEdit.vue';
-
-// Editor de plantillas (admin)
 import TemplateEditor from '../js/views/settings/TemplateEditor.vue';
 
-// Panel Admin (Master)
-import AdminDashboard          from '../js/views/admin/AdminDashboard.vue';
-import AdminPlans              from '../js/views/admin/AdminPlans.vue';
-import AdminPlanForm           from '../js/views/admin/AdminPlanForm.vue';
-import AdminSubscriptions      from '../js/views/admin/AdminSubscriptions.vue';
-import AdminSubscriptionDetail from '../js/views/admin/AdminSubscriptionDetail.vue';
-import AdminPayments           from '../js/views/admin/AdminPayments.vue';
-import AdminPaymentDetail      from '../js/views/admin/AdminPaymentDetail.vue';
-import AdminUsers              from '../js/views/admin/AdminUsers.vue';
-import AdminUserDetail         from '../js/views/admin/AdminUserDetail.vue';
-import AdminCompanies          from '../js/views/admin/AdminCompanies.vue';
-
-// Suscripcion y pagos
-import Plans            from '../js/views/subscription/Plans.vue';
-import Checkout         from '../js/views/subscription/Checkout.vue';
-import PaymentResult    from '../js/views/subscription/PaymentResult.vue';
-import MySubscription   from '../js/views/subscription/MySubscription.vue';
+// Panel Admin (master)
+import AdminDashboard from '../js/views/admin/AdminDashboard.vue';
+import AdminUsers     from '../js/views/admin/AdminUsers.vue';
+import AdminUserDetail from '../js/views/admin/AdminUserDetail.vue';
+import AdminCompanies  from '../js/views/admin/AdminCompanies.vue';
 
 // Vistas publicas
 import CompanyPublic from '../js/views/public/CompanyPublic.vue';
 import CardPublic    from '../js/views/public/CardPublic.vue';
 
 const routes = [
-    // --- Landing (pagina publica de inicio) ---
+    // --- Landing ---
     {
         path: '/inicio',
         name: 'landing',
         component: Landing,
+        meta: { layout: 'public' },
+    },
+    {
+        path: '/nosotros',
+        name: 'about',
+        component: About,
+        meta: { layout: 'public' },
+    },
+    {
+        path: '/servicios',
+        name: 'services',
+        component: Services,
+        meta: { layout: 'public' },
+    },
+    {
+        path: '/contacto',
+        name: 'contact',
+        component: Contact,
         meta: { layout: 'public' },
     },
 
@@ -63,12 +87,6 @@ const routes = [
         path: '/login',
         name: 'login',
         component: Login,
-        meta: { guest: true },
-    },
-    {
-        path: '/register',
-        name: 'register',
-        component: Register,
         meta: { guest: true },
     },
 
@@ -80,72 +98,30 @@ const routes = [
         meta: { requiresAuth: true },
     },
 
-    // --- Panel Admin (Master) ---
+    // --- Panel Admin (master) ---
     {
         path: '/admin',
         name: 'admin.dashboard',
         component: AdminDashboard,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/planes',
-        name: 'admin.plans',
-        component: AdminPlans,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/planes/crear',
-        name: 'admin.plans.create',
-        component: AdminPlanForm,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/planes/:id/editar',
-        name: 'admin.plans.edit',
-        component: AdminPlanForm,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/suscripciones',
-        name: 'admin.subscriptions',
-        component: AdminSubscriptions,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/suscripciones/:id',
-        name: 'admin.subscriptions.show',
-        component: AdminSubscriptionDetail,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/pagos',
-        name: 'admin.payments',
-        component: AdminPayments,
-        meta: { requiresAuth: true, roles: ['Master'] },
-    },
-    {
-        path: '/admin/pagos/:id',
-        name: 'admin.payments.show',
-        component: AdminPaymentDetail,
-        meta: { requiresAuth: true, roles: ['Master'] },
+        meta: { requiresAuth: true, roles: ['master'] },
     },
     {
         path: '/admin/usuarios',
         name: 'admin.users',
         component: AdminUsers,
-        meta: { requiresAuth: true, roles: ['Master'] },
+        meta: { requiresAuth: true, roles: ['master'] },
     },
     {
         path: '/admin/usuarios/:id',
         name: 'admin.users.show',
         component: AdminUserDetail,
-        meta: { requiresAuth: true, roles: ['Master'] },
+        meta: { requiresAuth: true, roles: ['master'] },
     },
     {
         path: '/admin/empresas',
         name: 'admin.companies',
         component: AdminCompanies,
-        meta: { requiresAuth: true, roles: ['Master'] },
+        meta: { requiresAuth: true, roles: ['master'] },
     },
 
     // --- Acceso denegado ---
@@ -156,121 +132,195 @@ const routes = [
         meta: { requiresAuth: true },
     },
 
-    // --- Empresas ---
+    // --- Clientes ---
     {
-        path: '/empresas',
-        name: 'companies.index',
-        component: CompanyIndex,
+        path: '/clientes',
+        name: 'clients.index',
+        component: ClientIndex,
         meta: { requiresAuth: true },
     },
     {
-        path: '/empresas/crear',
-        name: 'companies.create',
-        component: CompanyCreate,
-        meta: { requiresAuth: true, roles: ['Master'] },
+        path: '/clientes/crear',
+        name: 'clients.create',
+        component: ClientCreate,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
     },
     {
-        path: '/empresas/:id',
+        path: '/clientes/:id',
+        name: 'clients.show',
+        component: ClientShow,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/clientes/:id/editar',
+        name: 'clients.edit',
+        component: ClientEdit,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+    },
+
+    // --- Sedes ---
+    {
+        path: '/clientes/:clientId/sedes/crear',
+        name: 'sites.create',
+        component: SiteCreate,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+    },
+    {
+        path: '/clientes/:clientId/sedes/:siteId/editar',
+        name: 'sites.edit',
+        component: SiteEdit,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+    },
+
+    // --- Equipos ---
+    {
+        path: '/equipos',
+        name: 'equipment.index',
+        component: EquipmentIndex,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/equipos/crear',
+        name: 'equipment.create',
+        component: EquipmentCreate,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+    },
+    {
+        path: '/equipos/:id',
+        name: 'equipment.show',
+        component: EquipmentDetail,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/equipos/:id/editar',
+        name: 'equipment.edit',
+        component: EquipmentEdit,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+    },
+
+    // --- Reportes de Servicio ---
+    {
+        path: '/reportes',
+        name: 'reports.index',
+        component: ServiceReportIndex,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/reportes/nuevo',
+        name: 'reports.create',
+        component: ServiceReportForm,
+        meta: { requiresAuth: true, roles: ['master', 'coordinator', 'technician'] },
+    },
+    {
+        path: '/reportes/:id',
+        name: 'reports.show',
+        component: ServiceReportDetail,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/reportes/:id/editar',
+        name: 'reports.edit',
+        component: ServiceReportForm,
+        meta: { requiresAuth: true },
+    },
+
+    // --- Portal Cliente ---
+    {
+        path: '/portal',
+        name: 'portal.dashboard',
+        component: PortalDashboard,
+        meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+    {
+        path: '/portal/equipos',
+        name: 'portal.equipment',
+        component: PortalEquipment,
+        meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+    {
+        path: '/portal/reportes',
+        name: 'portal.reports',
+        component: PortalReports,
+        meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+
+    // --- Tarjetas Tzion ---
+    {
+        path: '/tarjetas',
         name: 'companies.show',
         component: CompanyShow,
         meta: { requiresAuth: true },
     },
     {
-        path: '/empresas/:id/editar',
+        path: '/tarjetas/editar',
         name: 'companies.edit',
         component: CompanyEdit,
         meta: { requiresAuth: true },
     },
-
-    // --- Tarjetas (anidadas bajo empresa) ---
     {
-        path: '/empresas/:companyId/tarjetas/crear',
+        path: '/tarjetas/crear',
         name: 'cards.create',
         component: CardCreate,
         meta: { requiresAuth: true },
     },
     {
-        path: '/empresas/:companyId/tarjetas/:cardId/editar',
+        path: '/tarjetas/:cardId/editar',
         name: 'cards.edit',
         component: CardEdit,
         meta: { requiresAuth: true },
     },
-
-    // --- Productos (anidados bajo empresa) ---
     {
-        path: '/empresas/:companyId/productos/crear',
+        path: '/tarjetas/productos/crear',
         name: 'products.create',
         component: ProductCreate,
         meta: { requiresAuth: true },
     },
     {
-        path: '/empresas/:companyId/productos/:productId/editar',
+        path: '/tarjetas/productos/:productId/editar',
         name: 'products.edit',
         component: ProductEdit,
         meta: { requiresAuth: true },
     },
-
-    // --- Servicios (anidados bajo empresa) ---
     {
-        path: '/empresas/:companyId/servicios/crear',
+        path: '/tarjetas/servicios/crear',
         name: 'services.create',
         component: ServiceCreate,
         meta: { requiresAuth: true },
     },
     {
-        path: '/empresas/:companyId/servicios/:serviceId/editar',
+        path: '/tarjetas/servicios/:serviceId/editar',
         name: 'services.edit',
         component: ServiceEdit,
         meta: { requiresAuth: true },
     },
-
-    // --- Editor de Plantillas ---
     {
-        path: '/empresas/:companyId/plantilla',
+        path: '/tarjetas/plantilla',
         name: 'settings.editor',
         component: TemplateEditor,
         meta: { requiresAuth: true },
     },
 
-    // --- Suscripcion y pagos ---
-    {
-        path: '/planes',
-        name: 'subscription.plans',
-        component: Plans,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: '/checkout/:planId',
-        name: 'subscription.checkout',
-        component: Checkout,
-        meta: { requiresAuth: true },
-    },
-    {
-        path: '/pago/resultado',
-        name: 'subscription.result',
-        component: PaymentResult,
-        meta: { layout: 'public' },
-    },
-    {
-        path: '/mi-suscripcion',
-        name: 'subscription.my',
-        component: MySubscription,
-        meta: { requiresAuth: true },
-    },
+    // --- Redirects de rutas viejas ---
+    { path: '/empresas/:id', redirect: '/tarjetas' },
+    { path: '/empresas/:id/editar', redirect: '/tarjetas/editar' },
+    { path: '/empresas/:companyId/tarjetas/crear', redirect: '/tarjetas/crear' },
+    { path: '/empresas/:companyId/tarjetas/:cardId/editar', redirect: to => `/tarjetas/${to.params.cardId}/editar` },
+    { path: '/empresas/:companyId/productos/crear', redirect: '/tarjetas/productos/crear' },
+    { path: '/empresas/:companyId/productos/:productId/editar', redirect: to => `/tarjetas/productos/${to.params.productId}/editar` },
+    { path: '/empresas/:companyId/servicios/crear', redirect: '/tarjetas/servicios/crear' },
+    { path: '/empresas/:companyId/servicios/:serviceId/editar', redirect: to => `/tarjetas/servicios/${to.params.serviceId}/editar` },
+    { path: '/empresas/:companyId/plantilla', redirect: '/tarjetas/plantilla' },
 
-    // --- Vistas publicas de tarjetas (al final, antes del 404) ---
+    // --- Vistas publicas de tarjetas ---
     {
-        path: '/:companySlug',
-        name: 'public.company',
-        component: CompanyPublic,
-        meta: { layout: 'public' },
-    },
-    {
-        path: '/:companySlug/:cardSlug',
+        path: '/:cardSlug',
         name: 'public.card',
         component: CardPublic,
         meta: { layout: 'public' },
     },
+
+    // Redirect de ruta vieja /:companySlug/:cardSlug
+    { path: '/:companySlug/:cardSlug', redirect: to => `/${to.params.cardSlug}` },
 
     // --- 404 ---
     {
@@ -296,7 +346,19 @@ router.beforeEach((to, from, next) => {
         return next({ name: 'home' });
     }
 
-    // Verificar roles si la ruta los requiere
+    // Redirigir segun rol al acceder a home
+    if (token && to.name === 'home') {
+        const userData = localStorage.getItem('auth_user');
+        const user = userData ? JSON.parse(userData) : null;
+        const userRoles = (user?.roles || []).map(r => r.name);
+        if (userRoles.includes('master')) {
+            return next({ name: 'admin.dashboard' });
+        }
+        if (userRoles.includes('admin') && !userRoles.includes('master')) {
+            return next({ name: 'portal.dashboard' });
+        }
+    }
+
     if (to.meta.roles && token) {
         const userData = localStorage.getItem('auth_user');
         const user = userData ? JSON.parse(userData) : null;

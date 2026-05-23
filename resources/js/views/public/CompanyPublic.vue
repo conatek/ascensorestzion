@@ -36,7 +36,7 @@
         <router-link
           v-for="card in company.cards"
           :key="card.id"
-          :to="`/${company.slug}/${card.slug}`"
+          :to="`/${card.slug}`"
           class="cp-card"
         >
           <div class="cp-card__photo">
@@ -101,7 +101,7 @@
     </div>
 
     <footer class="cp-footer">
-      <p>Tarjetas digitales · Powered by NexosCard</p>
+      <p>Powered by Ascensores Tzion</p>
     </footer>
   </div>
 </template>

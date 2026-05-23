@@ -1,260 +1,217 @@
 <template>
     <div class="landing-page">
-        <!-- Header -->
-        <header class="landing-header">
-            <div class="header-container">
-                <div class="logo">
-                    <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="40" height="40" rx="10" fill="url(#logo-gradient)"/>
-                        <path d="M12 20C12 15.5817 15.5817 12 20 12C24.4183 12 28 15.5817 28 20C28 24.4183 24.4183 28 20 28" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="20" cy="20" r="4" fill="white"/>
-                        <defs>
-                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#8b5cf6"/>
-                                <stop offset="1" stop-color="#ec4899"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <span class="logo-text">NexosCard</span>
-                </div>
-                <nav class="header-nav">
-                    <router-link to="/login" class="btn-login">
-                        Iniciar Sesion
-                    </router-link>
-                </nav>
-            </div>
-        </header>
+        <PublicNavbar />
 
         <!-- Hero Section -->
-        <section class="hero-section">
+        <section class="hero">
             <div class="hero-container">
-                <div class="hero-content">
-                    <div class="hero-text">
-                        <h1 class="hero-title">
-                            Tarjetas de presentacion
-                            <span class="gradient-text">digitales</span>
-                            para tu negocio
-                        </h1>
-                        <p class="hero-description">
-                            Crea minisitios profesionales para tu empresa y tus empleados.
-                            Comparte tu informacion de contacto de manera moderna y elegante.
-                        </p>
-                        <div class="hero-actions">
-                            <router-link to="/register" class="btn-gradient">
-                                <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
-                                </svg>
-                                Comenzar Gratis
-                            </router-link>
-                            <a href="#features" class="btn-outline">
-                                Conocer mas
-                            </a>
-                        </div>
+                <div class="hero-text">
+                    <h1 class="hero-title">Expertos en transporte vertical</h1>
+                    <p class="hero-subtitle">
+                        Mantenimiento, reparación, modernización e instalación de ascensores
+                        y escaleras eléctricas en Medellín y Antioquia.
+                    </p>
+                    <div class="hero-actions">
+                        <router-link to="/servicios" class="btn-primary">Nuestros Servicios</router-link>
+                        <router-link to="/contacto" class="btn-outline">Contáctenos</router-link>
                     </div>
-                    <div class="hero-illustration">
-                        <!-- SVG Illustration: Digital Card -->
-                        <svg class="hero-svg" viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Background shapes -->
-                            <circle cx="200" cy="160" r="120" fill="url(#hero-bg-gradient)" opacity="0.1"/>
-                            <circle cx="320" cy="80" r="40" fill="#8b5cf6" opacity="0.1"/>
-                            <circle cx="80" cy="240" r="30" fill="#ec4899" opacity="0.1"/>
+                </div>
+                <div class="hero-illustration">
+                    <svg class="hero-svg" viewBox="0 0 380 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Building -->
+                        <rect x="60" y="40" width="260" height="360" rx="4" fill="#e2e8f0" stroke="#606060" stroke-width="2"/>
+                        <!-- Floors -->
+                        <line x1="60" y1="120" x2="320" y2="120" stroke="#606060" stroke-width="1"/>
+                        <line x1="60" y1="200" x2="320" y2="200" stroke="#606060" stroke-width="1"/>
+                        <line x1="60" y1="280" x2="320" y2="280" stroke="#606060" stroke-width="1"/>
+                        <line x1="60" y1="360" x2="320" y2="360" stroke="#606060" stroke-width="1"/>
+                        <!-- Windows left -->
+                        <rect x="80" y="55" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="80" y="135" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="80" y="215" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="80" y="295" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <!-- Windows right -->
+                        <rect x="260" y="55" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="260" y="135" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="260" y="215" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <rect x="260" y="295" width="40" height="50" rx="2" fill="#fff" stroke="#606060" stroke-width="1.5"/>
+                        <!-- Elevator shaft -->
+                        <rect x="155" y="45" width="70" height="350" rx="2" fill="#f8fafc" stroke="#30ab0a" stroke-width="2"/>
+                        <!-- Shaft lines (cables) -->
+                        <line x1="180" y1="45" x2="180" y2="140" stroke="#30ab0a" stroke-width="1.5" stroke-dasharray="6 4"/>
+                        <line x1="200" y1="45" x2="200" y2="140" stroke="#30ab0a" stroke-width="1.5" stroke-dasharray="6 4"/>
+                        <!-- Elevator cab -->
+                        <rect x="160" y="140" width="60" height="70" rx="3" fill="#30ab0a" stroke="#1e293b" stroke-width="2"/>
+                        <!-- Cab door split -->
+                        <line x1="190" y1="145" x2="190" y2="205" stroke="#1e293b" stroke-width="1.5"/>
+                        <!-- Cab detail arrows -->
+                        <polygon points="183,165 190,155 197,165" fill="#fff"/>
+                        <polygon points="183,185 190,195 197,185" fill="#fff"/>
+                        <!-- Floor labels -->
+                        <text x="45" y="85" font-size="12" fill="#606060" font-family="Poppins, sans-serif" text-anchor="end">4</text>
+                        <text x="45" y="165" font-size="12" fill="#606060" font-family="Poppins, sans-serif" text-anchor="end">3</text>
+                        <text x="45" y="245" font-size="12" fill="#606060" font-family="Poppins, sans-serif" text-anchor="end">2</text>
+                        <text x="45" y="325" font-size="12" fill="#606060" font-family="Poppins, sans-serif" text-anchor="end">1</text>
+                        <!-- Ground entrance -->
+                        <rect x="165" y="365" width="50" height="30" rx="2" fill="#1e293b"/>
+                        <rect x="170" y="367" width="18" height="28" rx="1" fill="#606060"/>
+                        <rect x="192" y="367" width="18" height="28" rx="1" fill="#606060"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
 
-                            <!-- Main Card -->
-                            <g filter="url(#card-shadow)">
-                                <rect x="100" y="60" width="200" height="240" rx="16" fill="white"/>
-                                <rect x="100" y="60" width="200" height="240" rx="16" stroke="#e2e8f0" stroke-width="1"/>
-                            </g>
+        <!-- Cifras Section -->
+        <section class="cifras">
+            <div class="cifras-container">
+                <div class="cifra-card">
+                    <span class="cifra-number">+4</span>
+                    <span class="cifra-label">años de experiencia</span>
+                </div>
+                <div class="cifra-card">
+                    <span class="cifra-number">+200</span>
+                    <span class="cifra-label">equipos atendidos</span>
+                </div>
+                <div class="cifra-card">
+                    <span class="cifra-number">+50</span>
+                    <span class="cifra-label">clientes</span>
+                </div>
+                <div class="cifra-card">
+                    <span class="cifra-number">24/7</span>
+                    <span class="cifra-label">emergencias</span>
+                </div>
+            </div>
+        </section>
 
-                            <!-- Card Header Gradient -->
-                            <rect x="100" y="60" width="200" height="80" rx="16" fill="url(#card-header-gradient)"/>
-                            <rect x="100" y="120" width="200" height="20" fill="url(#card-header-gradient)"/>
-
-                            <!-- Avatar Circle -->
-                            <circle cx="200" cy="130" r="35" fill="white" stroke="#e2e8f0" stroke-width="2"/>
-                            <circle cx="200" cy="130" r="28" fill="#f1f5f9"/>
-                            <path d="M200 115c-4.418 0-8 3.582-8 8s3.582 8 8 8 8-3.582 8-8-3.582-8-8-8zm0 20c-6.627 0-12 2.686-12 6v2h24v-2c0-3.314-5.373-6-12-6z" fill="#94a3b8"/>
-
-                            <!-- Name -->
-                            <rect x="150" y="175" width="100" height="12" rx="6" fill="#1e293b"/>
-
-                            <!-- Job Title -->
-                            <rect x="160" y="195" width="80" height="8" rx="4" fill="#94a3b8"/>
-
-                            <!-- Contact Icons -->
-                            <g transform="translate(140, 220)">
-                                <circle cx="15" cy="15" r="15" fill="#f3e8ff"/>
-                                <path d="M15 8v14M8 15h14" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
-                            </g>
-                            <g transform="translate(180, 220)">
-                                <circle cx="15" cy="15" r="15" fill="#d1fae5"/>
-                                <path d="M12 10l6 5-6 5" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </g>
-                            <g transform="translate(220, 220)">
-                                <circle cx="15" cy="15" r="15" fill="#fef3c7"/>
-                                <circle cx="15" cy="15" r="5" stroke="#d97706" stroke-width="2"/>
-                            </g>
-
-                            <!-- Floating Elements -->
-                            <g class="floating-element" style="animation-delay: 0s">
-                                <circle cx="60" cy="100" r="20" fill="#8b5cf6" opacity="0.2"/>
-                                <path d="M55 100l5 5 10-10" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
-                            </g>
-                            <g class="floating-element" style="animation-delay: 0.5s">
-                                <circle cx="340" cy="180" r="18" fill="#ec4899" opacity="0.2"/>
-                                <path d="M334 180h12M340 174v12" stroke="#ec4899" stroke-width="2" stroke-linecap="round"/>
-                            </g>
-                            <g class="floating-element" style="animation-delay: 1s">
-                                <circle cx="320" cy="280" r="15" fill="#f97316" opacity="0.2"/>
-                                <path d="M315 280l5-5 5 5" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
-                            </g>
-
-                            <!-- Definitions -->
-                            <defs>
-                                <linearGradient id="hero-bg-gradient" x1="80" y1="40" x2="320" y2="280" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#8b5cf6"/>
-                                    <stop offset="1" stop-color="#ec4899"/>
-                                </linearGradient>
-                                <linearGradient id="card-header-gradient" x1="100" y1="60" x2="300" y2="140" gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#8b5cf6"/>
-                                    <stop offset="1" stop-color="#ec4899"/>
-                                </linearGradient>
-                                <filter id="card-shadow" x="90" y="55" width="220" height="260" filterUnits="userSpaceOnUse">
-                                    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.1"/>
-                                </filter>
-                            </defs>
+        <!-- Servicios Section -->
+        <section class="servicios">
+            <div class="servicios-container">
+                <div class="section-header">
+                    <h2 class="section-title">Nuestros Servicios</h2>
+                    <p class="section-subtitle">Soluciones integrales para equipos de transporte vertical con los más altos estándares de calidad y seguridad.</p>
+                </div>
+                <div class="servicios-grid">
+                    <div class="servicio-card">
+                        <div class="servicio-icon">
+                            <!-- Wrench icon -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                            </svg>
+                        </div>
+                        <h3 class="servicio-title">Instalación</h3>
+                        <p class="servicio-desc">Instalamos ascensores con precisión, seguridad y confort.</p>
+                    </div>
+                    <div class="servicio-card">
+                        <div class="servicio-icon">
+                            <!-- Trending up icon -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                <polyline points="17 6 23 6 23 12"/>
+                            </svg>
+                        </div>
+                        <h3 class="servicio-title">Modernización</h3>
+                        <p class="servicio-desc">Actualizamos sus equipos con tecnología de última generación.</p>
+                    </div>
+                    <div class="servicio-card">
+                        <div class="servicio-icon">
+                            <!-- Shield check icon -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <h3 class="servicio-title">Mantenimiento</h3>
+                        <p class="servicio-desc">Planes preventivos y correctivos para máxima disponibilidad.</p>
+                    </div>
+                    <div class="servicio-card">
+                        <div class="servicio-icon">
+                            <!-- Tools icon -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                                <path d="M10 13l-2 2"/>
+                                <path d="M16 8l-1.5 1.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="servicio-title">Reparación</h3>
+                        <p class="servicio-desc">Diagnóstico y solución rápida de fallas en cualquier equipo.</p>
+                    </div>
+                </div>
+                <div class="servicios-link-wrap">
+                    <router-link to="/servicios" class="servicios-link">
+                        Ver todos los servicios
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"/>
+                            <path d="M12 5l7 7-7 7"/>
                         </svg>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section id="features" class="features-section">
-            <div class="features-container">
-                <div class="features-header">
-                    <h2 class="features-title">Todo lo que necesitas</h2>
-                    <p class="features-subtitle">Herramientas poderosas para crear tarjetas de presentacion digitales profesionales</p>
-                </div>
-                <div class="features-grid">
-                    <!-- Feature 1 -->
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #f3e8ff, #ede9fe);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <circle cx="12" cy="10" r="3"/>
-                                <path d="M7 21v-2a4 4 0 014-4h2a4 4 0 014 4v2"/>
-                            </svg>
-                        </div>
-                        <h3>Multiples Tarjetas</h3>
-                        <p>Crea tarjetas personalizadas para cada miembro de tu equipo con informacion unica.</p>
-                    </div>
-
-                    <!-- Feature 2 -->
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                <path d="M2 17l10 5 10-5"/>
-                                <path d="M2 12l10 5 10-5"/>
-                            </svg>
-                        </div>
-                        <h3>Plantillas Profesionales</h3>
-                        <p>Elige entre 6 plantillas modernas y personaliza colores, fuentes y estilos.</p>
-                    </div>
-
-                    <!-- Feature 3 -->
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                        </div>
-                        <h3>Productos y Servicios</h3>
-                        <p>Muestra tu catalogo completo con imagenes, precios y descripciones.</p>
-                    </div>
-
-                    <!-- Feature 4 -->
-                    <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #fce7f3, #fbcfe8);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <path d="M22 6l-10 7L2 6"/>
-                            </svg>
-                        </div>
-                        <h3>Comparte Facilmente</h3>
-                        <p>Un enlace unico para compartir por WhatsApp, email o redes sociales.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="cta-section">
-            <div class="cta-container">
-                <div class="cta-content">
-                    <h2 class="cta-title">Comienza a crear tu presencia digital</h2>
-                    <p class="cta-description">Registrate gratis y crea tu primera tarjeta en minutos</p>
-                    <router-link to="/register" class="btn-gradient btn-large">
-                        Crear cuenta gratis
                     </router-link>
                 </div>
-                <!-- CTA Illustration -->
-                <div class="cta-illustration">
-                    <svg viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Phone outline -->
-                        <rect x="100" y="20" width="100" height="180" rx="12" fill="white" opacity="0.1"/>
-                        <rect x="100" y="20" width="100" height="180" rx="12" stroke="white" stroke-width="2" opacity="0.3"/>
+            </div>
+        </section>
 
-                        <!-- Screen content -->
-                        <rect x="110" y="40" width="80" height="140" rx="4" fill="white" opacity="0.05"/>
-
-                        <!-- Mini card preview -->
-                        <rect x="120" y="60" width="60" height="80" rx="6" fill="white" opacity="0.2"/>
-                        <circle cx="150" cy="85" r="15" fill="white" opacity="0.3"/>
-                        <rect x="135" y="110" width="30" height="6" rx="3" fill="white" opacity="0.3"/>
-                        <rect x="130" y="122" width="40" height="4" rx="2" fill="white" opacity="0.2"/>
-
-                        <!-- Decorative elements -->
-                        <circle cx="60" cy="100" r="30" fill="white" opacity="0.05"/>
-                        <circle cx="240" cy="150" r="25" fill="white" opacity="0.05"/>
-                        <circle cx="230" cy="50" r="15" fill="white" opacity="0.08"/>
-                    </svg>
+        <!-- Por qué elegirnos -->
+        <section class="elegir">
+            <div class="elegir-container">
+                <div class="section-header">
+                    <h2 class="section-title">Innovación y Confianza en Cada Proyecto</h2>
+                </div>
+                <div class="elegir-grid">
+                    <div class="elegir-card elegir-green">
+                        <div class="elegir-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </div>
+                        <h3 class="elegir-title">Compromiso con la seguridad</h3>
+                        <p class="elegir-desc">Cumplimos con todas las normativas y estándares de seguridad vigentes, garantizando la protección de los usuarios y la tranquilidad de nuestros clientes en cada proyecto.</p>
+                    </div>
+                    <div class="elegir-card elegir-red">
+                        <div class="elegir-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#ba2831" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 7h-3a2 2 0 01-2-2V2"/>
+                                <path d="M9 18a2 2 0 01-2-2V4a2 2 0 012-2h5l4 4v10a2 2 0 01-2 2z"/>
+                                <path d="M3 7v10a2 2 0 002 2h4"/>
+                                <path d="M9 13h6"/>
+                                <path d="M12 10v6"/>
+                            </svg>
+                        </div>
+                        <h3 class="elegir-title">Soluciones personalizadas</h3>
+                        <p class="elegir-desc">Cada edificio es único, por eso diseñamos soluciones a la medida que se adaptan a las necesidades específicas de su infraestructura y presupuesto.</p>
+                    </div>
+                    <div class="elegir-card elegir-gray">
+                        <div class="elegir-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#606060" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <h3 class="elegir-title">Respuesta rápida y eficiente</h3>
+                        <p class="elegir-desc">Contamos con un equipo técnico disponible 24/7 para atender emergencias y minimizar los tiempos de inactividad de sus equipos de transporte vertical.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="landing-footer">
-            <div class="footer-container">
-                <div class="footer-brand">
-                    <svg class="footer-logo" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="8" fill="url(#footer-logo-gradient)"/>
-                        <path d="M10 16C10 12.686 12.686 10 16 10C19.314 10 22 12.686 22 16C22 19.314 19.314 22 16 22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="16" cy="16" r="3" fill="white"/>
-                        <defs>
-                            <linearGradient id="footer-logo-gradient" x1="0" y1="0" x2="32" y2="32">
-                                <stop stop-color="#8b5cf6"/>
-                                <stop offset="1" stop-color="#ec4899"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <span>NexosCard</span>
-                </div>
-                <p class="footer-copy">&copy; {{ currentYear }} NexosCard. Todos los derechos reservados.</p>
+        <!-- Slogan + CTA -->
+        <section class="slogan">
+            <div class="slogan-container">
+                <blockquote class="slogan-text">
+                    "El éxito no está en elevarnos sobre los demás, sino en elevar a todos a nuevas alturas"
+                </blockquote>
+                <router-link to="/contacto" class="btn-slogan">Contáctenos</router-link>
             </div>
-        </footer>
+        </section>
+
+        <PublicFooter />
     </div>
 </template>
 
 <script>
+import PublicNavbar from '@/components/PublicNavbar.vue';
+import PublicFooter from '@/components/PublicFooter.vue';
+
 export default {
     name: 'Landing',
-    computed: {
-        currentYear() {
-            return new Date().getFullYear();
-        }
-    }
+    components: { PublicNavbar, PublicFooter },
 };
 </script>
 
@@ -262,80 +219,20 @@ export default {
 /* Base */
 .landing-page {
     min-height: 100vh;
-    background: #ffffff;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-/* Header */
-.landing-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-}
-
-.logo-icon {
-    width: 40px;
-    height: 40px;
-}
-
-.logo-text {
-    font-size: 1.5rem;
-    font-weight: 700;
+    background: #fff;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #1e293b;
 }
 
-.btn-login {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.625rem 1.5rem;
-    background: #7c3aed;
-    color: white;
-    font-weight: 600;
-    border-radius: 10px;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
-}
-
-.btn-login:hover {
-    background: #6d28d9;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
-    transform: translateY(-1px);
-}
-
-/* Hero Section */
-.hero-section {
-    padding: 8rem 2rem 4rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+/* ===== Hero ===== */
+.hero {
+    padding: 120px 2rem 5rem;
+    background: #f8fafc;
 }
 
 .hero-container {
     max-width: 1200px;
     margin: 0 auto;
-}
-
-.hero-content {
     display: flex;
     align-items: center;
     gap: 4rem;
@@ -347,25 +244,18 @@ export default {
 
 .hero-title {
     font-size: 3rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #1e293b;
-    line-height: 1.2;
-    margin-bottom: 1.5rem;
+    line-height: 1.15;
+    margin: 0 0 1.25rem;
 }
 
-.gradient-text {
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hero-description {
-    font-size: 1.25rem;
-    color: #64748b;
-    line-height: 1.7;
-    margin-bottom: 2rem;
-    max-width: 500px;
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: #606060;
+    line-height: 1.75;
+    margin: 0 0 2rem;
+    max-width: 520px;
 }
 
 .hero-actions {
@@ -374,46 +264,39 @@ export default {
     flex-wrap: wrap;
 }
 
-.btn-gradient {
+.btn-primary {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 2rem;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    color: white;
+    padding: 0.85rem 2rem;
+    background: #30ab0a;
+    color: #fff;
     font-weight: 600;
-    border-radius: 12px;
+    font-size: 1rem;
+    border-radius: 10px;
     text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    transition: background 0.2s, transform 0.2s;
 }
-
-.btn-gradient:hover {
+.btn-primary:hover {
+    background: #279208;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
-}
-
-.btn-icon {
-    width: 20px;
-    height: 20px;
 }
 
 .btn-outline {
     display: inline-flex;
     align-items: center;
-    padding: 0.875rem 2rem;
+    padding: 0.85rem 2rem;
     background: transparent;
-    color: #475569;
+    color: #1e293b;
     font-weight: 600;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    font-size: 1rem;
+    border: 2px solid #1e293b;
+    border-radius: 10px;
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
 }
-
 .btn-outline:hover {
-    border-color: #8b5cf6;
-    color: #8b5cf6;
+    border-color: #30ab0a;
+    color: #30ab0a;
 }
 
 .hero-illustration {
@@ -424,282 +307,346 @@ export default {
 
 .hero-svg {
     width: 100%;
-    max-width: 400px;
+    max-width: 340px;
     height: auto;
 }
 
-.floating-element {
-    animation: float 3s ease-in-out infinite;
+/* ===== Cifras ===== */
+.cifras {
+    padding: 4rem 2rem;
+    background: #fff;
 }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+.cifras-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
 }
 
-/* Features Section */
-.features-section {
+.cifra-card {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-top: 4px solid #30ab0a;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cifra-number {
+    display: block;
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+
+.cifra-label {
+    display: block;
+    font-size: 0.95rem;
+    color: #606060;
+    font-weight: 500;
+}
+
+/* ===== Servicios ===== */
+.servicios {
     padding: 5rem 2rem;
-    background: white;
+    background: #f8fafc;
 }
 
-.features-container {
+.servicios-container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-.features-header {
+.section-header {
     text-align: center;
     margin-bottom: 3rem;
 }
 
-.features-title {
+.section-title {
     font-size: 2.25rem;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 1rem;
+    margin: 0 0 0.75rem;
 }
 
-.features-subtitle {
-    font-size: 1.1rem;
-    color: #64748b;
-    max-width: 600px;
+.section-subtitle {
+    font-size: 1.05rem;
+    color: #606060;
+    max-width: 620px;
     margin: 0 auto;
+    line-height: 1.7;
 }
 
-.features-grid {
+.servicios-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
+    margin-bottom: 2.5rem;
 }
 
-.feature-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    border: 1px solid #f1f5f9;
-}
-
-.feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-}
-
-.feature-icon {
-    width: 56px;
-    height: 56px;
+.servicio-card {
+    background: #fff;
     border-radius: 14px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.servicio-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.servicio-icon {
+    width: 52px;
+    height: 52px;
+    background: #edf9ea;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1.25rem;
 }
-
-.feature-icon svg {
-    width: 28px;
-    height: 28px;
+.servicio-icon svg {
+    width: 26px;
+    height: 26px;
 }
 
-.feature-card h3 {
+.servicio-title {
     font-size: 1.1rem;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.75rem;
+    margin: 0 0 0.5rem;
 }
 
-.feature-card p {
-    font-size: 0.95rem;
-    color: #64748b;
+.servicio-desc {
+    font-size: 0.92rem;
+    color: #606060;
     line-height: 1.6;
     margin: 0;
 }
 
-/* CTA Section */
-.cta-section {
-    padding: 5rem 2rem;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    position: relative;
-    overflow: hidden;
+.servicios-link-wrap {
+    text-align: center;
 }
 
-.cta-container {
+.servicios-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #30ab0a;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: gap 0.2s;
+}
+.servicios-link:hover {
+    gap: 0.75rem;
+}
+
+/* ===== Por qué elegirnos ===== */
+.elegir {
+    padding: 5rem 2rem;
+    background: #fff;
+}
+
+.elegir-container {
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.elegir-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.elegir-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid transparent;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.elegir-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.elegir-green { border-left-color: #30ab0a; }
+.elegir-red   { border-left-color: #ba2831; }
+.elegir-gray  { border-left-color: #606060; }
+
+.elegir-icon {
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 3rem;
-}
-
-.cta-content {
-    flex: 1;
-    position: relative;
-    z-index: 1;
-}
-
-.cta-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: white;
+    justify-content: center;
     margin-bottom: 1rem;
 }
-
-.cta-description {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 2rem;
-}
-
-.cta-section .btn-gradient {
-    background: white;
-    color: #8b5cf6;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.cta-section .btn-gradient:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-.btn-large {
-    padding: 1rem 2.5rem;
-    font-size: 1.05rem;
-}
-
-.cta-illustration {
-    flex: 0 0 300px;
-}
-
-.cta-illustration svg {
-    width: 100%;
-    height: auto;
-}
-
-/* Footer */
-.landing-footer {
-    padding: 2rem;
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-}
-
-.footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.footer-logo {
+.elegir-icon svg {
     width: 32px;
     height: 32px;
 }
 
-.footer-copy {
-    color: #64748b;
-    font-size: 0.9rem;
+.elegir-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.5rem;
+}
+
+.elegir-desc {
+    font-size: 0.92rem;
+    color: #606060;
+    line-height: 1.7;
     margin: 0;
 }
 
-/* Responsive */
+/* ===== Slogan + CTA ===== */
+.slogan {
+    padding: 5rem 2rem;
+    background: #30ab0a;
+    text-align: center;
+}
+
+.slogan-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.slogan-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    font-style: italic;
+    color: #fff;
+    line-height: 1.7;
+    margin: 0 0 2.5rem;
+    border: none;
+    padding: 0;
+}
+
+.btn-slogan {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.9rem 2.5rem;
+    background: #fff;
+    color: #30ab0a;
+    font-weight: 700;
+    font-size: 1.05rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-slogan:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Responsive ===== */
+
+/* Tablet landscape */
 @media (max-width: 992px) {
-    .hero-content {
+    .hero-container {
         flex-direction: column;
         text-align: center;
+        gap: 2.5rem;
     }
-
-    .hero-title {
-        font-size: 2.25rem;
-    }
-
-    .hero-description {
+    .hero-subtitle {
         max-width: 100%;
     }
-
     .hero-actions {
         justify-content: center;
     }
-
-    .hero-illustration {
-        order: -1;
+    .hero-title {
+        font-size: 2.5rem;
     }
-
     .hero-svg {
-        max-width: 320px;
+        max-width: 280px;
     }
-
-    .cta-container {
-        flex-direction: column;
-        text-align: center;
+    .cifras-container {
+        grid-template-columns: repeat(2, 1fr);
     }
-
-    .cta-illustration {
-        display: none;
+    .servicios-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .elegir-grid {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+        margin: 0 auto;
     }
 }
 
-@media (max-width: 576px) {
-    .header-container {
-        padding: 0.875rem 1rem;
+/* Tablet portrait */
+@media (max-width: 768px) {
+    .hero {
+        padding: 110px 1.5rem 3.5rem;
     }
-
-    .logo-text {
-        font-size: 1.25rem;
-    }
-
-    .btn-login {
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-    }
-
-    .hero-section {
-        padding: 6rem 1rem 3rem;
-    }
-
     .hero-title {
-        font-size: 1.875rem;
+        font-size: 2rem;
     }
-
-    .hero-description {
+    .hero-subtitle {
         font-size: 1rem;
     }
-
-    .btn-gradient,
-    .btn-outline {
-        padding: 0.75rem 1.5rem;
-        font-size: 0.95rem;
-    }
-
-    .features-section {
-        padding: 3rem 1rem;
-    }
-
-    .features-title {
+    .section-title {
         font-size: 1.75rem;
     }
+    .slogan-text {
+        font-size: 1.25rem;
+    }
+    .cifras-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    .cifra-number {
+        font-size: 2.25rem;
+    }
+}
 
-    .cta-section {
+/* Mobile */
+@media (max-width: 576px) {
+    .hero {
+        padding: 100px 1rem 3rem;
+    }
+    .hero-title {
+        font-size: 1.75rem;
+    }
+    .hero-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    .btn-primary, .btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+    .cifras-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    .cifra-card {
+        padding: 1.25rem 0.75rem;
+    }
+    .cifra-number {
+        font-size: 2rem;
+    }
+    .servicios-grid {
+        grid-template-columns: 1fr;
+    }
+    .servicios, .elegir, .cifras {
         padding: 3rem 1rem;
     }
-
-    .cta-title {
-        font-size: 1.5rem;
+    .slogan {
+        padding: 3rem 1rem;
     }
-
-    .footer-container {
-        flex-direction: column;
-        text-align: center;
+    .slogan-text {
+        font-size: 1.1rem;
     }
 }
 </style>

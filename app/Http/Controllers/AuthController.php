@@ -2,17 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Company;
 use App\Models\User;
-use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    // Login
     public function login(Request $request)
     {
         $request->validate([
@@ -28,21 +23,25 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Crear token
+        if (! $user->active) {
+            return response()->json([
+                'message' => 'Tu cuenta está desactivada. Contacta al administrador.'
+            ], 401);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
             'token_type'   => 'Bearer',
-            'user'         => $user->load('roles:id,name'),
+            'user'         => $user->load(['roles:id,name', 'client:id,business_name']),
             'permissions'  => $user->getAllPermissions()->pluck('name'),
         ]);
     }
 
-    // Obtener usuario autenticado
     public function me(Request $request)
     {
-        $user = $request->user()->load('roles:id,name');
+        $user = $request->user()->load(['roles:id,name', 'client:id,business_name']);
 
         return response()->json([
             'user'        => $user,
@@ -50,7 +49,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Logout (revocar token actual)
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -60,7 +58,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // Logout de todos los dispositivos
     public function logoutAll(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -70,54 +67,41 @@ class AuthController extends Controller
         ]);
     }
 
-    // Registro de usuario
-    public function register(Request $request)
+    public function impersonate(Request $request, $clientId)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $master = $request->user();
 
-        // Crear empresa vacía para el nuevo usuario
-        $baseSlug = Str::slug($request->name);
-        $slug = $baseSlug;
-        $counter = 1;
-        while (Company::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter++;
+        if (! $master->hasRole('master')) {
+            return response()->json(['message' => 'No autorizado.'], 403);
         }
 
-        $company = Company::create([
-            'name' => 'Empresa de ' . $request->name,
-            'slug' => $slug,
-        ]);
+        // Buscar un usuario admin activo del cliente
+        $user = User::where('client_id', $clientId)
+            ->where('active', true)
+            ->role('admin')
+            ->first();
 
-        $user = User::create([
-            'company_id' => $company->id,
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
+        if (! $user) {
+            return response()->json(['message' => 'Este cliente no tiene un usuario administrador activo.'], 422);
+        }
 
-        // Asignar el usuario como owner de la empresa
-        $company->update(['user_id' => $user->id]);
-
-        $user->assignRole('Guest');
-
-        // Crear suscripción trial
-        $subscriptionService = app(SubscriptionService::class);
-        $subscriptionService->createTrialSubscription($company);
-
-        // Crear token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('impersonation')->plainTextToken;
 
         return response()->json([
-            'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => $user->load('roles:id,name'),
-            'permissions'  => $user->getAllPermissions()->pluck('name'),
-        ], 201);
+            'access_token'         => $token,
+            'user'                 => $user->load(['roles:id,name', 'client:id,business_name']),
+            'permissions'          => $user->getAllPermissions()->pluck('name'),
+            'original_token'       => $request->bearerToken(),
+            'original_user'        => $master->load(['roles:id,name', 'client:id,business_name']),
+            'original_permissions' => $master->getAllPermissions()->pluck('name'),
+        ]);
     }
 
+    public function stopImpersonating(Request $request)
+    {
+        // Eliminar el token de impersonation actual
+        $request->user()->currentAccessToken()->delete();
 
+        return response()->json(['message' => 'Impersonacion finalizada.']);
+    }
 }

@@ -16,7 +16,7 @@
                 </div>
                 <div class="page-title-actions d-flex gap-2">
                     <router-link
-                        :to="{ name: 'companies.show', params: { id: $route.params.companyId }, query: $route.query.from === 'admin' ? { from: 'admin' } : {} }"
+                        :to="{ name: 'companies.show', query: $route.query.from === 'admin' ? { from: 'admin' } : {} }"
                         class="btn-editor btn-editor-back"
                     >
                         <i class="fa fa-arrow-left me-1"></i> Volver
@@ -332,6 +332,7 @@
 </template>
 
 <script>
+import { useAuth } from '@/stores/auth.js'
 import Swal from 'sweetalert2'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
@@ -383,7 +384,7 @@ export default {
 
     computed: {
         companyId() {
-            return this.$route.params.companyId
+            return useAuth().companyId.value
         },
 
         sampleCard() {
@@ -740,9 +741,9 @@ export default {
 }
 
 .card-selector-item.active {
-    border-color: #7c3aed;
+    border-color: #279208;
     background: #f5f3ff;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.15);
 }
 
 .card-selector-photo {
@@ -827,14 +828,14 @@ export default {
 }
 
 .btn-editor-save {
-    background: #7c3aed;
+    background: #279208;
     color: white;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.3);
 }
 
 .btn-editor-save:hover {
-    background: #6d28d9;
-    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+    background: #1f7506;
+    box-shadow: 0 6px 16px rgba(39, 146, 8, 0.4);
 }
 
 .btn-editor-save:disabled {
@@ -884,7 +885,7 @@ export default {
 
 .viewport-btn.active {
     background: white;
-    color: #7c3aed;
+    color: #279208;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     font-weight: 600;
 }
@@ -941,7 +942,7 @@ export default {
     background-color: #f5f3ff;
     color: #1e293b;
     box-shadow: none;
-    border-left: 3px solid #7c3aed;
+    border-left: 3px solid #279208;
 }
 
 .form-control-color {
@@ -966,8 +967,8 @@ export default {
 }
 
 .template-selector select:focus {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.15);
 }
 
 /* Image upload control */
@@ -1086,7 +1087,7 @@ export default {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
     font-weight: 500;
-    background: #7c3aed;
+    background: #279208;
     color: white;
     border: none;
     border-radius: 8px;
@@ -1095,7 +1096,7 @@ export default {
 }
 
 .btn-crop-submit:hover {
-    background: #6d28d9;
+    background: #1f7506;
 }
 
 @media (max-width: 1200px) {

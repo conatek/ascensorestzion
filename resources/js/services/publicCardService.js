@@ -17,4 +17,8 @@ export default {
     card(companySlug, cardSlug) {
         return publicApi.get(`/${companySlug}/${cardSlug}`);
     },
+
+    cardBySlug(cardSlug) {
+        return publicApi.get(`/card/${cardSlug}`);
+    },
 };

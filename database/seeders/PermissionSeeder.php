@@ -13,7 +13,7 @@ class PermissionSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
-            // Empresas
+            // Empresas (tarjetas Tzion)
             'view_any_company',
             'view_company',
             'create_company',
@@ -42,8 +42,41 @@ class PermissionSeeder extends Seeder
             'view_settings',
             'edit_settings',
 
+            // Clientes
+            'view_clients',
+            'create_client',
+            'edit_client',
+            'delete_client',
+
+            // Sedes
+            'view_sites',
+            'create_site',
+            'edit_site',
+            'delete_site',
+
+            // Equipos
+            'view_equipment',
+            'create_equipment',
+            'edit_equipment',
+            'delete_equipment',
+
             // Usuarios
             'manage_users',
+
+            // Catalogos
+            'manage_catalogs',
+
+            // Reportes de servicio
+            'view_reports',
+            'create_report',
+            'edit_own_report',
+            'edit_any_report',
+            'sign_report_technician',
+            'sign_report_customer',
+            'export_report_pdf',
+
+            // Impersonation
+            'impersonate_user',
         ];
 
         foreach ($permissions as $permission) {

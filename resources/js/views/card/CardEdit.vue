@@ -22,7 +22,7 @@
                         </div>
                     </div>
                     <div class="page-title-actions">
-                        <router-link :to="{ name: 'companies.show', params: { id: $route.params.companyId } }" class="btn-action btn-back">
+                        <router-link :to="{ name: 'companies.show' }" class="btn-action btn-back">
                             <i class="fa fa-arrow-left me-1"></i> Volver
                         </router-link>
                     </div>
@@ -160,7 +160,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <router-link :to="{ name: 'companies.show', params: { id: $route.params.companyId } }" class="btn-cancel">
+                            <router-link :to="{ name: 'companies.show' }" class="btn-cancel">
                                 Cancelar
                             </router-link>
                             <button type="submit" class="btn-submit" :disabled="saving">
@@ -213,6 +213,7 @@
 <script>
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
+import { useAuth } from '@/stores/auth.js';
 import cardService from '@/services/cardService.js';
 
 export default {
@@ -237,7 +238,7 @@ export default {
 
     async created() {
         const { data } = await cardService.get(
-            this.$route.params.companyId,
+            useAuth().companyId.value,
             this.$route.params.cardId
         );
         this.form = data;
@@ -296,7 +297,7 @@ export default {
 
             try {
                 await cardService.update(
-                    this.$route.params.companyId,
+                    useAuth().companyId.value,
                     this.$route.params.cardId,
                     payload
                 );
@@ -388,8 +389,8 @@ export default {
 .section-icon {
     width: 32px;
     height: 32px;
-    background: #f3e8ff;
-    color: #7c3aed;
+    background: #e8f5e4;
+    color: #279208;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -419,7 +420,7 @@ export default {
 }
 
 .required {
-    color: #ef4444;
+    color: #ba2831;
 }
 
 .form-input {
@@ -434,12 +435,12 @@ export default {
 
 .form-input:focus {
     outline: none;
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
 }
 
 .form-input.has-error {
-    border-color: #ef4444;
+    border-color: #ba2831;
 }
 
 .form-input::placeholder {
@@ -482,7 +483,7 @@ textarea.form-input {
 .error-text {
     display: block;
     font-size: 0.8rem;
-    color: #ef4444;
+    color: #ba2831;
     margin-top: 0.375rem;
 }
 
@@ -523,8 +524,8 @@ textarea.form-input {
 }
 
 .file-upload:hover .file-upload-content {
-    border-color: #7c3aed;
-    color: #7c3aed;
+    border-color: #279208;
+    color: #279208;
     background: #faf5ff;
 }
 
@@ -595,7 +596,7 @@ textarea.form-input {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background: #7c3aed;
+    background: #279208;
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
@@ -666,7 +667,7 @@ textarea.form-input {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
     font-weight: 500;
-    background: #7c3aed;
+    background: #279208;
     color: white;
     border: none;
     border-radius: 8px;
@@ -675,7 +676,7 @@ textarea.form-input {
 }
 
 .btn-submit:hover:not(:disabled) {
-    background: #6d28d9;
+    background: #1f7506;
 }
 
 .btn-submit:disabled {
@@ -807,7 +808,7 @@ textarea.form-input {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
     font-weight: 500;
-    background: #7c3aed;
+    background: #279208;
     color: white;
     border: none;
     border-radius: 8px;
@@ -816,6 +817,6 @@ textarea.form-input {
 }
 
 .cropper-modal-actions .btn-submit:hover {
-    background: #6d28d9;
+    background: #1f7506;
 }
 </style>

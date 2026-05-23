@@ -13,7 +13,7 @@ class EnsureCompanyAccess
     {
         $user = $request->user();
 
-        if ($user->hasRole('Master')) {
+        if ($user->hasRole('master')) {
             return $next($request);
         }
 

@@ -90,7 +90,7 @@ export default {
 
         neonBoxStyle() {
             const neon = this.customization?.neon || {}
-            const colorAcento = neon.colorAcento || '#00ffcc'
+            const colorAcento = neon.colorAcento || '#30ab0a'
             const brillo = neon.brillo ?? 10
 
             return {
@@ -104,7 +104,7 @@ export default {
             const neon = this.customization?.neon || {}
             return {
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderBottom: `1px solid ${neon.colorAcento || '#00ffcc'}50`,
+                borderBottom: `1px solid ${neon.colorAcento || '#30ab0a'}50`,
             }
         },
 
@@ -116,7 +116,7 @@ export default {
             const avatar = this.customization?.avatar || {}
             const neon = this.customization?.neon || {}
             const tamano = avatar.tamano ?? 130
-            const acento = neon.colorAcento || '#00ffcc'
+            const acento = neon.colorAcento || '#30ab0a'
             const brillo = neon.brillo ?? 10
 
             return {
@@ -131,11 +131,11 @@ export default {
         nameStyle() {
             const neon = this.customization?.neon || {}
             return {
-                color: neon.colorAcento || '#00ffcc',
+                color: neon.colorAcento || '#30ab0a',
                 fontSize: '1.4rem',
                 fontWeight: '700',
                 marginBottom: '0.2rem',
-                textShadow: `0 0 8px ${neon.colorAcento || '#00ffcc'}80`,
+                textShadow: `0 0 8px ${neon.colorAcento || '#30ab0a'}80`,
             }
         },
 
@@ -162,7 +162,7 @@ export default {
                 color: gen.colorTexto || '#e2e8f0',
                 fontSize: '0.85rem',
                 lineHeight: '1.6',
-                borderLeft: `2px dashed ${this.customization?.neon?.colorAcento || '#00ffcc'}50`,
+                borderLeft: `2px dashed ${this.customization?.neon?.colorAcento || '#30ab0a'}50`,
                 paddingLeft: '10px',
                 textAlign: 'left',
                 opacity: '0.9',
@@ -172,9 +172,9 @@ export default {
         sectionTitleStyle() {
             const neon = this.customization?.neon || {}
             return {
-                color: neon.colorAcento || '#00ffcc',
+                color: neon.colorAcento || '#30ab0a',
                 fontSize: '1rem',
-                borderBottom: `1px solid ${neon.colorAcento || '#00ffcc'}`,
+                borderBottom: `1px solid ${neon.colorAcento || '#30ab0a'}`,
                 paddingBottom: '5px',
                 marginBottom: '10px',
                 textAlign: 'left',
@@ -194,7 +194,7 @@ export default {
         getSocialBtnStyle(type) {
             const config = this.customization?.botones || {}
             const neon = this.customization?.neon || {}
-            const acento = neon.colorAcento || '#00ffcc'
+            const acento = neon.colorAcento || '#30ab0a'
             const estilo = config.estiloBoton || 'solido'
 
             // Colores por defecto de las marcas

@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\Company;
 
 class User extends Authenticatable
 {
@@ -17,10 +15,15 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'password',
+        'phone',
+        'document_type',
+        'document_number',
+        'active',
+        'company_id',
+        'client_id',
         'image_public_id',
         'image_url',
-        'company_id',
-        'password',
     ];
 
     protected $hidden = [
@@ -30,10 +33,16 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'active'            => 'boolean',
     ];
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
     }
 }

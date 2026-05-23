@@ -13,10 +13,14 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
-            PlanSeeder::class,
             CompanySeeder::class,
+            ClientSeeder::class,
+            SiteSeeder::class,
+            EquipmentSeeder::class,
+            CatalogSeeder::class,
             CardSeeder::class,
             UserSeeder::class,
+            ServiceReportSeeder::class,
         ]);
     }
 }

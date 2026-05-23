@@ -16,18 +16,6 @@ return [
             'component' => 'TemplateModern',
             'thumbnail' => '/img/templates/modern.png',
         ],
-        'classic' => [
-            'name' => 'Clásica',
-            'description' => 'Estilo tradicional y elegante',
-            'component' => 'TemplateClassic',
-            'thumbnail' => '/img/templates/classic.png',
-        ],
-        'minimal' => [
-            'name' => 'Minimalista',
-            'description' => 'Diseño limpio, enfocado en el contenido y la legibilidad.',
-            'component' => 'TemplateMinimal',
-            'thumbnail' => '/img/templates/minimal.png',
-        ],
         'creative' => [
             'name' => 'Creativa',
             'description' => 'Diseño moderno con efecto glassmorphism y luces ambientales',
@@ -45,12 +33,6 @@ return [
             'description' => 'Diseño juvenil con degradados animados y formato Bento Box.',
             'component' => 'TemplateVibrant',
             'thumbnail' => '/img/templates/vibrant.png',
-        ],
-        'action' => [
-            'name' => 'Acción',
-            'description' => 'Diseño orientado a la conversión con botones de contacto rápido y video.',
-            'component' => 'TemplateAction',
-            'thumbnail' => '/img/templates/action.png',
         ],
     ],
 
@@ -78,8 +60,8 @@ return [
                 'fontFamily' => [
                     'type' => 'select',
                     'label' => 'Tipografía',
-                    'value' => 'Montserrat',
-                    'options' => ['Montserrat', 'Quicksand', 'Roboto', 'Open Sans', 'Lato', 'Poppins'],
+                    'value' => 'Poppins',
+                    'options' => ['Poppins', 'Montserrat', 'Quicksand', 'Roboto', 'Open Sans', 'Lato'],
                 ],
                 'colorFondo' => [
                     'type' => 'color',
@@ -165,12 +147,12 @@ return [
                 'color1' => [
                     'type' => 'color',
                     'label' => 'Color Principal',
-                    'value' => '#6366f1',
+                    'value' => '#30ab0a',
                 ],
                 'color2' => [
                     'type' => 'color',
                     'label' => 'Color Secundario (degradado)',
-                    'value' => '#8b5cf6',
+                    'value' => '#279208',
                 ],
                 'direccion' => [
                     'type' => 'select',
@@ -489,27 +471,27 @@ return [
                 'colorSeccion1' => [
                     'type' => 'color',
                     'label' => 'Color Sección 1 (Quién Soy)',
-                    'value' => '#6366f1',
+                    'value' => '#30ab0a',
                 ],
                 'colorSeccion2' => [
                     'type' => 'color',
                     'label' => 'Color Sección 2 (Contacto)',
-                    'value' => '#8b5cf6',
+                    'value' => '#279208',
                 ],
                 'colorSeccion3' => [
                     'type' => 'color',
                     'label' => 'Color Sección 3 (Servicios)',
-                    'value' => '#a855f7',
+                    'value' => '#1f7506',
                 ],
                 'colorSeccion4' => [
                     'type' => 'color',
                     'label' => 'Color Sección 4 (Productos)',
-                    'value' => '#d946ef',
+                    'value' => '#ba2831',
                 ],
                 'colorSeccion5' => [
                     'type' => 'color',
                     'label' => 'Color Sección 5 (Galería)',
-                    'value' => '#ec4899',
+                    'value' => '#9e2229',
                 ],
             ],
 
@@ -603,152 +585,6 @@ return [
             ],
         ],
 
-        // Plantilla Clásica (diseño elegante con serif)
-        'classic' => [
-            'general' => [
-                '_label' => 'Ajustes Generales',
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color de Fondo',
-                    'value' => '#fdfbf7',
-                ],
-                'colorTexto' => [
-                    'type' => 'color',
-                    'label' => 'Color de Texto',
-                    'value' => '#2c3e50',
-                ],
-                'colorAcento' => [
-                    'type' => 'color',
-                    'label' => 'Color de Acento',
-                    'value' => '#b89947',
-                ],
-                'fuenteTitulos' => [
-                    'type' => 'select',
-                    'label' => 'Tipografía de Títulos',
-                    'value' => 'Playfair Display',
-                    'options' => ['Playfair Display', 'Merriweather', 'Lora', 'Crimson Text', 'Libre Baskerville'],
-                ],
-            ],
-            'avatar' => [
-                '_label' => 'Foto de Perfil',
-                'mostrar' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Foto',
-                    'value' => true,
-                ],
-                'tamano' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño',
-                    'value' => 140,
-                    'min' => 80,
-                    'max' => 200,
-                    'step' => 5,
-                    'unit' => 'px',
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo',
-                    'value' => 0,
-                    'min' => 0,
-                    'max' => 50,
-                    'step' => 1,
-                    'unit' => '%',
-                ],
-            ],
-            'perfil' => [
-                '_label' => 'Alineación de Contenido',
-                'alineacion' => [
-                    'type' => 'select',
-                    'label' => 'Alineación',
-                    'value' => 'center',
-                    'options' => ['left', 'center', 'right'],
-                ],
-            ],
-            'botones' => [
-                '_label' => 'Botones Sociales',
-                'estilo' => [
-                    'type' => 'select',
-                    'label' => 'Estilo de Botones',
-                    'value' => 'borde',
-                    'options' => ['solido', 'borde', 'minimalista'],
-                ],
-            ],
-        ],
-
-        // Plantilla Minimalista
-        'minimal' => [
-            'general' => [
-                '_label' => 'Estilo Minimalista',
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color de Fondo',
-                    'value' => '#ffffff',
-                ],
-                'colorTexto' => [
-                    'type' => 'color',
-                    'label' => 'Color Principal de Texto',
-                    'value' => '#1a1a1a',
-                ],
-                'colorAcento' => [
-                    'type' => 'color',
-                    'label' => 'Color de Acento (Suave)',
-                    'value' => '#888888',
-                ],
-                'tipografia' => [
-                    'type' => 'select',
-                    'label' => 'Tipografía',
-                    'value' => 'Inter',
-                    'options' => ['Inter', 'Roboto', 'Helvetica Neue', 'System UI'],
-                ],
-                'alineacion' => [
-                    'type' => 'select',
-                    'label' => 'Alineación Global',
-                    'value' => 'center',
-                    'options' => ['left', 'center'],
-                ],
-            ],
-            'avatar' => [
-                '_label' => 'Fotografía',
-                'mostrar' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Fotografía',
-                    'value' => true,
-                ],
-                'tamano' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño',
-                    'value' => 100,
-                    'min' => 60,
-                    'max' => 180,
-                    'step' => 5,
-                    'unit' => 'px',
-                ],
-                'escalaGrises' => [
-                    'type' => 'toggle',
-                    'label' => 'Filtro Blanco y Negro',
-                    'value' => true,
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo',
-                    'value' => 50,
-                    'min' => 0,
-                    'max' => 50,
-                    'step' => 1,
-                    'unit' => '%',
-                ],
-            ],
-            'botones' => [
-                '_label' => 'Acciones y Redes',
-                'estilo' => [
-                    'type' => 'select',
-                    'label' => 'Estilo de Iconos',
-                    'value' => 'fantasma',
-                    'options' => ['fantasma', 'contorno', 'solido'],
-                ],
-            ],
-        ],
-
         // Plantilla Creativa (Glassmorphism)
         'creative' => [
             'general' => [
@@ -761,7 +597,7 @@ return [
                 'colorAcento' => [
                     'type' => 'color',
                     'label' => 'Color de Acento',
-                    'value' => '#38bdf8',
+                    'value' => '#30ab0a',
                 ],
                 'fuentePrincipal' => [
                     'type' => 'select',
@@ -792,7 +628,7 @@ return [
                 'colorLuzSecundaria' => [
                     'type' => 'color',
                     'label' => 'Color Luz Secundaria',
-                    'value' => '#c084fc',
+                    'value' => '#ba2831',
                 ],
                 'radioBorde' => [
                     'type' => 'range',
@@ -925,7 +761,7 @@ return [
                 'colorAcento' => [
                     'type' => 'color',
                     'label' => 'Color Neón (Bordes y Botones)',
-                    'value' => '#00ffcc',
+                    'value' => '#30ab0a',
                 ],
                 'brillo' => [
                     'type' => 'range',
@@ -990,12 +826,12 @@ return [
                 'color1' => [
                     'type' => 'color',
                     'label' => 'Color Gradiente 1',
-                    'value' => '#ff00cc',
+                    'value' => '#30ab0a',
                 ],
                 'color2' => [
                     'type' => 'color',
                     'label' => 'Color Gradiente 2',
-                    'value' => '#333399',
+                    'value' => '#ba2831',
                 ],
                 'tipografia' => [
                     'type' => 'select',
@@ -1014,7 +850,7 @@ return [
                 'colorTexto' => [
                     'type' => 'color',
                     'label' => 'Color de Texto',
-                    'value' => '#1e1e2f',
+                    'value' => '#2d2d2d',
                 ],
                 'radio' => [
                     'type' => 'range',
@@ -1054,395 +890,12 @@ return [
                 'colorBoton' => [
                     'type' => 'color',
                     'label' => 'Color Primario (Botones)',
-                    'value' => '#1e1e2f',
+                    'value' => '#2d2d2d',
                 ],
                 'colorTextoBoton' => [
                     'type' => 'color',
                     'label' => 'Texto en Botones',
                     'value' => '#ffffff',
-                ],
-            ],
-        ],
-        // Plantilla Action (orientada a conversión)
-        'action' => [
-            'general' => [
-                '_label' => 'Estilo General',
-                'fuentePrincipal' => [
-                    'type' => 'select',
-                    'label' => 'Tipografía',
-                    'value' => 'Montserrat',
-                    'options' => ['Montserrat', 'Roboto', 'Open Sans', 'Lato'],
-                ],
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color de Fondo',
-                    'value' => '#ffffff',
-                ],
-            ],
-            'hero' => [
-                '_label' => 'Cabecera',
-                'imagenFondo' => [
-                    'type' => 'image',
-                    'label' => 'Imagen de Fondo',
-                    'value' => '',
-                    'aspectRatio' => 16 / 9,
-                ],
-                'mostrarLogo' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Logo / Nombre',
-                    'value' => true,
-                ],
-                'mostrarEslogan' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Lema',
-                    'value' => true,
-                ],
-                'opacidadOverlay' => [
-                    'type' => 'range',
-                    'label' => 'Oscurecer Fondo',
-                    'value' => 0.6,
-                    'min' => 0,
-                    'max' => 0.9,
-                    'step' => 0.1,
-                ],
-                'eslogan' => [
-                    'type' => 'text',
-                    'label' => 'Texto del Lema',
-                    'value' => 'Tu lema aquí',
-                ],
-            ],
-            'cta' => [
-                '_label' => 'Botón Principal',
-                'texto' => [
-                    'type' => 'text',
-                    'label' => 'Texto del Botón',
-                    'value' => 'Solicita información',
-                ],
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color del Botón',
-                    'value' => '#5cb85c',
-                ],
-                'colorTexto' => [
-                    'type' => 'color',
-                    'label' => 'Color del Texto',
-                    'value' => '#ffffff',
-                ],
-                'tamanoTexto' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño del Texto',
-                    'value' => 1.2,
-                    'min' => 0.8,
-                    'max' => 2,
-                    'step' => 0.1,
-                    'unit' => 'rem',
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo de Esquinas',
-                    'value' => 50,
-                    'min' => 0,
-                    'max' => 50,
-                    'unit' => 'px',
-                ],
-                'tipoBorde' => [
-                    'type' => 'select',
-                    'label' => 'Borde',
-                    'value' => 'none',
-                    'options' => ['none', 'solid', 'dashed', 'dotted'],
-                ],
-                'colorBorde' => [
-                    'type' => 'color',
-                    'label' => 'Color del Borde',
-                    'value' => '#ffffff',
-                ],
-                'grosorBorde' => [
-                    'type' => 'range',
-                    'label' => 'Grosor del Borde',
-                    'value' => 2,
-                    'min' => 1,
-                    'max' => 6,
-                    'unit' => 'px',
-                ],
-                'sombra' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Sombra',
-                    'value' => true,
-                ],
-            ],
-            'contactoRapido' => [
-                '_label' => 'Botones de Contacto',
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo de Esquinas',
-                    'value' => 6,
-                    'min' => 0,
-                    'max' => 30,
-                    'unit' => 'px',
-                ],
-                'tamanoTexto' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño Texto e Iconos',
-                    'value' => 0.9,
-                    'min' => 0.7,
-                    'max' => 1.4,
-                    'step' => 0.1,
-                    'unit' => 'rem',
-                ],
-                'colorLlamar' => [
-                    'type' => 'color',
-                    'label' => 'Color Llamar',
-                    'value' => '#5b7cfa',
-                ],
-                'colorWhatsapp' => [
-                    'type' => 'color',
-                    'label' => 'Color WhatsApp',
-                    'value' => '#10c469',
-                ],
-                'colorEmail' => [
-                    'type' => 'color',
-                    'label' => 'Color Email',
-                    'value' => '#f05050',
-                ],
-            ],
-            'video' => [
-                '_label' => 'Video Promocional',
-                'mostrar' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Video',
-                    'value' => true,
-                ],
-                'urlId' => [
-                    'type' => 'text',
-                    'label' => 'ID del video de YouTube',
-                    'value' => 'dQw4w9WgXcQ',
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo de Esquinas',
-                    'value' => 8,
-                    'min' => 0,
-                    'max' => 20,
-                    'unit' => 'px',
-                ],
-            ],
-            'actionButtons' => [
-                '_label' => 'Botones de Acción',
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color de Fondo',
-                    'value' => '#ffffff',
-                ],
-                'colorTexto' => [
-                    'type' => 'color',
-                    'label' => 'Color del Texto',
-                    'value' => '#000000',
-                ],
-                'colorBorde' => [
-                    'type' => 'color',
-                    'label' => 'Color del Borde',
-                    'value' => '#000000',
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo de Esquinas',
-                    'value' => 8,
-                    'min' => 0,
-                    'max' => 20,
-                    'unit' => 'px',
-                ],
-                'textoBoton1' => [
-                    'type' => 'text',
-                    'label' => 'Texto Botón 1',
-                    'value' => 'Sobre nosotros',
-                ],
-                'iconoBoton1' => [
-                    'type' => 'select',
-                    'label' => 'Ícono Botón 1',
-                    'value' => 'bi-people-fill',
-                    'options' => ['bi-people-fill', 'bi-building', 'bi-info-circle-fill', 'bi-person-lines-fill', 'bi-briefcase-fill', 'bi-house-fill', 'bi-award-fill', 'bi-star-fill', 'bi-heart-fill', 'bi-shield-check'],
-                ],
-                'colorIconoBoton1' => [
-                    'type' => 'color',
-                    'label' => 'Color Ícono Botón 1',
-                    'value' => '#1a237e',
-                ],
-                'textoBoton2' => [
-                    'type' => 'text',
-                    'label' => 'Texto Botón 2',
-                    'value' => 'Nuestros servicios',
-                ],
-                'iconoBoton2' => [
-                    'type' => 'select',
-                    'label' => 'Ícono Botón 2',
-                    'value' => 'bi-journal-text',
-                    'options' => ['bi-journal-text', 'bi-gear-fill', 'bi-tools', 'bi-wrench-adjustable', 'bi-clipboard-check', 'bi-list-check', 'bi-grid-fill', 'bi-box-seam', 'bi-cart-fill', 'bi-tag-fill'],
-                ],
-                'colorIconoBoton2' => [
-                    'type' => 'color',
-                    'label' => 'Color Ícono Botón 2',
-                    'value' => '#455a64',
-                ],
-                'textoBoton3' => [
-                    'type' => 'text',
-                    'label' => 'Texto Botón 3',
-                    'value' => 'Abrir QR',
-                ],
-                'iconoBoton3' => [
-                    'type' => 'select',
-                    'label' => 'Ícono Botón 3',
-                    'value' => 'bi-qr-code',
-                    'options' => ['bi-qr-code', 'bi-share-fill', 'bi-link-45deg', 'bi-send-fill', 'bi-download', 'bi-upload', 'bi-camera-fill', 'bi-phone-fill', 'bi-envelope-fill', 'bi-globe'],
-                ],
-                'colorIconoBoton3' => [
-                    'type' => 'color',
-                    'label' => 'Color Ícono Botón 3',
-                    'value' => '#000000',
-                ],
-            ],
-            'social' => [
-                '_label' => 'Botones Sociales',
-                'colorIcono' => [
-                    'type' => 'color',
-                    'label' => 'Color de Íconos',
-                    'value' => '#ffffff',
-                ],
-                'tamano' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño de Botones',
-                    'value' => 40,
-                    'min' => 30,
-                    'max' => 56,
-                    'unit' => 'px',
-                ],
-                'tamanoIcono' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño de Íconos',
-                    'value' => 1.2,
-                    'min' => 0.8,
-                    'max' => 2,
-                    'step' => 0.1,
-                    'unit' => 'rem',
-                ],
-                'radio' => [
-                    'type' => 'range',
-                    'label' => 'Redondeo de Esquinas',
-                    'value' => 50,
-                    'min' => 0,
-                    'max' => 50,
-                    'unit' => '%',
-                ],
-                'sombra' => [
-                    'type' => 'toggle',
-                    'label' => 'Sombra en Botones',
-                    'value' => true,
-                ],
-                'mostrarFacebook' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Facebook',
-                    'value' => true,
-                ],
-                'fondoFacebook' => [
-                    'type' => 'color',
-                    'label' => 'Fondo Facebook',
-                    'value' => '#3b5998',
-                ],
-                'mostrarInstagram' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Instagram',
-                    'value' => true,
-                ],
-                'fondoInstagram' => [
-                    'type' => 'color',
-                    'label' => 'Fondo Instagram',
-                    'value' => '#e1306c',
-                ],
-                'mostrarYoutube' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar YouTube',
-                    'value' => true,
-                ],
-                'fondoYoutube' => [
-                    'type' => 'color',
-                    'label' => 'Fondo YouTube',
-                    'value' => '#ff0000',
-                ],
-                'mostrarTiktok' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar TikTok',
-                    'value' => true,
-                ],
-                'fondoTiktok' => [
-                    'type' => 'color',
-                    'label' => 'Fondo TikTok',
-                    'value' => '#000000',
-                ],
-                'mostrarLinkedin' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar LinkedIn',
-                    'value' => true,
-                ],
-                'fondoLinkedin' => [
-                    'type' => 'color',
-                    'label' => 'Fondo LinkedIn',
-                    'value' => '#0077b5',
-                ],
-                'mostrarUbicacion' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Ubicación',
-                    'value' => true,
-                ],
-                'fondoUbicacion' => [
-                    'type' => 'color',
-                    'label' => 'Fondo Ubicación',
-                    'value' => '#0000ed',
-                ],
-                'mostrarWeb' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar Web',
-                    'value' => true,
-                ],
-                'fondoWeb' => [
-                    'type' => 'color',
-                    'label' => 'Fondo Web',
-                    'value' => '#0000ed',
-                ],
-                'mostrarVcard' => [
-                    'type' => 'toggle',
-                    'label' => 'Mostrar vCard',
-                    'value' => true,
-                ],
-                'fondoVcard' => [
-                    'type' => 'color',
-                    'label' => 'Fondo vCard',
-                    'value' => '#87ceeb',
-                ],
-            ],
-            'footer' => [
-                '_label' => 'Pie de Página',
-                'texto' => [
-                    'type' => 'text',
-                    'label' => 'Texto',
-                    'value' => 'by NexosCard.com',
-                ],
-                'colorFondo' => [
-                    'type' => 'color',
-                    'label' => 'Color de Fondo',
-                    'value' => '#ffffff',
-                ],
-                'colorTexto' => [
-                    'type' => 'color',
-                    'label' => 'Color del Texto',
-                    'value' => '#666666',
-                ],
-                'tamanoTexto' => [
-                    'type' => 'range',
-                    'label' => 'Tamaño de Texto',
-                    'value' => 0.9,
-                    'min' => 0.7,
-                    'max' => 1.3,
-                    'step' => 0.1,
-                    'unit' => 'rem',
                 ],
             ],
         ],

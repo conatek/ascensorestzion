@@ -74,7 +74,7 @@
                         </span>
 
                         <span v-else-if="props.column.field === 'actions'">
-                            <router-link :to="{ name: 'companies.show', params: { id: props.row.id }, query: { from: 'admin' } }" class="action-btn" title="Ver empresa">
+                            <router-link :to="{ name: 'companies.show', query: { from: 'admin' } }" class="action-btn" title="Ver empresa">
                                 <i class="fa fa-eye"></i>
                             </router-link>
                         </span>
@@ -236,8 +236,8 @@ export default {
 
 .filter-input:focus {
     outline: none;
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
 }
 
 .filter-select {
@@ -253,8 +253,8 @@ export default {
 
 .filter-select:focus {
     outline: none;
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
 }
 
 /* Card — overflow:hidden recorta contenido pero NO el box-shadow propio */
@@ -293,7 +293,7 @@ export default {
     text-decoration: none;
     transition: all 0.2s;
 }
-.action-btn:hover { background: #f1f5f9; color: #7c3aed; }
+.action-btn:hover { background: #f1f5f9; color: #279208; }
 
 /* Empty & loading */
 .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
@@ -390,7 +390,7 @@ export default {
 }
 
 .vgt-wrap__footer .footer__row-count__select:focus {
-    border-color: #7c3aed !important;
+    border-color: #279208 !important;
     outline: none;
 }
 
@@ -425,9 +425,9 @@ export default {
 }
 
 .vgt-wrap__footer .footer__navigation__page-info__current-entry:focus {
-    border-color: #7c3aed !important;
+    border-color: #279208 !important;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+    box-shadow: 0 0 0 2px rgba(39, 146, 8, 0.1);
 }
 
 /* Botones prev/next — compactos */
@@ -461,17 +461,17 @@ export default {
 }
 
 .vgt-wrap__footer .footer__navigation__page-btn:hover:not(.disabled) {
-    background: #f3e8ff !important;
+    background: #e8f5e4 !important;
     border-color: #c4b5fd !important;
 }
 
 /* Flechas — triangulos CSS de la libreria, solo cambiar color */
 .vgt-wrap__footer .footer__navigation__page-btn .chevron.left::after {
-    border-right-color: #7c3aed !important;
+    border-right-color: #279208 !important;
 }
 
 .vgt-wrap__footer .footer__navigation__page-btn .chevron.right::after {
-    border-left-color: #7c3aed !important;
+    border-left-color: #279208 !important;
 }
 
 .vgt-wrap__footer .footer__navigation__page-btn.disabled {

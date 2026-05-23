@@ -10,7 +10,7 @@ trait HasCompanyAccess
 {
     protected function canAccessCompany(User $user, Company $company): bool
     {
-        if ($user->hasRole('Master')) {
+        if ($user->hasRole('master')) {
             return true;
         }
 
@@ -20,7 +20,7 @@ trait HasCompanyAccess
 
     protected function getAccessibleCompanies(User $user): Builder
     {
-        if ($user->hasRole('Master')) {
+        if ($user->hasRole('master')) {
             return Company::query();
         }
 

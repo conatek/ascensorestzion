@@ -42,7 +42,7 @@
                         <rect x="87" y="100" width="26" height="40" rx="4" fill="#94a3b8"/>
 
                         <!-- Roof -->
-                        <path d="M40 65 L100 25 L160 65 Z" fill="#8b5cf6"/>
+                        <path d="M40 65 L100 25 L160 65 Z" fill="#30ab0a"/>
 
                         <!-- Plus circle -->
                         <circle cx="160" cy="40" r="25" fill="url(#emptyGradient)"/>
@@ -58,8 +58,8 @@
 
                         <defs>
                             <linearGradient id="emptyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#8b5cf6"/>
-                                <stop offset="100%" style="stop-color:#ec4899"/>
+                                <stop offset="0%" style="stop-color:#30ab0a"/>
+                                <stop offset="100%" style="stop-color:#ba2831"/>
                             </linearGradient>
                         </defs>
                     </svg>
@@ -108,7 +108,7 @@
 
                 <!-- Acciones -->
                 <div class="company-actions">
-                    <router-link :to="{ name: 'companies.show', params: { id: company.id } }"
+                    <router-link :to="{ name: 'companies.show' }"
                                  class="action-btn action-primary">
                         <i class="fa fa-eye me-1"></i> Gestionar
                     </router-link>
@@ -220,20 +220,20 @@ export default {
     display: inline-flex;
     align-items: center;
     padding: 0.625rem 1.25rem;
-    background: #7c3aed;
+    background: #279208;
     color: white;
     font-weight: 600;
     border-radius: 10px;
     text-decoration: none;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.25);
     border: none;
     cursor: pointer;
 }
 
 .btn-create:hover {
-    background: #6d28d9;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    background: #1f7506;
+    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
     color: white;
 }
 
@@ -341,7 +341,7 @@ export default {
 }
 
 .company-slug:hover {
-    color: #8b5cf6;
+    color: #30ab0a;
 }
 
 .company-logo {
@@ -377,7 +377,7 @@ export default {
     font-weight: 700;
 }
 
-.stat-purple { color: #7c3aed; }
+.stat-purple { color: #279208; }
 .stat-green { color: #059669; }
 .stat-amber { color: #d97706; }
 
@@ -412,12 +412,12 @@ export default {
 
 .action-primary {
     flex: 1;
-    background: #7c3aed;
+    background: #279208;
     color: white;
 }
 
 .action-primary:hover {
-    background: #6d28d9;
+    background: #1f7506;
     color: white;
 }
 
@@ -482,7 +482,7 @@ export default {
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    color: #ef4444;
+    color: #ba2831;
     font-size: 1.5rem;
 }
 
@@ -528,7 +528,7 @@ export default {
 }
 
 .modal-btn-danger {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+    background: linear-gradient(135deg, #ba2831, #dc2626);
     color: white;
 }
 

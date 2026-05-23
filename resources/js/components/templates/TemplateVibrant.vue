@@ -127,8 +127,8 @@ export default {
         // --- ESTILOS COMPUTADOS ---
         containerStyle() {
             const gen = this.customization?.general || {}
-            const color1 = gen.color1 || '#ff00cc'
-            const color2 = gen.color2 || '#333399'
+            const color1 = gen.color1 || '#30ab0a'
+            const color2 = gen.color2 || '#ba2831'
             return {
                 backgroundImage: `linear-gradient(-45deg, ${color1}, ${color2}, ${color1})`,
                 fontFamily: `'${gen.tipografia || 'Outfit'}', sans-serif`,
@@ -138,7 +138,7 @@ export default {
         badgeStyle() {
             return {
                 backgroundColor: this.customization?.tarjetas?.colorFondo || '#ffffff',
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 borderRadius: '50px',
             }
         },
@@ -173,7 +173,7 @@ export default {
                 fontSize: '1.8rem',
                 fontWeight: '800',
                 letterSpacing: '-0.5px',
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 margin: '1rem 0 0.5rem 0',
             }
         },
@@ -181,7 +181,7 @@ export default {
         rolePillStyle() {
             const btn = this.customization?.botones || {}
             return {
-                backgroundColor: btn.colorBoton || '#1e1e2f',
+                backgroundColor: btn.colorBoton || '#2d2d2d',
                 color: btn.colorTextoBoton || '#ffffff',
                 borderRadius: '50px',
             }
@@ -191,7 +191,7 @@ export default {
             return {
                 fontSize: '0.95rem',
                 lineHeight: '1.5',
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 opacity: '0.8',
                 marginTop: '1.2rem',
                 marginBottom: '0',
@@ -200,14 +200,14 @@ export default {
 
         textNormalStyle() {
             return {
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 margin: 0,
             }
         },
 
         textSmallStyle() {
             return {
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 opacity: '0.7',
                 fontSize: '0.85rem',
                 margin: 0,
@@ -216,7 +216,7 @@ export default {
 
         titleSmallStyle() {
             return {
-                color: this.customization?.tarjetas?.colorTexto || '#1e1e2f',
+                color: this.customization?.tarjetas?.colorTexto || '#2d2d2d',
                 fontSize: '1.1rem',
                 fontWeight: '700',
                 marginBottom: '1rem',
@@ -225,7 +225,7 @@ export default {
 
         iconStyle() {
             return {
-                color: this.customization?.botones?.colorBoton || '#1e1e2f',
+                color: this.customization?.botones?.colorBoton || '#2d2d2d',
                 fontSize: '1.8rem',
             }
         },
@@ -242,7 +242,7 @@ export default {
         productItemStyle() {
             const btn = this.customization?.botones || {}
             return {
-                border: `2px solid ${btn.colorBoton || '#1e1e2f'}`,
+                border: `2px solid ${btn.colorBoton || '#2d2d2d'}`,
                 borderRadius: `${(this.customization?.tarjetas?.radio ?? 24) / 2}px`,
             }
         },
@@ -250,7 +250,7 @@ export default {
         priceTagStyle() {
             const btn = this.customization?.botones || {}
             return {
-                backgroundColor: btn.colorBoton || '#1e1e2f',
+                backgroundColor: btn.colorBoton || '#2d2d2d',
                 color: btn.colorTextoBoton || '#ffffff',
             }
         }

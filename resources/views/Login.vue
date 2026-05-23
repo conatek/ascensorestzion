@@ -25,8 +25,8 @@
                         <path d="M35 80V60C35 40 50 25 60 25C70 25 85 40 85 60V80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none"/>
 
                         <!-- Keyhole -->
-                        <circle cx="60" cy="110" r="10" fill="#8b5cf6"/>
-                        <rect x="56" y="115" width="8" height="15" rx="2" fill="#8b5cf6"/>
+                        <circle cx="60" cy="110" r="10" fill="#30ab0a"/>
+                        <rect x="56" y="115" width="8" height="15" rx="2" fill="#30ab0a"/>
                     </g>
 
                     <!-- Floating Cards -->
@@ -56,17 +56,12 @@
 
                 <!-- Brand -->
                 <div class="illustration-brand">
-                    <svg class="brand-logo" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="10" fill="white" opacity="0.2"/>
-                        <path d="M12 20C12 15.58 15.58 12 20 12C24.42 12 28 15.58 28 20C28 24.42 24.42 28 20 28" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="20" cy="20" r="4" fill="white"/>
-                    </svg>
-                    <span class="brand-name">NexosCard</span>
+                    <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" style="height: 60px; filter: brightness(0) invert(1);" />
                 </div>
 
                 <div class="illustration-text">
-                    <h2>Bienvenido de vuelta</h2>
-                    <p>Gestiona tus tarjetas digitales y haz crecer tu presencia en linea.</p>
+                    <h2>Bienvenido</h2>
+                    <p>Sistema integral de gestion de equipos de transporte vertical.</p>
                 </div>
             </div>
         </div>
@@ -76,17 +71,7 @@
             <div class="auth-form-wrapper">
                 <!-- Mobile Logo -->
                 <div class="mobile-logo">
-                    <svg viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="10" fill="url(#mobile-logo-gradient)"/>
-                        <path d="M12 20C12 15.58 15.58 12 20 12C24.42 12 28 15.58 28 20C28 24.42 24.42 28 20 28" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="20" cy="20" r="4" fill="white"/>
-                        <defs>
-                            <linearGradient id="mobile-logo-gradient" x1="0" y1="0" x2="40" y2="40">
-                                <stop stop-color="#8b5cf6"/>
-                                <stop offset="1" stop-color="#ec4899"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                    <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" style="height: 60px;" />
                 </div>
 
                 <div class="auth-header">
@@ -237,13 +222,13 @@ export default {
 .auth-page {
     display: flex;
     min-height: 100vh;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Left Side - Illustration */
 .auth-illustration {
     flex: 0 0 45%;
-    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    background: linear-gradient(135deg, #30ab0a 0%, #ba2831 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -449,12 +434,12 @@ export default {
 
 .form-input:focus {
     outline: none;
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #30ab0a;
+    box-shadow: 0 0 0 3px rgba(48, 171, 10, 0.1);
 }
 
 .form-input.has-error {
-    border-color: #ef4444;
+    border-color: #ba2831;
 }
 
 .form-input::placeholder {
@@ -483,7 +468,7 @@ export default {
 
 .error-text {
     font-size: 0.8rem;
-    color: #ef4444;
+    color: #ba2831;
 }
 
 /* Submit Button */
@@ -494,7 +479,7 @@ export default {
     gap: 0.5rem;
     width: 100%;
     padding: 0.875rem;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, #30ab0a, #279208);
     color: white;
     font-size: 1rem;
     font-weight: 600;
@@ -502,12 +487,12 @@ export default {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.25);
     margin-top: 0.5rem;
 }
 
 .btn-submit:hover:not(:disabled) {
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
     transform: translateY(-1px);
 }
 
@@ -543,14 +528,14 @@ export default {
 }
 
 .auth-link {
-    color: #8b5cf6;
+    color: #30ab0a;
     font-weight: 600;
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .auth-link:hover {
-    color: #7c3aed;
+    color: #279208;
     text-decoration: underline;
 }
 
@@ -566,7 +551,7 @@ export default {
 }
 
 .back-link:hover {
-    color: #8b5cf6;
+    color: #30ab0a;
 }
 
 .back-link svg {

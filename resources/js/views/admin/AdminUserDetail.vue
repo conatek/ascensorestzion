@@ -67,18 +67,23 @@
                             </div>
                         </div>
 
-                        <div v-if="currentRole === 'Guest'" class="form-group">
-                            <label class="form-label">Promover a Admin</label>
+                        <div class="form-group">
+                            <label class="form-label">Cambiar rol</label>
                             <div class="inline-action">
-                                <span class="promote-label">Cambiar rol de Guest a Admin</span>
-                                <button @click="promoteToAdmin" class="btn-sm btn-primary" :disabled="saving">
-                                    {{ saving ? 'Cambiando...' : 'Promover' }}
+                                <select v-model="newRole" class="form-input" style="max-width: 200px;">
+                                    <option v-for="r in availableRoles" :key="r.value" :value="r.value">
+                                        {{ r.label }}
+                                    </option>
+                                </select>
+                                <button @click="changeRole" class="btn-sm btn-primary"
+                                        :disabled="saving || newRole === currentRole">
+                                    {{ saving ? 'Cambiando...' : 'Actualizar Rol' }}
                                 </button>
                             </div>
                         </div>
 
                         <div v-if="user.company" class="mt-1">
-                            <router-link :to="{ name: 'companies.show', params: { id: user.company_id }, query: { from: 'admin' } }" class="link-company">
+                            <router-link :to="{ name: 'companies.show', query: { from: 'admin' } }" class="link-company">
                                 <i class="fa fa-external-link-alt me-1"></i> Ver empresa
                             </router-link>
                         </div>
@@ -101,6 +106,13 @@ export default {
             loading: true,
             saving: false,
             successMsg: null,
+            newRole: '',
+            availableRoles: [
+                { value: 'master', label: 'Master' },
+                { value: 'coordinator', label: 'Coordinador' },
+                { value: 'technician', label: 'Tecnico' },
+                { value: 'admin', label: 'Administrador' },
+            ],
         };
     },
 
@@ -110,8 +122,15 @@ export default {
         },
     },
 
+    watch: {
+        currentRole(val) {
+            this.newRole = val;
+        },
+    },
+
     async created() {
         await this.load();
+        this.newRole = this.currentRole;
     },
 
     methods: {
@@ -128,13 +147,13 @@ export default {
             return new Date(d).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
         },
 
-        async promoteToAdmin() {
+        async changeRole() {
             this.saving = true;
             this.successMsg = null;
             try {
-                const { data } = await adminService.updateUser(this.user.id, { role: 'Admin' });
+                const { data } = await adminService.updateUser(this.user.id, { role: this.newRole });
                 this.user = data;
-                this.successMsg = 'Usuario promovido a Admin correctamente.';
+                this.successMsg = `Rol actualizado a ${this.newRole} correctamente.`;
             } finally { this.saving = false; }
         },
     },
@@ -146,7 +165,7 @@ export default {
 .section-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .section-header { padding: 1rem 1.25rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.75rem; font-weight: 600; color: #1e293b; border-radius: 12px 12px 0 0; }
 .section-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
-.icon-purple { background: #f3e8ff; color: #7c3aed; }
+.icon-purple { background: #e8f5e4; color: #279208; }
 .section-body { padding: 1.25rem; }
 
 .detail-row { display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
@@ -156,24 +175,24 @@ export default {
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .form-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
-.form-input:focus { outline: none; border-color: #7c3aed; }
+.form-input:focus { outline: none; border-color: #279208; }
 
 .current-value { padding: 0.25rem 0; }
 
 .role-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
-.role-master { background: linear-gradient(135deg, #ede9fe, #f3e8ff); color: #7c3aed; }
-.role-admin { background: linear-gradient(135deg, #dbeafe, #e0f2fe); color: #2563eb; }
-.role-guest { background: #f1f5f9; color: #64748b; }
+.role-master { background: linear-gradient(135deg, #d4edda, #e8f5e4); color: #279208; }
+.role-coordinator { background: linear-gradient(135deg, #dbeafe, #e0f2fe); color: #2563eb; }
+.role-technician { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+.role-admin { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #7c3aed; }
 
 .inline-action { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-.promote-label { font-size: 0.9rem; color: #334155; }
 
 .btn-sm { padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; white-space: nowrap; }
-.btn-primary { background: #7c3aed; color: white; }
-.btn-primary:hover:not(:disabled) { background: #6d28d9; }
+.btn-primary { background: #279208; color: white; }
+.btn-primary:hover:not(:disabled) { background: #1f7506; }
 .btn-sm:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.link-company { font-size: 0.85rem; color: #7c3aed; text-decoration: none; }
+.link-company { font-size: 0.85rem; color: #279208; text-decoration: none; }
 .link-company:hover { text-decoration: underline; }
 .mt-1 { margin-top: 0.5rem; }
 

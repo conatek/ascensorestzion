@@ -19,10 +19,8 @@
                         </div>
                         <div>
                             {{ company.name }}
-                            <div class="page-title-subheading">
-                                <a :href="'/' + company.slug" target="_blank" class="slug-link">
-                                    <i class="fa fa-external-link-alt me-1"></i>/{{ company.slug }}
-                                </a>
+                            <div class="page-title-subheading text-muted">
+                                Tarjetas de presentacion digital
                             </div>
                         </div>
                     </div>
@@ -30,11 +28,11 @@
                         <router-link v-if="isMaster" :to="backRoute" class="btn-action btn-back">
                             <i class="fa fa-arrow-left me-1"></i> Volver
                         </router-link>
-                        <router-link v-if="canEditSettings" :to="{ name: 'settings.editor', params: { companyId: company.id }, query: fromAdmin ? { from: 'admin' } : {} }"
+                        <router-link v-if="canEditSettings" :to="{ name: 'settings.editor', query: fromAdmin ? { from: 'admin' } : {} }"
                                      class="btn-action btn-template">
                             <i class="fa fa-palette me-1"></i> Plantilla
                         </router-link>
-                        <router-link v-if="canEditCompany" :to="{ name: 'companies.edit', params: { id: company.id }, query: fromAdmin ? { from: 'admin' } : {} }"
+                        <router-link v-if="canEditCompany" :to="{ name: 'companies.edit', query: fromAdmin ? { from: 'admin' } : {} }"
                                      class="btn-action btn-edit">
                             <i class="fa fa-edit me-1"></i> Editar
                         </router-link>
@@ -130,7 +128,7 @@
                         <i class="fa fa-id-card section-icon icon-purple"></i>
                         <span>Tarjetas de presentacion</span>
                     </div>
-                    <router-link v-if="canCreateCard" :to="{ name: 'cards.create', params: { companyId: company.id } }"
+                    <router-link v-if="canCreateCard" :to="{ name: 'cards.create' }"
                                  class="btn-add btn-add-purple">
                         <i class="fa fa-plus me-1"></i> Nueva tarjeta
                     </router-link>
@@ -158,7 +156,7 @@
                                 </div>
                             </div>
                             <div class="item-url">
-                                <a :href="'/' + company.slug + '/' + card.slug" target="_blank">
+                                <a :href="'/' + card.slug" target="_blank">
                                     /{{ card.slug }}
                                 </a>
                             </div>
@@ -168,7 +166,7 @@
                                 </span>
                             </div>
                             <div class="item-actions">
-                                <router-link v-if="canEditCard" :to="{ name: 'cards.edit', params: { companyId: company.id, cardId: card.id } }"
+                                <router-link v-if="canEditCard" :to="{ name: 'cards.edit', params: { cardId: card.id } }"
                                              class="action-btn">
                                     <i class="fa fa-edit"></i>
                                 </router-link>
@@ -188,7 +186,7 @@
                         <i class="fa fa-concierge-bell section-icon icon-green"></i>
                         <span>Servicios</span>
                     </div>
-                    <router-link v-if="canCreateService" :to="{ name: 'services.create', params: { companyId: company.id } }"
+                    <router-link v-if="canCreateService" :to="{ name: 'services.create' }"
                                  class="btn-add btn-add-green">
                         <i class="fa fa-plus me-1"></i> Nuevo servicio
                     </router-link>
@@ -222,7 +220,7 @@
                                 </span>
                             </div>
                             <div class="item-actions">
-                                <router-link v-if="canEditService" :to="{ name: 'services.edit', params: { companyId: company.id, serviceId: service.id } }"
+                                <router-link v-if="canEditService" :to="{ name: 'services.edit', params: { serviceId: service.id } }"
                                              class="action-btn">
                                     <i class="fa fa-edit"></i>
                                 </router-link>
@@ -242,7 +240,7 @@
                         <i class="fa fa-box section-icon icon-amber"></i>
                         <span>Productos</span>
                     </div>
-                    <router-link v-if="canCreateProduct" :to="{ name: 'products.create', params: { companyId: company.id } }"
+                    <router-link v-if="canCreateProduct" :to="{ name: 'products.create' }"
                                  class="btn-add btn-add-amber">
                         <i class="fa fa-plus me-1"></i> Nuevo producto
                     </router-link>
@@ -278,7 +276,7 @@
                                 </span>
                             </div>
                             <div class="item-actions">
-                                <router-link v-if="canEditProduct" :to="{ name: 'products.edit', params: { companyId: company.id, productId: product.id } }"
+                                <router-link v-if="canEditProduct" :to="{ name: 'products.edit', params: { productId: product.id } }"
                                              class="action-btn">
                                     <i class="fa fa-edit"></i>
                                 </router-link>
@@ -400,7 +398,7 @@ export default {
             if (this.fromAdmin) {
                 return { name: 'admin.companies' };
             }
-            return { name: 'companies.index' };
+            return { name: 'admin.companies' };
         },
         canEditCompany() {
             const auth = useAuth();
@@ -456,7 +454,8 @@ export default {
         async load() {
             this.loading = true;
             try {
-                const { data } = await companyService.get(this.$route.params.id);
+                const auth = useAuth();
+                const { data } = await companyService.get(auth.companyId.value);
                 this.company = data;
             } finally {
                 this.loading = false;
@@ -544,7 +543,7 @@ export default {
 }
 
 .slug-link:hover {
-    color: #7c3aed;
+    color: #279208;
 }
 
 /* Action buttons */
@@ -571,12 +570,12 @@ export default {
 }
 
 .btn-template {
-    background: #7c3aed;
+    background: #279208;
     color: white;
 }
 
 .btn-template:hover {
-    background: #6d28d9;
+    background: #1f7506;
     color: white;
 }
 
@@ -620,7 +619,7 @@ export default {
     font-size: 1.25rem;
 }
 
-.stat-purple .stat-icon { background: #f3e8ff; color: #7c3aed; }
+.stat-purple .stat-icon { background: #e8f5e4; color: #279208; }
 .stat-green .stat-icon { background: #d1fae5; color: #059669; }
 .stat-amber .stat-icon { background: #fef3c7; color: #d97706; }
 
@@ -665,7 +664,7 @@ export default {
 }
 
 .info-header i {
-    color: #7c3aed;
+    color: #279208;
 }
 
 .info-body {
@@ -687,7 +686,7 @@ export default {
 }
 
 .info-item a {
-    color: #7c3aed;
+    color: #279208;
     text-decoration: none;
 }
 
@@ -761,7 +760,7 @@ export default {
     font-size: 0.9rem;
 }
 
-.icon-purple { background: #f3e8ff; color: #7c3aed; }
+.icon-purple { background: #e8f5e4; color: #279208; }
 .icon-green { background: #d1fae5; color: #059669; }
 .icon-amber { background: #fef3c7; color: #d97706; }
 
@@ -777,8 +776,8 @@ export default {
     transition: all 0.2s;
 }
 
-.btn-add-purple { background: #7c3aed; }
-.btn-add-purple:hover { background: #6d28d9; color: white; }
+.btn-add-purple { background: #279208; }
+.btn-add-purple:hover { background: #1f7506; color: white; }
 .btn-add-green { background: #059669; }
 .btn-add-green:hover { background: #047857; color: white; }
 .btn-add-amber { background: #d97706; }
@@ -911,15 +910,15 @@ export default {
 
 .item-url a {
     font-size: 0.8rem;
-    color: #7c3aed;
+    color: #279208;
     text-decoration: none;
-    background: #f3e8ff;
+    background: #e8f5e4;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
 }
 
 .item-url a:hover {
-    background: #ede9fe;
+    background: #d4edda;
 }
 
 .item-price {
@@ -1047,7 +1046,7 @@ export default {
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    color: #ef4444;
+    color: #ba2831;
     font-size: 1.5rem;
 }
 
@@ -1093,7 +1092,7 @@ export default {
 }
 
 .modal-btn-danger {
-    background: #ef4444;
+    background: #ba2831;
     color: white;
 }
 

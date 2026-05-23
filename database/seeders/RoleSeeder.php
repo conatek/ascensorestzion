@@ -13,35 +13,35 @@ class RoleSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Crear roles
-        $master = Role::firstOrCreate(['name' => 'Master', 'guard_name' => 'web']);
-        $admin  = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $guest  = Role::firstOrCreate(['name' => 'Guest', 'guard_name' => 'web']);
-
-        // Master: todos los permisos
+        // ── master: acceso total ──
+        $master = Role::firstOrCreate(['name' => 'master', 'guard_name' => 'web']);
         $master->syncPermissions(Permission::all());
 
-        // Admin: todos excepto view_any_company, delete_company, manage_users
-        $admin->syncPermissions(
-            Permission::whereNotIn('name', [
-                'view_any_company',
-                'delete_company',
-                'manage_users',
-            ])->get()
-        );
-
-        // Guest: lectura + edición de su empresa + creación limitada
-        $guest->syncPermissions([
-            'view_company',
-            'edit_company',
-            'view_cards',
-            'create_card',
-            'view_products',
-            'create_product',
-            'view_services',
-            'create_service',
+        // ── coordinator: seguimiento de reportes, gestión de clientes/sedes/equipos ──
+        $coordinator = Role::firstOrCreate(['name' => 'coordinator', 'guard_name' => 'web']);
+        $coordinator->syncPermissions([
+            'view_clients', 'create_client', 'edit_client',
+            'view_sites', 'create_site', 'edit_site',
+            'view_equipment', 'create_equipment', 'edit_equipment',
+            'view_company', 'view_cards', 'view_products', 'view_services',
             'view_settings',
-            'edit_settings',
+            'view_reports', 'create_report', 'edit_any_report',
+            'sign_report_technician', 'export_report_pdf',
+        ]);
+
+        // ── technician: carga de reportes, ve equipos ──
+        $technician = Role::firstOrCreate(['name' => 'technician', 'guard_name' => 'web']);
+        $technician->syncPermissions([
+            'view_clients', 'view_sites', 'view_equipment',
+            'view_reports', 'create_report', 'edit_own_report',
+            'sign_report_technician', 'export_report_pdf',
+        ]);
+
+        // ── admin: usuario externo del cliente, ve sus datos ──
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin->syncPermissions([
+            'view_clients', 'view_sites', 'view_equipment',
+            'view_reports', 'sign_report_customer', 'export_report_pdf',
         ]);
     }
 }

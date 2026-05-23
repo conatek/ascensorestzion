@@ -1,19 +1,15 @@
 <template>
     <header class="app-header">
         <div class="header-left">
-            <!-- Toggle Sidebar Button -->
-            <button @click="changeSidebarStatus" type="button" class="sidebar-toggle" :class="{ 'active': !sidebarStatus }">
-                <span class="toggle-bar"></span>
-                <span class="toggle-bar"></span>
-                <span class="toggle-bar"></span>
-            </button>
-
-            <!-- Mobile Menu Button -->
+            <!-- Mobile Menu Button (solo visible en móvil) -->
             <button @click="openSidebarMobile()" type="button" class="mobile-toggle" :class="{ 'active': isOpenSidebarMobile }">
                 <span class="toggle-bar"></span>
                 <span class="toggle-bar"></span>
                 <span class="toggle-bar"></span>
             </button>
+
+            <!-- Logo -->
+            <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" class="header-logo-img" />
         </div>
 
         <div class="header-right">
@@ -116,15 +112,16 @@ export default {
             const auth = useAuth();
             const roles = auth.state.user?.roles || [];
             const role = roles.length > 0 ? roles[0].name : '';
-            if (role === 'Guest') return 'Gratis';
-            return role;
+            const labels = { master: 'Master', coordinator: 'Coordinador', technician: 'Técnico', admin: 'Admin Cliente' };
+            return labels[role] || role;
         },
         roleBadgeClass() {
             const auth = useAuth();
             const roles = auth.state.user?.roles || [];
             const role = roles.length > 0 ? roles[0].name : '';
-            if (role === 'Master') return 'role-badge-master';
-            if (role === 'Admin') return 'role-badge-admin';
+            if (role === 'master') return 'role-badge-master';
+            if (role === 'coordinator') return 'role-badge-admin';
+            if (role === 'technician') return 'role-badge-admin';
             return 'role-badge-guest';
         },
     },
@@ -165,7 +162,7 @@ export default {
 
 <style scoped>
 .app-header {
-    height: 60px;
+    height: 70px;
     background: white;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
@@ -182,6 +179,11 @@ export default {
     display: flex;
     align-items: center;
     gap: 1rem;
+}
+
+.header-logo-img {
+    height: 60px;
+    width: auto;
 }
 
 .sidebar-toggle,
@@ -263,7 +265,7 @@ export default {
 .user-avatar {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    background: linear-gradient(135deg, #30ab0a, #606060);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -333,7 +335,7 @@ export default {
 .dropdown-avatar {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    background: linear-gradient(135deg, #30ab0a, #606060);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -383,9 +385,9 @@ export default {
 }
 
 .role-badge-master {
-    background: linear-gradient(135deg, #ede9fe, #f3e8ff);
-    color: #7c3aed;
-    border: 1px solid #ddd6fe;
+    background: linear-gradient(135deg, #e8f5e4, #d4edda);
+    color: #279208;
+    border: 1px solid #b7dfb2;
 }
 
 .role-badge-admin {
@@ -422,7 +424,7 @@ export default {
 
 .dropdown-item:hover {
     background: #f8fafc;
-    color: #8b5cf6;
+    color: #30ab0a;
 }
 
 .dropdown-item svg {
@@ -450,7 +452,7 @@ export default {
     background: linear-gradient(135deg, #fef2f2, #fee2e2);
     border: 1px solid #fecaca;
     border-radius: 10px;
-    color: #dc2626;
+    color: #ba2831;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
