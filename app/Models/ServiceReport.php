@@ -34,17 +34,22 @@ class ServiceReport extends Model
         'customer_signed_at',
         'status',
         'final_pdf_path',
+        'reception_token',
+        'reception_confirmed_at',
+        'reception_confirmed_ip',
+        'reception_confirmed_ua',
         'created_by',
         'last_edited_by',
     ];
 
     protected $casts = [
-        'service_date'          => 'date',
-        'equipment_functional'  => 'boolean',
-        'generates_quotation'   => 'boolean',
-        'requires_parts_change' => 'boolean',
-        'technician_signed_at'  => 'datetime',
-        'customer_signed_at'    => 'datetime',
+        'service_date'             => 'date',
+        'equipment_functional'     => 'boolean',
+        'generates_quotation'      => 'boolean',
+        'requires_parts_change'    => 'boolean',
+        'technician_signed_at'     => 'datetime',
+        'customer_signed_at'       => 'datetime',
+        'reception_confirmed_at'   => 'datetime',
     ];
 
     public function equipment()

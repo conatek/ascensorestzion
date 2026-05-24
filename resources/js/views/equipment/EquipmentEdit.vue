@@ -112,7 +112,7 @@
                                                 @change="onClientChange">
                                             <option value="">Seleccionar cliente</option>
                                             <option v-for="client in clients" :key="client.id" :value="client.id">
-                                                {{ client.name }}
+                                                {{ client.business_name }}
                                             </option>
                                         </select>
                                     </div>

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'client_id',
         'image_public_id',
         'image_url',
+        'notification_preferences',
     ];
 
     protected $hidden = [
@@ -32,8 +33,9 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'active'            => 'boolean',
+        'email_verified_at'        => 'datetime',
+        'active'                   => 'boolean',
+        'notification_preferences' => 'array',
     ];
 
     public function company()
@@ -44,5 +46,14 @@ class User extends Authenticatable
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Numero de WhatsApp para notificaciones.
+     * Formato esperado: 573001234567 (codigo pais + numero)
+     */
+    public function routeNotificationForWhatsApp($notification = null): ?string
+    {
+        return $this->phone;
     }
 }

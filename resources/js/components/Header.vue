@@ -13,6 +13,12 @@
         </div>
 
         <div class="header-right">
+            <!-- Notifications -->
+            <NotificationBell />
+
+            <!-- Connection Status -->
+            <ConnectionStatus />
+
             <!-- User Menu -->
             <div class="user-menu" ref="userMenu">
                 <button class="user-trigger" @click="toggleUserMenu">
@@ -81,8 +87,11 @@
 
 <script>
 import { useAuth } from '@/stores/auth';
+import ConnectionStatus from '@/components/shared/ConnectionStatus.vue';
+import NotificationBell from '@/components/shared/NotificationBell.vue';
 
 export default {
+    components: { ConnectionStatus, NotificationBell },
     props: {
         isCollapsed: {
             type: Boolean,

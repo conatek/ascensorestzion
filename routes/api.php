@@ -18,6 +18,9 @@ use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\CompanyAdminController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\TechnicianCheckinController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportConfirmationController;
 
 // Autenticación pública
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -32,6 +35,10 @@ Route::prefix('public')->group(function () {
 // Plantillas públicas (para consultar schemas)
 Route::get('/templates', [CompanySettingController::class, 'templates']);
 Route::get('/templates/{templateName}/schema', [CompanySettingController::class, 'schema']);
+
+// Confirmacion de recepcion de reportes (publico, sin auth)
+Route::get('/report-confirmation/{token}', [ReportConfirmationController::class, 'show']);
+Route::post('/report-confirmation/{token}', [ReportConfirmationController::class, 'confirm']);
 
 // Rutas protegidas con Sanctum
 Route::middleware('auth:sanctum')->group(function () {
@@ -64,6 +71,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('equipment/{equipment}/history', [EquipmentController::class, 'history']);
     Route::post('equipment/{equipment}/attachments', [EquipmentController::class, 'uploadAttachment']);
     Route::delete('equipment/{equipment}/attachments/{attachment}', [EquipmentController::class, 'deleteAttachment']);
+    Route::post('equipment/{equipment}/generate-qr', [EquipmentController::class, 'generateQr'])
+        ->middleware('role:master|coordinator');
+
+    // Check-in de técnicos
+    Route::prefix('tech')->group(function () {
+        Route::post('checkin', [TechnicianCheckinController::class, 'store']);
+        Route::get('checkins', [TechnicianCheckinController::class, 'index']);
+        Route::get('checkins/{checkin}', [TechnicianCheckinController::class, 'show']);
+    });
+
+    // Notificaciones
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+    });
 
     // Reportes de servicio
     Route::apiResource('service-reports', ServiceReportController::class);
@@ -71,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('service-reports/{service_report}/sign-customer', [ServiceReportController::class, 'signCustomer'])->middleware('throttle:10,1');
     Route::get('service-reports/{service_report}/pdf', [ServiceReportController::class, 'pdf']);
     Route::post('service-reports/{service_report}/send-email', [ServiceReportController::class, 'sendEmail'])->middleware('throttle:5,1');
+    Route::post('service-reports/{service_report}/attachments', [ServiceReportController::class, 'uploadAttachment']);
     Route::get('service-reports-export', [ServiceReportController::class, 'export']);
 
     // Estadísticas

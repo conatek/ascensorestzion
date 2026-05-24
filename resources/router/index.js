@@ -51,6 +51,15 @@ import AdminUsers     from '../js/views/admin/AdminUsers.vue';
 import AdminUserDetail from '../js/views/admin/AdminUserDetail.vue';
 import AdminCompanies  from '../js/views/admin/AdminCompanies.vue';
 
+// Confirmacion de recepcion (publica)
+import ReportConfirmation from '../js/views/public/ReportConfirmation.vue';
+
+// Vistas del técnico
+import TechDashboard       from '../js/views/tech/TechDashboard.vue';
+import TechCheckin         from '../js/views/tech/TechCheckin.vue';
+import TechEquipmentCard   from '../js/views/tech/TechEquipmentCard.vue';
+import TechReportTypeSelect from '../js/views/tech/TechReportTypeSelect.vue';
+
 // Vistas publicas
 import CompanyPublic from '../js/views/public/CompanyPublic.vue';
 import CardPublic    from '../js/views/public/CardPublic.vue';
@@ -300,6 +309,46 @@ const routes = [
         meta: { requiresAuth: true },
     },
 
+    // --- Confirmacion de recepcion (publica) ---
+    {
+        path: '/confirmacion-reporte/:token',
+        name: 'report.confirmation',
+        component: ReportConfirmation,
+        meta: { layout: 'public' },
+    },
+
+    // --- Técnico ---
+    {
+        path: '/tech',
+        name: 'tech.dashboard',
+        component: TechDashboard,
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/checkin',
+        name: 'tech.checkin',
+        component: TechCheckin,
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/equipo/:id',
+        name: 'tech.equipment',
+        component: TechEquipmentCard,
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/reporte/tipo',
+        name: 'tech.report.type',
+        component: TechReportTypeSelect,
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/reporte/nuevo',
+        name: 'tech.report.create',
+        component: () => import('../js/views/tech/TechReportForm.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+
     // --- Redirects de rutas viejas ---
     { path: '/empresas/:id', redirect: '/tarjetas' },
     { path: '/empresas/:id/editar', redirect: '/tarjetas/editar' },
@@ -353,6 +402,9 @@ router.beforeEach((to, from, next) => {
         const userRoles = (user?.roles || []).map(r => r.name);
         if (userRoles.includes('master')) {
             return next({ name: 'admin.dashboard' });
+        }
+        if (userRoles.includes('technician')) {
+            return next({ name: 'tech.dashboard' });
         }
         if (userRoles.includes('admin') && !userRoles.includes('master')) {
             return next({ name: 'portal.dashboard' });

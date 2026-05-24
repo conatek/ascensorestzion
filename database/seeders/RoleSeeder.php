@@ -27,6 +27,7 @@ class RoleSeeder extends Seeder
             'view_settings',
             'view_reports', 'create_report', 'edit_any_report',
             'sign_report_technician', 'export_report_pdf',
+            'checkin_equipment', 'view_notifications',
         ]);
 
         // ── technician: carga de reportes, ve equipos ──
@@ -35,6 +36,7 @@ class RoleSeeder extends Seeder
             'view_clients', 'view_sites', 'view_equipment',
             'view_reports', 'create_report', 'edit_own_report',
             'sign_report_technician', 'export_report_pdf',
+            'checkin_equipment', 'view_notifications',
         ]);
 
         // ── admin: usuario externo del cliente, ve sus datos ──
@@ -42,6 +44,7 @@ class RoleSeeder extends Seeder
         $admin->syncPermissions([
             'view_clients', 'view_sites', 'view_equipment',
             'view_reports', 'sign_report_customer', 'export_report_pdf',
+            'confirm_report', 'view_notifications',
         ]);
     }
 }

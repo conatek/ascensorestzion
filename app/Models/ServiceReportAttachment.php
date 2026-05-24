@@ -9,6 +9,10 @@ class ServiceReportAttachment extends Model
     protected $fillable = [
         'service_report_id',
         'type',
+        'condition_key',
+        'activity_key',
+        'group_key',
+        'media_type',
         'file_path',
         'original_name',
         'uploaded_by',

@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ReportCompleted;
 use App\Http\Requests\StoreServiceReportRequest;
 use App\Models\Equipment;
 use App\Models\ServiceReport;
 use App\Models\ServiceReportAuditLog;
+use App\Models\User;
+use App\Notifications\ReportCompletedNotification;
 use App\Services\ServiceReportNumberingService;
 use App\Services\ServiceReportSigningService;
 use App\Mail\ServiceReportMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Spatie\Browsershot\Browsershot;
 
 class ServiceReportController extends Controller
@@ -322,6 +327,36 @@ class ServiceReportController extends Controller
             $request
         );
 
+        // Generar token de confirmacion de recepcion
+        $serviceReport->update([
+            'reception_token' => Str::random(64),
+        ]);
+
+        // Notificar a masters, tecnico y cliente
+        $serviceReport->refresh()->load(['technician', 'client']);
+
+        $masterIds = User::role('master')->pluck('id')->toArray();
+        $masters = User::role('master')->get();
+
+        // Broadcast a masters
+        if ($masterIds) {
+            ReportCompleted::dispatch($serviceReport, $masterIds);
+        }
+
+        // Notificar masters
+        Notification::send($masters, new ReportCompletedNotification($serviceReport, 'master'));
+
+        // Notificar tecnico
+        if ($serviceReport->technician) {
+            $serviceReport->technician->notify(new ReportCompletedNotification($serviceReport, 'technician'));
+        }
+
+        // Notificar admin del cliente (si existe)
+        $clientAdmins = User::where('client_id', $serviceReport->client_id)->get();
+        if ($clientAdmins->isNotEmpty()) {
+            Notification::send($clientAdmins, new ReportCompletedNotification($serviceReport, 'client'));
+        }
+
         return response()->json($serviceReport->fresh());
     }
 
@@ -447,5 +482,44 @@ class ServiceReportController extends Controller
         }
 
         return $browsershot->pdf();
+    }
+
+    public function uploadAttachment(Request $request, ServiceReport $serviceReport): JsonResponse
+    {
+        $user = $request->user();
+
+        // Permitir al creador o a quien tenga permiso de edicion
+        $canEdit = $user->can('edit_any_report')
+            || (int) $serviceReport->created_by === (int) $user->id
+            || (int) $serviceReport->technician_id === (int) $user->id;
+        abort_if(! $canEdit, 403, 'No autorizado.');
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:51200'], // 50MB max
+            'type' => ['required', 'in:foto_antes,foto_despues,cotizacion,otro'],
+            'condition_key' => ['nullable', 'string', 'max:50'],
+            'activity_key' => ['nullable', 'string', 'max:50'],
+            'group_key' => ['nullable', 'string', 'max:50'],
+            'media_type' => ['nullable', 'in:foto,video'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store(
+            "report-attachments/{$serviceReport->id}",
+            'local',
+        );
+
+        $attachment = $serviceReport->attachments()->create([
+            'type' => $request->type,
+            'condition_key' => $request->condition_key,
+            'activity_key' => $request->activity_key,
+            'group_key' => $request->group_key,
+            'media_type' => $request->media_type ?? 'foto',
+            'file_path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'uploaded_by' => $user->id,
+        ]);
+
+        return response()->json($attachment->load('uploader:id,name'), 201);
     }
 }

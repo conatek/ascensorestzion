@@ -88,6 +88,9 @@
         </div>
     </div>
 
+    <!-- Layout técnico: mobile-first, sin sidebar -->
+    <tech-layout v-else-if="isTechLayout && isAuthenticated" />
+
     <!-- Layout con sidebar/header para usuarios autenticados -->
     <div v-else-if="isAuthenticated" class="app-container app-theme-dark"
         :class="{
@@ -204,6 +207,9 @@
         <div class="app-main">
             <main-sidebar :isCollapsed="isCollapsed" :sidebarStatus="sidebarStatus" @updateSidebar="toggleSidebar" @changeSidebarStatus="sidebarVisualization" />
 
+            <!-- Backdrop para cerrar sidebar en mobile -->
+            <div v-if="isOpenSidebarMobile" class="sidebar-mobile-backdrop" @click="isOpenSidebarMobile = false"></div>
+
             <div class="app-main__outer">
 
                 <div class="app-main__inner">
@@ -262,6 +268,9 @@ export default {
         },
         isPublicLayout() {
             return this.$route.meta?.layout === 'public';
+        },
+        isTechLayout() {
+            return this.$route.meta?.layout === 'tech';
         },
         isPortalLayout() {
             if (this.$route.meta?.layout === 'portal') return true;
@@ -324,6 +333,12 @@ export default {
                 { name: 'RSTC', data: this.quickReportsByMonth.map(m => m.rstc || 0) },
                 { name: 'RSTE', data: this.quickReportsByMonth.map(m => m.rste || 0) },
             ];
+        },
+    },
+    watch: {
+        '$route'() {
+            this.isOpenSidebarMobile = false;
+            this.portalMobileOpen = false;
         },
     },
     methods: {
@@ -859,5 +874,29 @@ export default {
     width: 100% !important;
     background-color: #ffffff !important;
     flex-shrink: 0;
+}
+
+/* Sidebar mobile backdrop */
+.sidebar-mobile-backdrop {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .sidebar-mobile-backdrop {
+        display: block;
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+        animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
 }
 </style>

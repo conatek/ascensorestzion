@@ -208,3 +208,104 @@ background: rgba(250, 251, 252, 0.1); }
     transform: translateX(-50%);
     width: 50%;
 }
+
+/* ============================================================
+   MOBILE-FIRST GLOBAL ENHANCEMENTS
+   ============================================================ */
+
+/* Touch-friendly targets: minimo 44px */
+@media (max-width: 768px) {
+    .btn, button, a.nav-link, .dropdown-item, .form-select, .form-control {
+        min-height: 44px;
+    }
+
+    /* Forms: single column on mobile */
+    .form-row,
+    .row.g-3,
+    .row.g-4 {
+        flex-direction: column;
+    }
+
+    .form-row > .col,
+    .form-row > [class*="col-"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    /* Buttons full-width on mobile */
+    .page-title-actions .btn,
+    .page-title-actions .btn-action {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    /* Page titles */
+    .app-page-title .page-title-wrapper {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+
+    .page-title-actions {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .page-title-actions > * {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Modals: full-screen on mobile */
+    .modal-content {
+        border-radius: 0 !important;
+        margin: 0 !important;
+        min-height: 100vh;
+    }
+
+    .modal-dialog {
+        margin: 0 !important;
+        max-width: 100% !important;
+        height: 100vh;
+    }
+
+    /* Filter sections: stack vertically */
+    .filters-row,
+    .filters-section {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filters-row > *,
+    .filters-section > * {
+        width: 100%;
+    }
+
+    /* Tables: better scrolling on mobile */
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table td,
+    .data-table th {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Even smaller screens */
+    .app-main .app-main__inner {
+        padding: 0.5rem !important;
+    }
+
+    .page-title-heading {
+        font-size: 1rem;
+    }
+
+    .page-title-subheading {
+        font-size: 0.8rem;
+    }
+}

@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEquipmentRequest;
 use App\Models\Equipment;
 use App\Services\CloudinaryService;
+use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EquipmentController extends Controller
 {
-    public function __construct(private ?CloudinaryService $cloudinary = null) {}
+    public function __construct(
+        private ?CloudinaryService $cloudinary = null,
+        private ?QrCodeService $qrService = null,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -169,6 +173,20 @@ class EquipmentController extends Controller
         ]);
 
         return response()->json($attachment->load('uploader:id,name'), 201);
+    }
+
+    public function generateQr(Request $request, Equipment $equipment): JsonResponse
+    {
+        abort_if(! $request->user()->can('edit_equipment'), 403, 'No autorizado.');
+
+        $path = $this->qrService->generate($equipment);
+        $url = \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+
+        return response()->json([
+            'qr_code_path' => $path,
+            'qr_code_url' => $url,
+            'content' => $this->qrService->getContent($equipment),
+        ]);
     }
 
     public function deleteAttachment(Request $request, Equipment $equipment, \App\Models\EquipmentAttachment $attachment): JsonResponse

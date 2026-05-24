@@ -16,6 +16,7 @@ class Client extends Model
         'contact_name',
         'contact_email',
         'contact_phone',
+        'whatsapp_phone',
         'address',
         'city',
         'department',

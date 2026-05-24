@@ -75,6 +75,15 @@ class PermissionSeeder extends Seeder
             'sign_report_customer',
             'export_report_pdf',
 
+            // Check-in de técnicos
+            'checkin_equipment',
+
+            // Notificaciones
+            'view_notifications',
+
+            // Confirmación de reportes (cliente externo)
+            'confirm_report',
+
             // Impersonation
             'impersonate_user',
         ];

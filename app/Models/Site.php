@@ -19,12 +19,18 @@ class Site extends Model
         'contact_name_onsite',
         'contact_phone_onsite',
         'contact_email_onsite',
+        'latitude',
+        'longitude',
+        'geo_radius_meters',
         'notes',
         'active',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+        'geo_radius_meters' => 'integer',
     ];
 
     public function client()
