@@ -76,7 +76,7 @@ export default defineConfig({
             includeAssets: ['images/favicon.ico', 'images/logo.png'],
             manifest: {
                 name: 'Ascensores Tzion',
-                short_name: 'Tzion',
+                short_name: 'Atzion',
                 description: 'Gestión de equipos de transporte vertical',
                 theme_color: '#30ab0a',
                 background_color: '#ffffff',
