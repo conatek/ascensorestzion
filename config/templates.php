@@ -119,6 +119,11 @@ return [
                     'max' => 50,
                     'unit' => 'px',
                 ],
+                'colorFondo' => [
+                    'type' => 'color',
+                    'label' => 'Color Fondo Cabecera',
+                    'value' => 'transparent',
+                ],
                 'colorFuente' => [
                     'type' => 'color',
                     'label' => 'Color Nombre Empresa',
@@ -135,43 +140,6 @@ return [
                 ],
             ],
 
-            // FONDO DE FOTO
-            'photoBackground' => [
-                '_label' => 'Fondo de Foto',
-                'tipo' => [
-                    'type' => 'select',
-                    'label' => 'Tipo de Fondo',
-                    'value' => 'degradado',
-                    'options' => ['oculto', 'solido', 'degradado'],
-                ],
-                'color1' => [
-                    'type' => 'color',
-                    'label' => 'Color Principal',
-                    'value' => '#30ab0a',
-                ],
-                'color2' => [
-                    'type' => 'color',
-                    'label' => 'Color Secundario (degradado)',
-                    'value' => '#279208',
-                ],
-                'direccion' => [
-                    'type' => 'select',
-                    'label' => 'Dirección Degradado',
-                    'value' => 'diagonal',
-                    'options' => ['horizontal', 'vertical', 'diagonal'],
-                ],
-                'mostrarPatron' => [
-                    'type' => 'toggle',
-                    'label' => 'Aplicar Patrón',
-                    'value' => false,
-                ],
-                'patron' => [
-                    'type' => 'select',
-                    'label' => 'Tipo de Patrón',
-                    'value' => 'circulos',
-                    'options' => ['circulos', 'lineas', 'puntos', 'ondas', 'geometrico'],
-                ],
-            ],
 
             // FOTO DE PERFIL
             'photo' => [

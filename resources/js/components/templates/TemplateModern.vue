@@ -315,8 +315,8 @@ export default {
 
         // Si mostrar el fondo parcial
         showPhotoBackground() {
-            const tipo = this.customization?.photoBackground?.tipo
-            return tipo !== 'oculto' && this.showHeroSection
+            const colorFondo = this.customization?.header?.colorFondo
+            return colorFondo && colorFondo !== 'transparent' && this.showHeroSection
         },
 
         // Tamaño de la foto (para cálculos)
@@ -421,58 +421,18 @@ export default {
 
         // Estilo del fondo parcial
         photoBackgroundStyle() {
-            const bg = this.customization?.photoBackground || {}
-            const tipo = bg.tipo || 'degradado'
-            const color1 = bg.color1 || '#30ab0a'
-            const color2 = bg.color2 || '#279208'
-            const direccion = bg.direccion || 'diagonal'
-            const mostrarPatron = bg.mostrarPatron || false
-            const patron = bg.patron || 'circulos'
+            const header = this.customization?.header || {}
+            const colorFondo = header.colorFondo || 'transparent'
 
-            const styles = {}
+            const styles = {
+                background: colorFondo,
+            }
 
-            // Usar bottom en lugar de height para ajuste automático
-            // El fondo se extiende desde top:0 hasta 1/3 de la foto desde la base
             if (this.showPhoto) {
                 const bottomOffset = Math.round(this.photoSize / 3)
                 styles.bottom = `${bottomOffset}px`
             } else {
-                // Si no hay foto, el fondo cubre todo el hero-section
                 styles.bottom = '0'
-            }
-
-            // Definir patrones SVG
-            const patrones = {
-                circulos: `url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='3' fill='rgba(255,255,255,0.15)'/%3E%3C/svg%3E")`,
-                lineas: `url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10h20' stroke='rgba(255,255,255,0.15)' stroke-width='1'/%3E%3C/svg%3E")`,
-                puntos: `url("data:image/svg+xml,%3Csvg width='10' height='10' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='5' cy='5' r='1' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
-                ondas: `url("data:image/svg+xml,%3Csvg width='40' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q10 0 20 10 T40 10' fill='none' stroke='rgba(255,255,255,0.12)' stroke-width='1'/%3E%3C/svg%3E")`,
-                geometrico: `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h12v12H0zM12 12h12v12H12z' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E")`
-            }
-
-            // Construir el fondo base según el tipo
-            let fondoBase = ''
-
-            if (tipo === 'oculto') {
-                styles.background = 'transparent'
-                return styles
-            } else if (tipo === 'solido') {
-                fondoBase = color1
-            } else if (tipo === 'degradado') {
-                const dir = {
-                    horizontal: 'to right',
-                    vertical: 'to bottom',
-                    diagonal: '135deg'
-                }[direccion] || '135deg'
-                fondoBase = `linear-gradient(${dir}, ${color1}, ${color2})`
-            }
-
-            // Aplicar patrón si está activado
-            if (mostrarPatron && tipo !== 'oculto') {
-                const patronSvg = patrones[patron] || patrones.circulos
-                styles.background = `${patronSvg}, ${fondoBase}`
-            } else {
-                styles.background = fondoBase
             }
 
             return styles
