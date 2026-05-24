@@ -16,8 +16,10 @@
         "laravel/tinker": "^2.7",
         "laravel/ui": "^4.1",
         "maatwebsite/excel": "^3.1",
+        "mailgun/mailgun-php": "^4.5",
         "spatie/browsershot": "^5.3",
-        "spatie/laravel-permission": "^6.0"
+        "spatie/laravel-permission": "^6.0",
+        "symfony/http-client": "^7.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

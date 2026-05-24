@@ -71,6 +71,8 @@ export default defineConfig({
         vue(),
         VitePWA({
             registerType: 'autoUpdate',
+            scope: '/',
+            devOptions: { enabled: false },
             includeAssets: ['images/favicon.ico', 'images/logo.png'],
             manifest: {
                 name: 'Ascensores Tzion',

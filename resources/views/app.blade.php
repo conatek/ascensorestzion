@@ -45,6 +45,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Tzion">
     <link rel="apple-touch-icon" href="{{ asset('images/pwa/icon-192.png') }}">
+    <link rel="manifest" href="{{ asset('build/manifest.webmanifest') }}">
 
     <title>Ascensores Tzion</title>
 </head>
@@ -99,5 +100,6 @@
     @vite('resources/js/app.js')
 
     <script>window.mapboxToken = "{{ env('MAPBOX_TOKEN') }}";</script>
+    <script src="{{ asset('build/registerSW.js') }}"></script>
 </body>
 </html>
