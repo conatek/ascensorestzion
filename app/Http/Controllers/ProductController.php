@@ -38,6 +38,10 @@ class ProductController extends Controller
         $data = $request->validated();
         $data['company_id'] = $company->id;
 
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         if ($request->hasFile('image')) {
             $uploaded = $this->cloudinary->upload($request->file('image'), 'companies/products');
             $data['image_path'] = $uploaded['url'];
@@ -54,6 +58,10 @@ class ProductController extends Controller
         abort_if($product->company_id !== $company->id, 404);
 
         $data = $request->validated();
+
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->hasFile('image')) {
             if ($product->image_path) {

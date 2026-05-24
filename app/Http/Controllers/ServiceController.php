@@ -38,6 +38,10 @@ class ServiceController extends Controller
         $data = $request->validated();
         $data['company_id'] = $company->id;
 
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         if ($request->hasFile('image')) {
             $uploaded = $this->cloudinary->upload($request->file('image'), 'companies/services');
             $data['image_path'] = $uploaded['url'];
@@ -54,6 +58,10 @@ class ServiceController extends Controller
         abort_if($service->company_id !== $company->id, 404);
 
         $data = $request->validated();
+
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->hasFile('image')) {
             if ($service->image_path) {

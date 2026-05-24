@@ -33,6 +33,10 @@ class CardController extends Controller
         $data = $request->validated();
         $data['company_id'] = $company->id;
 
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         if ($request->hasFile('photo')) {
             $uploaded = $this->cloudinary->upload($request->file('photo'), 'companies/cards');
             $data['photo_path'] = $uploaded['url'];
@@ -57,6 +61,10 @@ class CardController extends Controller
         abort_if($card->company_id !== $company->id, 404);
 
         $data = $request->validated();
+
+        if (isset($data['is_active'])) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->hasFile('photo')) {
             if ($card->photo_path) {
