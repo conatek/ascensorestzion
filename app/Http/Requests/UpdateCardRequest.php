@@ -38,7 +38,7 @@ class UpdateCardRequest extends FormRequest
             'linkedin'     => ['nullable', 'url', 'max:255'],
             'whatsapp_message' => ['nullable', 'string', 'max:500'],
             'description'  => ['nullable', 'string', 'max:1000'],
-            'is_active'    => ['nullable', 'boolean'],
+            'is_active'    => ['nullable', 'in:0,1,true,false'],
         ];
     }
 }

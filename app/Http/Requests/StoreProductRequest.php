@@ -21,7 +21,7 @@ class StoreProductRequest extends FormRequest
             'comment'     => ['nullable', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
             'order'       => ['nullable', 'integer', 'min:0'],
-            'is_active'   => ['nullable', 'boolean'],
+            'is_active'   => ['nullable', 'in:0,1,true,false'],
         ];
     }
 }
