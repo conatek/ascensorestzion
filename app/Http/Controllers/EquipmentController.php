@@ -12,8 +12,8 @@ use Illuminate\Http\Request;
 class EquipmentController extends Controller
 {
     public function __construct(
-        private ?CloudinaryService $cloudinary = null,
-        private ?QrCodeService $qrService = null,
+        private CloudinaryService $cloudinary,
+        private QrCodeService $qrService,
     ) {}
 
     public function index(Request $request): JsonResponse

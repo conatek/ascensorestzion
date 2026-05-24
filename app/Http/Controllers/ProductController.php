@@ -14,7 +14,7 @@ class ProductController extends Controller
 {
     use HasCompanyAccess;
 
-    public function __construct(private ?CloudinaryService $cloudinary = null) {}
+    public function __construct(private CloudinaryService $cloudinary) {}
 
     public function index(Request $request, Company $company): JsonResponse
     {
