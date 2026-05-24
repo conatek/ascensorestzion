@@ -12,7 +12,7 @@
     </div>
 
     <!-- Tarjeta con plantilla dinámica -->
-    <div v-else class="public-card-wrapper">
+    <div v-else class="public-card-wrapper" :style="cssVariablesStyle">
         <component
             :is="currentTemplateComponent"
             :customization="customization"
@@ -61,6 +61,24 @@ export default {
                 vibrant: 'TemplateVibrant',
             };
             return templates[this.templateName] || 'TemplateModern';
+        },
+
+        cssVariablesStyle() {
+            const vars = {};
+            for (const [sectionKey, section] of Object.entries(this.customization || {})) {
+                if (typeof section !== 'object' || section === null) continue;
+                for (const [fieldKey, value] of Object.entries(section)) {
+                    const varName = `--${sectionKey}-${this.camelToKebab(fieldKey)}`;
+                    vars[varName] = value;
+                }
+            }
+            return vars;
+        },
+    },
+
+    methods: {
+        camelToKebab(str) {
+            return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
         },
     },
 
