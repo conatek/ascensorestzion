@@ -12,7 +12,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $tzion = Company::where('slug', 'ascensores-tzion')->first();
+        $tzion = Company::where('slug', 'ascensorestzion')->first();
 
         // ── Usuarios internos (Ascensores Tzion) ──
 
