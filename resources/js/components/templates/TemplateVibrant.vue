@@ -33,9 +33,8 @@
                     <h1 :style="nameStyle">{{ card?.first_name }} {{ card?.last_name }}</h1>
                     <div class="role-pill" :style="rolePillStyle">{{ card?.job_title }}</div>
 
-                    <p v-if="card?.description" :style="bioStyle">
-                        {{ card.description }}
-                    </p>
+                    <div v-if="card?.description" :style="bioStyle" v-html="card.description">
+                    </div>
                 </section>
 
                 <section class="bento-card flex-row interactive" :style="cardStyle" v-if="card?.whatsapp">
@@ -75,7 +74,7 @@
                     <div class="service-stack">
                         <div v-for="service in services" :key="`s-${service.id}`" class="service-item interactive-light" :style="serviceItemStyle">
                             <strong :style="textNormalStyle">{{ service.name }}</strong>
-                            <p v-if="service.description" :style="textSmallStyle">{{ service.description }}</p>
+                            <div v-if="service.description" :style="textSmallStyle" v-html="service.description"></div>
                         </div>
                     </div>
                 </section>

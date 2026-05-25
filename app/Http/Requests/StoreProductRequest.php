@@ -19,7 +19,7 @@ class StoreProductRequest extends FormRequest
             'price'       => ['required', 'numeric', 'min:0'],
             'discount'    => ['nullable', 'numeric', 'min:0', 'max:100'],
             'comment'     => ['nullable', 'string', 'max:120'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'order'       => ['nullable', 'integer', 'min:0'],
             'is_active'   => ['nullable', 'in:0,1,true,false'],
         ];

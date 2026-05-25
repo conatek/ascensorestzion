@@ -80,8 +80,7 @@
 
                             <div class="form-group">
                                 <label class="form-label">Perfil profesional</label>
-                                <textarea v-model="form.description" class="form-input" rows="3"
-                                    placeholder="Breve descripcion profesional..."></textarea>
+                                <RichEditor v-model="form.description" placeholder="Breve descripcion profesional..." />
                             </div>
                         </div>
                     </div>
@@ -203,11 +202,12 @@ import 'vue-advanced-cropper/dist/style.css';
 import { useAuth } from '@/stores/auth.js';
 import cardService    from '@/services/cardService.js';
 import companyService from '@/services/companyService.js';
+import RichEditor from '@/components/shared/RichEditor.vue';
 
 export default {
     name: 'CardCreate',
 
-    components: { Cropper },
+    components: { Cropper, RichEditor },
 
     data() {
         return {

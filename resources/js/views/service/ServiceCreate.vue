@@ -40,8 +40,7 @@
 
                             <div class="form-group">
                                 <label class="form-label">Descripcion</label>
-                                <textarea v-model="form.description" class="form-input" rows="4"
-                                    placeholder="Descripcion del servicio..."></textarea>
+                                <RichEditor v-model="form.description" placeholder="Descripcion del servicio..." />
                             </div>
 
                             <div class="form-group">
@@ -160,11 +159,12 @@ import 'vue-advanced-cropper/dist/style.css';
 import { useAuth } from '@/stores/auth.js';
 import serviceService from '@/services/serviceService.js';
 import companyService from '@/services/companyService.js';
+import RichEditor from '@/components/shared/RichEditor.vue';
 
 export default {
     name: 'ServiceCreate',
 
-    components: { Cropper },
+    components: { Cropper, RichEditor },
 
     data() {
         return {

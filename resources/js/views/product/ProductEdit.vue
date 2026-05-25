@@ -46,8 +46,7 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Descripcion</label>
-                                    <textarea v-model="form.description" class="form-input" rows="3"
-                                        placeholder="Descripcion del producto..."></textarea>
+                                    <RichEditor v-model="form.description" placeholder="Descripcion del producto..." />
                                 </div>
 
                                 <div class="form-group">
@@ -199,11 +198,12 @@ import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import productService from '@/services/productService.js';
 import { useAuth } from '@/stores/auth.js';
+import RichEditor from '@/components/shared/RichEditor.vue';
 
 export default {
     name: 'ProductEdit',
 
-    components: { Cropper },
+    components: { Cropper, RichEditor },
 
     data() {
         return {

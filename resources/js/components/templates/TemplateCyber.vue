@@ -25,7 +25,7 @@
 
                 <h1 :style="nameStyle">> {{ card?.first_name }} <span class="last-name">{{ card?.last_name }}</span><span class="cursor" :style="cursorStyle">_</span></h1>
                 <h2 :style="jobTitleStyle">{{ card?.job_title }}</h2>
-                <p v-if="card?.description" :style="bioStyle">{{ card.description }}</p>
+                <div v-if="card?.description" :style="bioStyle" v-html="card.description"></div>
 
                 <div class="social-grid">
                     <a v-if="card?.mobile_phone" :href="`tel:${card.mobile_phone}`" class="social-btn" :style="getSocialBtnStyle('phone')">

@@ -36,7 +36,7 @@
                     <span class="fw-light">{{ card?.last_name || 'Apellido' }}</span>
                 </h1>
                 <p class="role" :style="roleStyle">{{ card?.job_title || 'Cargo profesional' }}</p>
-                <p class="bio" v-if="card?.description">{{ card.description }}</p>
+                <div class="bio" v-if="card?.description" v-html="card.description"></div>
             </section>
 
             <section class="quick-actions">

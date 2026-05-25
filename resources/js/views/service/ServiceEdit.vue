@@ -46,8 +46,7 @@
 
                                 <div class="form-group">
                                     <label class="form-label">Descripcion</label>
-                                    <textarea v-model="form.description" class="form-input" rows="4"
-                                        placeholder="Descripcion del servicio..."></textarea>
+                                    <RichEditor v-model="form.description" placeholder="Descripcion del servicio..." />
                                 </div>
 
                                 <div class="form-group">
@@ -172,11 +171,12 @@ import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 import { useAuth } from '@/stores/auth.js';
 import serviceService from '@/services/serviceService.js';
+import RichEditor from '@/components/shared/RichEditor.vue';
 
 export default {
     name: 'ServiceEdit',
 
-    components: { Cropper },
+    components: { Cropper, RichEditor },
 
     data() {
         return {
@@ -258,8 +258,7 @@ export default {
                     this.$route.params.serviceId,
                     payload
                 );
-                this.success = true;
-                window.scrollTo(0, 0);
+                this.$router.push('/tarjetas');
             } catch (err) {
                 if (err.response?.status === 422) {
                     this.errors = err.response.data.errors;

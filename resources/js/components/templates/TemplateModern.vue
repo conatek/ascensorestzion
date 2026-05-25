@@ -132,8 +132,7 @@
                         <span>Quién soy</span>
                         <i class="bi" :class="openAccordion === 'about' ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                     </button>
-                    <div class="accordion-content" v-show="openAccordion === 'about'">
-                        <p>{{ card.description }}</p>
+                    <div class="accordion-content" v-show="openAccordion === 'about'" v-html="card.description">
                     </div>
                 </div>
 
@@ -242,7 +241,7 @@
                         </p>
                         <p v-if="modalData.comment" class="price-comment">{{ modalData.comment }}</p>
                     </div>
-                    <p class="modal-description">{{ modalData?.description }}</p>
+                    <div class="modal-description" v-html="modalData?.description"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn-close-modal" @click="closeModal">Cerrar</button>
@@ -780,6 +779,21 @@ export default {
         var(--accordion-tipo-borde, solid)
         var(--accordion-color-borde, #e0e0e0);
     border-top: none;
+}
+
+.accordion-content :deep(p),
+.accordion-content :deep(li p),
+.modal-description :deep(p),
+.modal-description :deep(li p) {
+    margin-bottom: 0;
+}
+
+.accordion-content :deep(ul),
+.accordion-content :deep(ol),
+.modal-description :deep(ul),
+.modal-description :deep(ol) {
+    padding-left: 1.5em;
+    margin: 1rem 0;
 }
 
 /* Redondeo en el contenido del último elemento (cuando está abierto) */
