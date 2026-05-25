@@ -252,7 +252,7 @@ export default {
 
             try {
                 await serviceService.store(useAuth().companyId.value, payload);
-                this.$router.push({ name: 'companies.show' });
+                this.$router.push('/tarjetas');
             } catch (err) {
                 if (err.response?.status === 422) {
                     this.errors = err.response.data.errors;

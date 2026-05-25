@@ -313,8 +313,7 @@ export default {
                     this.$route.params.cardId,
                     payload
                 );
-                this.success = true;
-                window.scrollTo(0, 0);
+                this.$router.push('/tarjetas');
             } catch (err) {
                 if (err.response?.status === 422) {
                     this.errors = err.response.data.errors;
@@ -618,6 +617,10 @@ textarea.form-input {
 .toggle-label {
     font-size: 0.9rem;
     color: #475569;
+}
+
+.toggle-inline {
+    margin-top: 0.5rem;
 }
 
 /* Alerts */

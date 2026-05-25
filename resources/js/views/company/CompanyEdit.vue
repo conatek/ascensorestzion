@@ -339,7 +339,7 @@ export default {
 
             try {
                 await companyService.update(useAuth().companyId.value, payload);
-                this.$router.push({ name: 'companies.show', query: this.$route.query.from === 'admin' ? { from: 'admin' } : {} });
+                this.$router.push('/tarjetas');
             } catch (err) {
                 if (err.response?.status === 422) {
                     this.errors = err.response.data.errors;

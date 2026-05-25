@@ -292,7 +292,7 @@ export default {
 
             try {
                 await cardService.store(useAuth().companyId.value, payload);
-                this.$router.push({ name: 'companies.show' });
+                this.$router.push('/tarjetas');
             } catch (err) {
                 if (err.response?.status === 422) {
                     this.errors = err.response.data.errors;
@@ -585,6 +585,10 @@ textarea.form-input {
 .toggle-label {
     font-size: 0.9rem;
     color: #475569;
+}
+
+.toggle-inline {
+    margin-top: 0.5rem;
 }
 
 /* Error Alert */
