@@ -219,33 +219,33 @@
 
         <!-- Modal para Servicios/Productos -->
         <Teleport to="body">
-        <div class="modal-overlay" v-if="modalOpen" @click.self="closeModal">
-            <div class="modal-content">
-                <div class="modal-header">
+        <div class="dm-overlay" v-if="modalOpen" @click.self="closeModal">
+            <div class="dm-box">
+                <div class="dm-header">
                     <h5>{{ modalData?.name }}</h5>
-                    <button class="modal-close" @click="closeModal">&times;</button>
+                    <button class="dm-close" @click="closeModal">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="dm-body">
                     <img
                         v-if="modalData?.image_path"
                         :src="modalData.image_path"
                         :alt="modalData.name"
-                        class="modal-image"
+                        class="dm-image"
                     >
-                    <div v-if="modalType === 'product' && modalData?.price" class="price-section">
-                        <p v-if="modalData.discount" class="original-price">
+                    <div v-if="modalType === 'product' && modalData?.price" class="dm-price-section">
+                        <p v-if="modalData.discount" class="dm-original-price">
                             Antes: <span>${{ modalData.price }}</span>
                         </p>
-                        <p class="current-price">
+                        <p class="dm-current-price">
                             {{ modalData.discount ? 'Ahora:' : 'Precio:' }}
                             ${{ modalData.discount || modalData.price }}
                         </p>
-                        <p v-if="modalData.comment" class="price-comment">{{ modalData.comment }}</p>
+                        <p v-if="modalData.comment" class="dm-price-comment">{{ modalData.comment }}</p>
                     </div>
-                    <div class="modal-description" v-html="modalData?.description"></div>
+                    <div class="dm-description" v-html="modalData?.description"></div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn-close-modal" @click="closeModal">Cerrar</button>
+                <div class="dm-footer">
+                    <button class="dm-btn-close" @click="closeModal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -866,8 +866,8 @@ export default {
 </style>
 
 <style>
-/* Modal (sin scoped para funcionar con Teleport) */
-.modal-overlay {
+/* Detail Modal (prefijo dm- para evitar conflicto con Bootstrap) */
+.dm-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -879,50 +879,51 @@ export default {
     align-items: center;
     justify-content: center;
     z-index: 99999;
+    padding: 1.5rem;
 }
 
-.modal-content {
+.dm-box {
     background: white;
     border-radius: 16px;
     max-width: 420px;
-    width: calc(100% - 3rem);
+    width: 100%;
     max-height: calc(100vh - 3rem);
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
 }
 
-.modal-content::-webkit-scrollbar {
+.dm-box::-webkit-scrollbar {
     width: 6px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.dm-box::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.dm-box::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
 }
 
-.modal-content::-webkit-scrollbar-thumb:hover {
+.dm-box::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
 
-.modal-header {
+.dm-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.25rem 1rem;
 }
 
-.modal-header h5 {
+.dm-header h5 {
     margin: 0;
     font-size: 1.1rem;
     font-weight: 600;
     color: #1e293b;
 }
 
-.modal-close {
+.dm-close {
     width: 32px;
     height: 32px;
     display: flex;
@@ -937,35 +938,35 @@ export default {
     transition: all 0.2s;
 }
 
-.modal-close:hover {
+.dm-close:hover {
     background: #e2e8f0;
     color: #1e293b;
 }
 
-.modal-body {
+.dm-body {
     padding: 1rem 1.25rem 1.25rem;
 }
 
-.modal-image {
+.dm-image {
     width: 100%;
     border-radius: 10px;
     margin-bottom: 1rem;
 }
 
-.price-section {
+.dm-price-section {
     margin-bottom: 1rem;
 }
 
-.original-price {
+.dm-original-price {
     color: #64748b;
     font-style: italic;
 }
 
-.original-price span {
+.dm-original-price span {
     text-decoration: line-through;
 }
 
-.current-price {
+.dm-current-price {
     background: #30ab0a;
     color: white;
     padding: 0.75rem;
@@ -975,35 +976,35 @@ export default {
     text-align: center;
 }
 
-.price-comment {
+.dm-price-comment {
     text-align: center;
     font-style: italic;
     color: #64748b;
     margin-top: 0.5rem;
 }
 
-.modal-description {
+.dm-description {
     color: #475569;
     line-height: 1.6;
     font-size: 0.95rem;
 }
 
-.modal-description p,
-.modal-description li p {
+.dm-description p,
+.dm-description li p {
     margin-bottom: 0;
 }
 
-.modal-description ul,
-.modal-description ol {
+.dm-description ul,
+.dm-description ol {
     padding-left: 1.5em;
     margin: 1rem 0;
 }
 
-.modal-footer {
+.dm-footer {
     padding: 1rem 1.25rem 1.25rem;
 }
 
-.btn-close-modal {
+.dm-btn-close {
     width: 100%;
     padding: 0.7rem;
     background: #279208;
@@ -1016,7 +1017,7 @@ export default {
     transition: all 0.2s;
 }
 
-.btn-close-modal:hover {
+.dm-btn-close:hover {
     background: #1f7506;
 }
 </style>
