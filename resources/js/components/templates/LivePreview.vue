@@ -5,8 +5,8 @@
             :customization="customization"
             :company="company"
             :card="sampleCard"
-            :services="sampleServices"
-            :products="sampleProducts"
+            :services="realServices.length ? realServices : sampleServices"
+            :products="realProducts.length ? realProducts : sampleProducts"
         />
     </div>
 </template>
@@ -57,49 +57,36 @@ export default {
                 photo_path: null,
             }),
         },
+        services: {
+            type: Array,
+            default: () => [],
+        },
+        products: {
+            type: Array,
+            default: () => [],
+        },
     },
 
     data() {
         return {
-            // Datos de muestra para el preview
             sampleServices: [
-                {
-                    id: 1,
-                    name: 'Consultoría',
-                    description: 'Asesoría profesional para tu negocio.',
-                    image_path: null,
-                },
-                {
-                    id: 2,
-                    name: 'Desarrollo',
-                    description: 'Soluciones tecnológicas a medida.',
-                    image_path: null,
-                },
+                { id: 1, name: 'Consultoría', description: 'Asesoría profesional para tu negocio.', image_path: null },
+                { id: 2, name: 'Desarrollo', description: 'Soluciones tecnológicas a medida.', image_path: null },
             ],
             sampleProducts: [
-                {
-                    id: 1,
-                    name: 'Producto Premium',
-                    description: 'Nuestro producto estrella.',
-                    price: 199.99,
-                    discount: 149.99,
-                    comment: 'Oferta especial',
-                    image_path: null,
-                },
-                {
-                    id: 2,
-                    name: 'Producto Básico',
-                    description: 'Ideal para comenzar.',
-                    price: 49.99,
-                    discount: null,
-                    comment: null,
-                    image_path: null,
-                },
+                { id: 1, name: 'Producto Premium', description: 'Nuestro producto estrella.', price: 199.99, discount: 149.99, comment: 'Oferta especial', image_path: null },
+                { id: 2, name: 'Producto Básico', description: 'Ideal para comenzar.', price: 49.99, discount: null, comment: null, image_path: null },
             ],
         }
     },
 
     computed: {
+        realServices() {
+            return this.services.filter(s => s.is_active !== false)
+        },
+        realProducts() {
+            return this.products.filter(p => p.is_active !== false)
+        },
         currentTemplateComponent() {
             const templates = {
                 modern: 'TemplateModern',

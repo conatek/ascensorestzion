@@ -257,6 +257,8 @@
                             :template-name="selectedTemplate"
                             :company="company"
                             :sample-card="sampleCard"
+                            :services="services"
+                            :products="products"
                         />
                     </div>
 
@@ -339,6 +341,8 @@ import 'vue-advanced-cropper/dist/style.css'
 import settingService from '../../services/settingService'
 import companyService from '../../services/companyService'
 import cardService from '../../services/cardService'
+import serviceService from '../../services/serviceService'
+import productService from '../../services/productService'
 import LivePreview from '../../components/templates/LivePreview.vue'
 
 export default {
@@ -362,6 +366,8 @@ export default {
             activeSection: 'general',
             previewMode: 'mobile',
             cards: [],
+            services: [],
+            products: [],
             selectedCardIndex: null,
             defaultCard: {
                 first_name: 'Juan',
@@ -434,15 +440,19 @@ export default {
             this.loading = true
             try {
                 // Cargar plantillas disponibles, settings, datos de empresa y tarjetas en paralelo
-                const [templatesRes, settingsRes, companyRes, cardsRes] = await Promise.all([
+                const [templatesRes, settingsRes, companyRes, cardsRes, servicesRes, productsRes] = await Promise.all([
                     settingService.getTemplates(),
                     settingService.getSettings(this.companyId),
                     companyService.get(this.companyId),
                     cardService.all(this.companyId),
+                    serviceService.all(this.companyId),
+                    productService.all(this.companyId),
                 ])
 
                 this.templates = templatesRes.data.templates
                 this.company = companyRes.data
+                this.services = servicesRes.data.data || servicesRes.data || []
+                this.products = productsRes.data.data || productsRes.data || []
 
                 // Últimas 3 tarjetas
                 const allCards = cardsRes.data.data || cardsRes.data || []
