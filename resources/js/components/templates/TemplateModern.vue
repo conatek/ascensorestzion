@@ -887,6 +887,7 @@ export default {
     max-height: calc(100vh - 3rem);
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    margin: 1.5rem 0;
 }
 
 .modal-content::-webkit-scrollbar {
