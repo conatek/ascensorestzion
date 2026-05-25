@@ -5,8 +5,8 @@
             :customization="customization"
             :company="company"
             :card="sampleCard"
-            :services="realServices.length ? realServices : sampleServices"
-            :products="realProducts.length ? realProducts : sampleProducts"
+            :services="realServices"
+            :products="realProducts"
         />
     </div>
 </template>
