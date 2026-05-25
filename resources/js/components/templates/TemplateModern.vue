@@ -869,25 +869,26 @@ export default {
 /* Modal (sin scoped para funcionar con Teleport) */
 .modal-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 99999;
-    padding: 1.5rem;
 }
 
 .modal-content {
     background: white;
     border-radius: 16px;
     max-width: 420px;
-    width: 100%;
+    width: calc(100% - 3rem);
     max-height: calc(100vh - 3rem);
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-    margin: 1.5rem 0;
 }
 
 .modal-content::-webkit-scrollbar {
