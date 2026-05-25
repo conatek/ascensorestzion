@@ -882,7 +882,7 @@ export default {
     background: white;
     border-radius: 16px;
     max-width: 420px;
-    width: 100%;
+    width: calc(100% - 2rem);
     max-height: 85vh;
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
