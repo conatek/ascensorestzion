@@ -218,6 +218,7 @@
         </footer>
 
         <!-- Modal para Servicios/Productos -->
+        <Teleport to="body">
         <div class="modal-overlay" v-if="modalOpen" @click.self="closeModal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -248,6 +249,7 @@
                 </div>
             </div>
         </div>
+        </Teleport>
     </div>
 </template>
 
@@ -782,16 +784,12 @@ export default {
 }
 
 .accordion-content :deep(p),
-.accordion-content :deep(li p),
-.modal-description :deep(p),
-.modal-description :deep(li p) {
+.accordion-content :deep(li p) {
     margin-bottom: 0;
 }
 
 .accordion-content :deep(ul),
-.accordion-content :deep(ol),
-.modal-description :deep(ul),
-.modal-description :deep(ol) {
+.accordion-content :deep(ol) {
     padding-left: 1.5em;
     margin: 1rem 0;
 }
@@ -865,7 +863,10 @@ export default {
     text-align: center;
 }
 
-/* Modal */
+</style>
+
+<style>
+/* Modal (sin scoped para funcionar con Teleport) */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -874,8 +875,8 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
+    z-index: 99999;
+    padding: 1.5rem;
 }
 
 .modal-content {
@@ -884,7 +885,6 @@ export default {
     max-width: 420px;
     width: 100%;
     max-height: calc(100vh - 3rem);
-    margin: 1.5rem;
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
 }
@@ -984,6 +984,17 @@ export default {
     color: #475569;
     line-height: 1.6;
     font-size: 0.95rem;
+}
+
+.modal-description p,
+.modal-description li p {
+    margin-bottom: 0;
+}
+
+.modal-description ul,
+.modal-description ol {
+    padding-left: 1.5em;
+    margin: 1rem 0;
 }
 
 .modal-footer {
