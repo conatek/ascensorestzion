@@ -547,7 +547,7 @@ export default {
     font-family: var(--general-font-family, 'Montserrat', sans-serif);
     color: var(--general-color-fuente, #606060);
     background-color: var(--general-color-fondo, #ffffff);
-    min-height: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
@@ -868,11 +868,9 @@ export default {
 /* Modal */
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -882,41 +880,72 @@ export default {
 
 .modal-content {
     background: white;
-    border-radius: 12px;
-    max-width: 400px;
+    border-radius: 16px;
+    max-width: 420px;
     width: 100%;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
+    padding: 1.25rem 1.25rem 1rem;
 }
 
 .modal-header h5 {
     margin: 0;
+    font-size: 1.1rem;
     font-weight: 600;
+    color: #1e293b;
 }
 
 .modal-close {
-    background: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
     border: none;
-    font-size: 1.5rem;
+    border-radius: 8px;
+    font-size: 1.2rem;
     cursor: pointer;
-    color: #666;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #e2e8f0;
+    color: #1e293b;
 }
 
 .modal-body {
-    padding: 1rem;
+    padding: 1rem 1.25rem 1.25rem;
 }
 
 .modal-image {
     width: 100%;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 1rem;
 }
 
@@ -925,7 +954,7 @@ export default {
 }
 
 .original-price {
-    color: #666;
+    color: #64748b;
     font-style: italic;
 }
 
@@ -937,7 +966,7 @@ export default {
     background: #30ab0a;
     color: white;
     padding: 0.75rem;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 1.25rem;
     font-weight: bold;
     text-align: center;
@@ -946,32 +975,34 @@ export default {
 .price-comment {
     text-align: center;
     font-style: italic;
-    color: #666;
+    color: #64748b;
     margin-top: 0.5rem;
 }
 
 .modal-description {
-    color: #333;
+    color: #475569;
     line-height: 1.6;
+    font-size: 0.95rem;
 }
 
 .modal-footer {
-    padding: 1rem;
-    border-top: 1px solid #eee;
+    padding: 1rem 1.25rem 1.25rem;
 }
 
 .btn-close-modal {
     width: 100%;
-    padding: 0.75rem;
-    background: #333;
+    padding: 0.7rem;
+    background: #279208;
     color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .btn-close-modal:hover {
-    background: #444;
+    background: #1f7506;
 }
 </style>

@@ -77,9 +77,14 @@
                                             <span>Cambiar imagen</span>
                                         </div>
                                     </div>
+                                    <label class="toggle-switch toggle-inline">
+                                        <input type="checkbox" v-model="enableCropper" />
+                                        <span class="toggle-slider"></span>
+                                        <span class="toggle-label">Recortar</span>
+                                    </label>
                                     <div v-if="photoPreview || form.photo_path" class="image-preview">
                                         <img :src="photoPreview || form.photo_path" class="preview-avatar" />
-                                        <button type="button" class="btn-crop" @click="openCropper">
+                                        <button v-if="enableCropper" type="button" class="btn-crop" @click="openCropper">
                                             <i class="fa fa-crop"></i> Recortar
                                         </button>
                                     </div>
@@ -230,6 +235,7 @@ export default {
             success: false,
             photoPreview: null,
             photoFile: null,
+            enableCropper: true,
             cropperOpen: false,
             cropperSrc: null,
             form: {},
@@ -253,8 +259,14 @@ export default {
         onFileSelected(e) {
             const file = e.target.files[0];
             if (!file) return;
-            this.cropperSrc = URL.createObjectURL(file);
-            this.cropperOpen = true;
+            if (this.enableCropper) {
+                this.cropperSrc = URL.createObjectURL(file);
+                this.cropperOpen = true;
+            } else {
+                this.photoFile = file;
+                if (this.photoPreview) URL.revokeObjectURL(this.photoPreview);
+                this.photoPreview = URL.createObjectURL(file);
+            }
         },
 
         openCropper() {

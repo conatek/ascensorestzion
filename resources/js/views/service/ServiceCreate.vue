@@ -52,9 +52,14 @@
                                         <span>Seleccionar imagen</span>
                                     </div>
                                 </div>
+                                <label class="toggle-switch toggle-inline">
+                                    <input type="checkbox" v-model="enableCropper" />
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Recortar</span>
+                                </label>
                                 <div v-if="imagePreview" class="image-preview">
                                     <img :src="imagePreview" class="preview-image" />
-                                    <button type="button" class="btn-crop" @click="openCropper">
+                                    <button v-if="enableCropper" type="button" class="btn-crop" @click="openCropper">
                                         <i class="fa fa-crop"></i> Recortar
                                     </button>
                                 </div>
@@ -174,6 +179,7 @@ export default {
             generalError: null,
             imagePreview: null,
             imageFile: null,
+            enableCropper: true,
             cropperOpen: false,
             cropperSrc: null,
             selectedRatio: 1,
@@ -200,8 +206,14 @@ export default {
         onFileSelected(e) {
             const file = e.target.files[0];
             if (!file) return;
-            this.cropperSrc = URL.createObjectURL(file);
-            this.cropperOpen = true;
+            if (this.enableCropper) {
+                this.cropperSrc = URL.createObjectURL(file);
+                this.cropperOpen = true;
+            } else {
+                this.imageFile = file;
+                if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
+                this.imagePreview = URL.createObjectURL(file);
+            }
         },
 
         openCropper() {
@@ -518,6 +530,10 @@ textarea.form-input {
 .toggle-label {
     font-size: 0.9rem;
     color: #475569;
+}
+
+.toggle-inline {
+    margin-top: 0.5rem;
 }
 
 /* Error Alert */

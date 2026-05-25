@@ -12,10 +12,7 @@
                 <div class="page-title-wrapper">
                     <div class="page-title-heading">
                         <div class="page-title-icon">
-                            <img v-if="company.logo_path"
-                                 :src="company.logo_path"
-                                 class="company-logo-header" />
-                            <i v-else class="fa fa-building icon-gradient bg-mean-fruit"></i>
+                            <i class="fa fa-building icon-gradient bg-mean-fruit"></i>
                         </div>
                         <div>
                             {{ company.name }}
@@ -208,7 +205,7 @@
                             <div class="item-info">
                                 <div class="item-name">{{ service.name }}</div>
                                 <div class="item-meta" v-if="service.description">
-                                    {{ service.description.substring(0, 60) }}{{ service.description.length > 60 ? '...' : '' }}
+                                    {{ stripHtml(service.description).substring(0, 60) }}{{ stripHtml(service.description).length > 60 ? '...' : '' }}
                                 </div>
                             </div>
                             <div class="item-order">
@@ -451,6 +448,12 @@ export default {
     },
 
     methods: {
+        stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        },
+
         async load() {
             this.loading = true;
             try {
