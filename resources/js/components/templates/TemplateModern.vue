@@ -848,7 +848,9 @@ export default {
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
     border-top:
         var(--footer-tamano-borde, 1px)
         var(--footer-tipo-borde, solid)
