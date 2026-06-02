@@ -16,8 +16,6 @@
     <meta property="og:description" content="{{ $ogDescription }}" />
     @if(!empty($ogImage))
     <meta property="og:image" content="{{ $ogImage }}" />
-    <meta property="og:image:width" content="300" />
-    <meta property="og:image:height" content="300" />
     @endif
     @endif
 
