@@ -24,10 +24,18 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
             ->first();
 
         if ($card) {
+            $image = $card->thumbnail_path ?? $card->photo_path;
+
+            // Transformar URL de Cloudinary: imagen cuadrada → 1200x630 con padding
+            // para que WhatsApp no recorte los bordes
+            if ($image) {
+                $image = str_replace('/image/upload/', '/image/upload/w_1200,h_630,c_pad,b_white/', $image);
+            }
+
             return view('app', [
                 'ogTitle'       => $card->full_name,
                 'ogDescription' => trim(($card->job_title ? $card->job_title . ' — ' : '') . $company->name),
-                'ogImage'       => $card->thumbnail_path ?? $card->photo_path,
+                'ogImage'       => $image,
                 'ogUrl'         => url($card->slug),
             ]);
         }
