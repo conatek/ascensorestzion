@@ -32,6 +32,7 @@ class UpdateCardRequest extends FormRequest
             ],
             'job_title'    => ['nullable', 'string', 'max:120'],
             'photo'        => ['nullable', 'image', 'max:5120'],
+            'thumbnail'    => ['nullable', 'image', 'max:2048'],
             'mobile_phone' => ['nullable', 'string', 'max:30'],
             'whatsapp'     => ['nullable', 'string', 'max:30'],
             'email'        => ['nullable', 'email', 'max:150'],

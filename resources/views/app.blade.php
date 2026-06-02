@@ -6,7 +6,20 @@
     <meta http-equiv="Content-Language" content="en">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
-    <meta name="description" content="Ascensores Tzion - Gestion de equipos de transporte vertical">
+    <meta name="description" content="{{ $ogDescription ?? 'Ascensores Tzion - Gestion de equipos de transporte vertical' }}">
+
+    <!-- Open Graph -->
+    @if(!empty($ogTitle))
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ $ogUrl }}" />
+    <meta property="og:title" content="{{ $ogTitle }}" />
+    <meta property="og:description" content="{{ $ogDescription }}" />
+    @if(!empty($ogImage))
+    <meta property="og:image" content="{{ $ogImage }}" />
+    <meta property="og:image:width" content="300" />
+    <meta property="og:image:height" content="300" />
+    @endif
+    @endif
 
     <!-- Disable tap highlight on IE -->
     <meta name="msapplication-tap-highlight" content="no">
@@ -47,7 +60,7 @@
     <link rel="apple-touch-icon" href="{{ asset('images/pwa/icon-192.png') }}">
     <link rel="manifest" href="{{ asset('build/manifest.webmanifest') }}">
 
-    <title>Ascensores Tzion</title>
+    <title>{{ $ogTitle ?? 'Ascensores Tzion' }}</title>
 </head>
 <body>
     <div id="app"></div>

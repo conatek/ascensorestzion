@@ -42,6 +42,11 @@ class CardController extends Controller
             $data['photo_path'] = $uploaded['url'];
         }
 
+        if ($request->hasFile('thumbnail')) {
+            $uploaded = $this->cloudinary->upload($request->file('thumbnail'), 'companies/cards/thumbnails');
+            $data['thumbnail_path'] = $uploaded['url'];
+        }
+
         $card = Card::create($data);
 
         return response()->json($card, 201);
@@ -74,6 +79,14 @@ class CardController extends Controller
             $data['photo_path'] = $uploaded['url'];
         }
 
+        if ($request->hasFile('thumbnail')) {
+            if ($card->thumbnail_path) {
+                $this->cloudinary->destroy($card->thumbnail_path);
+            }
+            $uploaded = $this->cloudinary->upload($request->file('thumbnail'), 'companies/cards/thumbnails');
+            $data['thumbnail_path'] = $uploaded['url'];
+        }
+
         $card->update($data);
 
         return response()->json($card->fresh());
@@ -86,6 +99,9 @@ class CardController extends Controller
 
         if ($card->photo_path) {
             $this->cloudinary->destroy($card->photo_path);
+        }
+        if ($card->thumbnail_path) {
+            $this->cloudinary->destroy($card->thumbnail_path);
         }
 
         $card->delete();

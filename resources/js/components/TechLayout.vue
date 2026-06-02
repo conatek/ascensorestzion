@@ -11,6 +11,9 @@
             <div class="tech-header__right">
                 <NotificationBell />
                 <ConnectionStatus />
+                <button class="tech-header__logout" @click="handleLogout" title="Cerrar sesion">
+                    <i class="fa fa-sign-out-alt"></i>
+                </button>
             </div>
         </header>
 
@@ -65,6 +68,12 @@ export default {
             return auth.state.user?.name || 'Técnico';
         },
     },
+    methods: {
+        async handleLogout() {
+            await useAuth().logout();
+            this.$router.push('/login');
+        },
+    },
 };
 </script>
 
@@ -116,6 +125,26 @@ export default {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.tech-header__logout {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tech-header__logout:hover {
+    background: #fef2f2;
+    color: #ba2831;
 }
 
 /* Content */

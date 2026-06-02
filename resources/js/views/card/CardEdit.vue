@@ -91,6 +91,31 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label class="form-label">Miniatura para compartir</label>
+                                    <span class="help-text" style="margin-top: 0; margin-bottom: 0.5rem;">
+                                        Imagen que se muestra al compartir el enlace por WhatsApp u otras redes.
+                                    </span>
+                                    <div class="file-upload">
+                                        <input ref="thumbInput" type="file" class="file-input" accept="image/*" @change="onThumbSelected" />
+                                        <div class="file-upload-content">
+                                            <i class="fa fa-share-alt"></i>
+                                            <span>{{ form.thumbnail_path ? 'Cambiar miniatura' : 'Seleccionar miniatura' }}</span>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch toggle-inline">
+                                        <input type="checkbox" v-model="enableThumbCropper" />
+                                        <span class="toggle-slider"></span>
+                                        <span class="toggle-label">Recortar</span>
+                                    </label>
+                                    <div v-if="thumbPreview || form.thumbnail_path" class="image-preview">
+                                        <img :src="thumbPreview || form.thumbnail_path" class="preview-thumb" />
+                                        <button v-if="enableThumbCropper" type="button" class="btn-crop" @click="openThumbCropper">
+                                            <i class="fa fa-crop"></i> Recortar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
                                     <label class="form-label">Perfil profesional</label>
                                     <RichEditor v-model="form.description" placeholder="Breve descripcion profesional..." />
                                 </div>
@@ -210,6 +235,40 @@
                     </div>
                 </div>
             </Teleport>
+
+            <!-- Modal de recorte miniatura -->
+            <Teleport to="body">
+                <div v-if="thumbCropperOpen" class="cropper-modal-overlay" @click.self="cancelThumbCrop">
+                    <div class="cropper-modal-container">
+                        <div class="cropper-modal-header">
+                            <h4>Recortar miniatura</h4>
+                            <button type="button" class="cropper-modal-close" @click="cancelThumbCrop">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="cropper-modal-info">
+                            <span class="ratio-badge">Proporcion 1:1 (cuadrada)</span>
+                        </div>
+
+                        <div class="cropper-modal-canvas">
+                            <Cropper
+                                ref="thumbCropper"
+                                :src="thumbCropperSrc"
+                                :stencil-props="{ aspectRatio: 1 }"
+                                class="cropper"
+                            />
+                        </div>
+
+                        <div class="cropper-modal-actions">
+                            <button type="button" class="btn-cancel" @click="cancelThumbCrop">Cancelar</button>
+                            <button type="button" class="btn-submit" @click="confirmThumbCrop">
+                                <i class="fa fa-check"></i> Aplicar recorte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Teleport>
         </template>
     </div>
 </template>
@@ -238,6 +297,11 @@ export default {
             enableCropper: true,
             cropperOpen: false,
             cropperSrc: null,
+            thumbPreview: null,
+            thumbFile: null,
+            enableThumbCropper: true,
+            thumbCropperOpen: false,
+            thumbCropperSrc: null,
             form: {},
         };
     },
@@ -292,6 +356,42 @@ export default {
             }
         },
 
+        onThumbSelected(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (this.enableThumbCropper) {
+                this.thumbCropperSrc = URL.createObjectURL(file);
+                this.thumbCropperOpen = true;
+            } else {
+                this.thumbFile = file;
+                if (this.thumbPreview) URL.revokeObjectURL(this.thumbPreview);
+                this.thumbPreview = URL.createObjectURL(file);
+            }
+        },
+
+        openThumbCropper() {
+            this.thumbCropperSrc = this.thumbPreview || this.form.thumbnail_path;
+            this.thumbCropperOpen = true;
+        },
+
+        confirmThumbCrop() {
+            const { canvas } = this.$refs.thumbCropper.getResult();
+            canvas.toBlob((blob) => {
+                this.thumbFile = new File([blob], 'thumbnail.png', { type: 'image/png' });
+                if (this.thumbPreview) URL.revokeObjectURL(this.thumbPreview);
+                this.thumbPreview = URL.createObjectURL(blob);
+                this.thumbCropperOpen = false;
+            }, 'image/png');
+        },
+
+        cancelThumbCrop() {
+            this.thumbCropperOpen = false;
+            if (!this.thumbFile && !this.form.thumbnail_path) {
+                this.thumbCropperSrc = null;
+                this.$refs.thumbInput.value = '';
+            }
+        },
+
         async submit() {
             this.saving = true;
             this.errors = {};
@@ -306,6 +406,7 @@ export default {
                 if (this.form[k] != null) payload.append(k, this.form[k]);
             });
             if (this.photoFile) payload.append('photo', this.photoFile);
+            if (this.thumbFile) payload.append('thumbnail', this.thumbFile);
 
             try {
                 await cardService.update(
@@ -555,6 +656,13 @@ textarea.form-input {
     height: 80px;
     object-fit: cover;
     border-radius: 50%;
+}
+
+.preview-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 
 .btn-crop {

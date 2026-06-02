@@ -16,6 +16,7 @@ class Card extends Model
         'slug',
         'job_title',
         'photo_path',
+        'thumbnail_path',
         'mobile_phone',
         'whatsapp',
         'email',
