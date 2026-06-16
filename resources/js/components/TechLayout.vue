@@ -10,7 +10,7 @@
             </div>
             <div class="tech-header__right">
                 <NotificationBell />
-                <ConnectionStatus />
+                <ConnectionStatus to="tech.pending" />
                 <button class="tech-header__logout" @click="handleLogout" title="Cerrar sesion">
                     <i class="fa fa-sign-out-alt"></i>
                 </button>
@@ -87,13 +87,14 @@ export default {
 
 /* Header */
 .tech-header {
-    height: 56px;
+    height: auto;
+    min-height: calc(56px + env(safe-area-inset-top, 0px));
     background: white;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1rem;
+    padding: env(safe-area-inset-top, 0px) 1rem 0;
     flex-shrink: 0;
     position: sticky;
     top: 0;

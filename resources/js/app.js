@@ -12,6 +12,7 @@ import Sidebar from './components/Sidebar.vue';
 import Footer from './components/Footer.vue';
 import ClientPortalLayout from './components/ClientPortalLayout.vue';
 import TechLayout from './components/TechLayout.vue';
+import RoleBottomNav from './components/shared/RoleBottomNav.vue';
 
 const loadApp = async () => {
     const auth = useAuth();
@@ -35,6 +36,7 @@ const loadApp = async () => {
     app.component('main-footer', Footer);
     app.component('client-portal-layout', ClientPortalLayout);
     app.component('tech-layout', TechLayout);
+    app.component('role-bottom-nav', RoleBottomNav);
 
     app.mount('#app');
 };

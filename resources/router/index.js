@@ -98,6 +98,18 @@ const routes = [
         component: Login,
         meta: { guest: true },
     },
+    {
+        path: '/recuperar-contrasena',
+        name: 'password.forgot',
+        component: () => import('../js/views/auth/ForgotPassword.vue'),
+        meta: { guest: true },
+    },
+    {
+        path: '/restablecer/:token',
+        name: 'password.reset',
+        component: () => import('../js/views/auth/ResetPassword.vue'),
+        meta: { guest: true },
+    },
 
     // --- Panel ---
     {
@@ -107,13 +119,14 @@ const routes = [
         meta: { requiresAuth: true },
     },
 
-    // --- Panel Admin (master) ---
+    // --- Panel Admin (master y super) ---
     {
         path: '/admin',
         name: 'admin.dashboard',
         component: AdminDashboard,
-        meta: { requiresAuth: true, roles: ['master'] },
+        meta: { requiresAuth: true, roles: ['master', 'super'] },
     },
+    // Gestión de usuarios: solo master
     {
         path: '/admin/usuarios',
         name: 'admin.users',
@@ -130,7 +143,7 @@ const routes = [
         path: '/admin/empresas',
         name: 'admin.companies',
         component: AdminCompanies,
-        meta: { requiresAuth: true, roles: ['master'] },
+        meta: { requiresAuth: true, roles: ['master', 'super'] },
     },
 
     // --- Acceso denegado ---
@@ -152,7 +165,7 @@ const routes = [
         path: '/clientes/crear',
         name: 'clients.create',
         component: ClientCreate,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
     {
         path: '/clientes/:id',
@@ -164,7 +177,7 @@ const routes = [
         path: '/clientes/:id/editar',
         name: 'clients.edit',
         component: ClientEdit,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
 
     // --- Sedes ---
@@ -172,13 +185,13 @@ const routes = [
         path: '/clientes/:clientId/sedes/crear',
         name: 'sites.create',
         component: SiteCreate,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
     {
         path: '/clientes/:clientId/sedes/:siteId/editar',
         name: 'sites.edit',
         component: SiteEdit,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
 
     // --- Equipos ---
@@ -192,7 +205,7 @@ const routes = [
         path: '/equipos/crear',
         name: 'equipment.create',
         component: EquipmentCreate,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
     {
         path: '/equipos/:id',
@@ -204,7 +217,7 @@ const routes = [
         path: '/equipos/:id/editar',
         name: 'equipment.edit',
         component: EquipmentEdit,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
 
     // --- Reportes de Servicio ---
@@ -218,7 +231,7 @@ const routes = [
         path: '/reportes/nuevo',
         name: 'reports.create',
         component: ServiceReportForm,
-        meta: { requiresAuth: true, roles: ['master', 'coordinator', 'technician'] },
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator', 'technician'] },
     },
     {
         path: '/reportes/:id',
@@ -251,6 +264,20 @@ const routes = [
         name: 'portal.reports',
         component: PortalReports,
         meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+    {
+        path: '/portal/perfil',
+        name: 'portal.profile',
+        component: () => import('../js/views/Profile.vue'),
+        meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+
+    // --- Mi Perfil (roles internos; portal y técnico usan sus propias rutas) ---
+    {
+        path: '/perfil',
+        name: 'profile',
+        component: () => import('../js/views/Profile.vue'),
+        meta: { requiresAuth: true, layout: 'admin', roles: ['master', 'super', 'coordinator'] },
     },
 
     // --- Tarjetas Tzion ---
@@ -348,6 +375,18 @@ const routes = [
         component: () => import('../js/views/tech/TechReportForm.vue'),
         meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
     },
+    {
+        path: '/tech/pendientes',
+        name: 'tech.pending',
+        component: () => import('../js/views/tech/TechPending.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/perfil',
+        name: 'tech.profile',
+        component: () => import('../js/views/Profile.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
 
     // --- Redirects de rutas viejas ---
     { path: '/empresas/:id', redirect: '/tarjetas' },
@@ -400,7 +439,7 @@ router.beforeEach((to, from, next) => {
         const userData = localStorage.getItem('auth_user');
         const user = userData ? JSON.parse(userData) : null;
         const userRoles = (user?.roles || []).map(r => r.name);
-        if (userRoles.includes('master')) {
+        if (userRoles.includes('master') || userRoles.includes('super')) {
             return next({ name: 'admin.dashboard' });
         }
         if (userRoles.includes('technician')) {

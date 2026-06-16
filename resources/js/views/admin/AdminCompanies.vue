@@ -200,6 +200,26 @@ export default {
 </script>
 
 <style scoped>
+/* Etiquetas por columna para las cards en móvil (≤768px) — scoped a esta vista.
+   Cols: 1 Empresa(título) · 2 Plan · 3 Estado · 4 Vence · 5 Tarjetas
+   · 6 Productos · 7 Servicios · 8 Usuarios · 9 Acciones */
+@media (max-width: 768px) {
+    :deep(.vgt-table tbody td:nth-of-type(2))::before { content: 'Plan'; }
+    :deep(.vgt-table tbody td:nth-of-type(3))::before { content: 'Estado'; }
+    :deep(.vgt-table tbody td:nth-of-type(4))::before { content: 'Vence'; }
+    :deep(.vgt-table tbody td:nth-of-type(5))::before { content: 'Tarjetas'; }
+    :deep(.vgt-table tbody td:nth-of-type(6))::before { content: 'Productos'; }
+    :deep(.vgt-table tbody td:nth-of-type(7))::before { content: 'Servicios'; }
+    :deep(.vgt-table tbody td:nth-of-type(8))::before { content: 'Usuarios'; }
+
+    /* Contenedor transparente: las cards van sobre el fondo del body */
+    .section-card {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+}
+
 /* Filtros */
 .filters-bar {
     display: flex;

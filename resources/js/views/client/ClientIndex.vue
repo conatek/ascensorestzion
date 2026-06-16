@@ -112,22 +112,22 @@
                     </thead>
                     <tbody>
                         <tr v-for="client in filteredClients" :key="client.id">
-                            <td class="td-name">{{ client.business_name }}</td>
-                            <td>{{ client.nit }}</td>
-                            <td>
+                            <td class="td-name" data-label="Razon Social">{{ client.business_name }}</td>
+                            <td data-label="NIT">{{ client.nit }}</td>
+                            <td data-label="Contacto">
                                 <div v-if="client.contact_name" class="contact-name">{{ client.contact_name }}</div>
                                 <div v-if="client.contact_phone" class="contact-meta">{{ client.contact_phone }}</div>
                             </td>
-                            <td>{{ client.city || '—' }}</td>
-                            <td class="text-center">
+                            <td data-label="Ciudad">{{ client.city || '—' }}</td>
+                            <td class="text-center" data-label="Sedes">
                                 <span class="count-badge">{{ client.sites_count ?? 0 }}</span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" data-label="Estado">
                                 <span class="status-badge" :class="client.active ? 'status-active' : 'status-inactive'">
                                     {{ client.active ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center cell-actions" data-label="Acciones">
                                 <div class="table-actions">
                                     <router-link :to="{ name: 'clients.show', params: { id: client.id } }"
                                                  class="action-btn action-view" title="Ver">
@@ -141,7 +141,7 @@
                                         <i class="fa fa-trash"></i>
                                     </button>
                                     <button
-                                        v-if="auth.isMaster()"
+                                        v-if="auth.isMasterOrSuper()"
                                         @click="impersonateClient(client)"
                                         class="action-btn action-impersonate"
                                         :title="'Acceder como ' + client.business_name"

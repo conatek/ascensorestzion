@@ -89,23 +89,23 @@
                     </thead>
                     <tbody>
                         <tr v-for="eq in equipments" :key="eq.id">
-                            <td>
+                            <td data-label="Codigo">
                                 <span class="code-text">{{ eq.internal_code }}</span>
                             </td>
-                            <td>
+                            <td data-label="Tipo">
                                 <span class="type-badge">{{ typeLabels[eq.equipment_type] || eq.equipment_type }}</span>
                             </td>
-                            <td>
+                            <td data-label="Marca / Modelo">
                                 <span class="brand-text">{{ eq.brand }}</span>
                                 <span v-if="eq.model" class="model-text">{{ eq.model }}</span>
                             </td>
-                            <td>{{ eq.site?.name || '-' }}</td>
-                            <td>
+                            <td data-label="Sede">{{ eq.site?.name || '-' }}</td>
+                            <td data-label="Estado">
                                 <span class="status-badge" :class="'status-' + eq.status">
                                     {{ statusLabels[eq.status] || eq.status }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="cell-actions" data-label="Acciones">
                                 <div class="item-actions">
                                     <router-link :to="'/equipos/' + eq.id"
                                                  class="action-btn" title="Ver Detalle">

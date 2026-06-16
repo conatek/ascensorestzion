@@ -26,7 +26,18 @@ class TechnicianCheckinController extends Controller
             'accuracy' => ['nullable', 'numeric', 'min:0'],
             'is_emergency' => ['boolean'],
             'call_received_at' => ['nullable', 'date'],
+            'client_uuid' => ['nullable', 'uuid'],
+            'checked_in_at' => ['nullable', 'date'],
         ]);
+
+        // Idempotencia: si ya existe un check-in con este client_uuid (sync reintentado),
+        // devolverlo sin duplicar ni re-notificar.
+        if (! empty($validated['client_uuid'])) {
+            $existing = TechnicianCheckin::where('client_uuid', $validated['client_uuid'])->first();
+            if ($existing) {
+                return $this->checkinResponse($existing, 200);
+            }
+        }
 
         // Buscar equipo por internal_code o customer_code
         $equipment = Equipment::where('internal_code', $validated['equipment_code'])
@@ -46,23 +57,48 @@ class TechnicianCheckinController extends Controller
         }
 
         $now = now();
+        // Para check-ins sincronizados offline, usar la hora real del dispositivo
+        $checkedInAt = ! empty($validated['checked_in_at'])
+            ? \Carbon\Carbon::parse($validated['checked_in_at'])
+            : $now;
 
         // Calcular tiempo de respuesta si es emergencia
         $responseTimeMinutes = null;
         if ($validated['is_emergency'] ?? false) {
             $callTime = $validated['call_received_at'] ?? null;
             if ($callTime) {
-                $responseTimeMinutes = (int) $now->diffInMinutes($callTime);
+                $responseTimeMinutes = (int) $checkedInAt->diffInMinutes($callTime);
             }
+        }
+
+        // Calcular proximidad respecto a la sede del equipo (advertir y registrar)
+        $proximity = null;
+        $site = $equipment->site()->first();
+        if ($site && $site->latitude && $site->longitude && ($validated['latitude'] ?? null) !== null) {
+            $distance = $this->haversineDistance(
+                (float) $validated['latitude'],
+                (float) $validated['longitude'],
+                (float) $site->latitude,
+                (float) $site->longitude,
+            );
+            $radius = $site->geo_radius_meters ?? 500;
+            $proximity = [
+                'within_radius' => $distance <= $radius,
+                'distance_meters' => (int) round($distance),
+                'radius_meters' => $radius,
+            ];
         }
 
         $checkin = TechnicianCheckin::create([
             'equipment_id' => $equipment->id,
             'technician_id' => $user->id,
-            'checked_in_at' => $now,
+            'client_uuid' => $validated['client_uuid'] ?? null,
+            'checked_in_at' => $checkedInAt,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
             'accuracy' => $validated['accuracy'] ?? null,
+            'distance_meters' => $proximity['distance_meters'] ?? null,
+            'within_radius' => $proximity['within_radius'] ?? null,
             'method' => $validated['method'],
             'is_emergency' => $validated['is_emergency'] ?? false,
             'call_received_at' => $validated['call_received_at'] ?? null,
@@ -78,43 +114,45 @@ class TechnicianCheckinController extends Controller
             Notification::send($masters, new TechnicianCheckedInNotification($checkin));
         }
 
-        // Cargar equipo con relaciones para la respuesta
-        $equipment->load([
-            'site:id,name,address,city,client_id,latitude,longitude,geo_radius_meters',
-            'site.client:id,business_name,contact_name,contact_phone',
+        return $this->checkinResponse($checkin, 201);
+    }
+
+    /**
+     * Respuesta estándar de un check-in (equipo + último reporte + proximidad).
+     * Reutilizada por la creación y por la respuesta idempotente del sync.
+     */
+    private function checkinResponse(TechnicianCheckin $checkin, int $status): JsonResponse
+    {
+        $checkin->loadMissing([
+            'equipment.site:id,name,address,city,client_id,latitude,longitude,geo_radius_meters',
+            'equipment.site.client:id,business_name,contact_name,contact_phone',
         ]);
 
-        // Info de proximidad
+        $equipment = $checkin->equipment;
+
         $proximity = null;
-        $site = $equipment->site;
-        if ($site && $site->latitude && $site->longitude && $validated['latitude']) {
-            $distance = $this->haversineDistance(
-                $validated['latitude'],
-                $validated['longitude'],
-                (float) $site->latitude,
-                (float) $site->longitude,
-            );
-            $radius = $site->geo_radius_meters ?? 500;
+        if ($checkin->distance_meters !== null) {
             $proximity = [
-                'within_radius' => $distance <= $radius,
-                'distance_meters' => round($distance),
-                'radius_meters' => $radius,
+                'within_radius' => (bool) $checkin->within_radius,
+                'distance_meters' => (int) $checkin->distance_meters,
+                'radius_meters' => $equipment?->site?->geo_radius_meters ?? 500,
             ];
         }
 
-        // Ultimo reporte del equipo
-        $lastReport = $equipment->serviceReports()
-            ->select('id', 'report_number', 'report_type', 'service_date', 'technician_id', 'status')
-            ->with('technician:id,name')
-            ->orderByDesc('service_date')
-            ->first();
+        $lastReport = $equipment
+            ? $equipment->serviceReports()
+                ->select('id', 'report_number', 'report_type', 'service_date', 'technician_id', 'status')
+                ->with('technician:id,name')
+                ->orderByDesc('service_date')
+                ->first()
+            : null;
 
         return response()->json([
             'checkin' => $checkin,
             'equipment' => $equipment,
             'last_report' => $lastReport,
             'proximity' => $proximity,
-        ], 201);
+        ], $status);
     }
 
     public function index(Request $request): JsonResponse

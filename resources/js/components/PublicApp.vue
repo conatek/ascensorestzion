@@ -86,6 +86,9 @@
                 </footer>
             </div>
         </div>
+
+        <!-- Navegación inferior (solo móvil) -->
+        <role-bottom-nav />
     </div>
 
     <!-- Layout técnico: mobile-first, sin sidebar -->
@@ -117,7 +120,8 @@
                         <div class="quick-panel-header">
                             <div class="quick-panel-user">
                                 <div class="quick-panel-avatar">
-                                    <i class="fa fa-user"></i>
+                                    <img v-if="authUser?.image_url" :src="authUser.image_url" alt="Avatar" class="quick-panel-avatar-img" />
+                                    <i v-else class="fa fa-user"></i>
                                 </div>
                                 <div>
                                     <div class="quick-panel-name">{{ authUser?.name }}</div>
@@ -172,7 +176,7 @@
                             </div>
 
                             <!-- Indicadores extra Master/Coordinator -->
-                            <div v-if="authIsMaster || authIsCoordinator" class="quick-panel-section">
+                            <div v-if="authIsMaster || authIsSuper || authIsCoordinator" class="quick-panel-section">
                                 <div class="quick-panel-section-title">Indicadores</div>
                                 <div class="qp-indicator">
                                     <span class="qp-indicator-label">Total Reportes</span>
@@ -219,6 +223,9 @@
                 <main-footer />
             </div>
         </div>
+
+        <!-- Navegación inferior (solo móvil) -->
+        <role-bottom-nav />
 
         <div class="app-drawer-wrapper" :class="{ 'drawer-open': isOpenRightDrawer }">
             <div class="drawer-nav-btn">
@@ -296,6 +303,9 @@ export default {
         authIsMaster() {
             return useAuth().isMaster();
         },
+        authIsSuper() {
+            return useAuth().isSuper();
+        },
         authIsCoordinator() {
             return useAuth().isCoordinator();
         },
@@ -305,6 +315,7 @@ export default {
         currentRoleLabel() {
             const auth = useAuth();
             if (auth.isMaster()) return 'Master';
+            if (auth.isSuper()) return 'Super';
             if (auth.isCoordinator()) return 'Coordinador';
             if (auth.isTechnician()) return 'Tecnico';
             if (auth.isAdmin()) return 'Administrador';
@@ -343,6 +354,11 @@ export default {
     },
     methods: {
         sidebarVisualization() {
+            // En móvil, el botón del sidebar cierra el overlay (no colapsa a iconos)
+            if (this.isOpenSidebarMobile || window.innerWidth <= 768) {
+                this.isOpenSidebarMobile = false;
+                return;
+            }
             this.isCollapsed = !this.isCollapsed;
         },
         toggleSidebar(status) {
@@ -462,6 +478,14 @@ export default {
     align-items: center;
     justify-content: center;
     font-size: 1rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.quick-panel-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .quick-panel-name {
@@ -611,13 +635,14 @@ export default {
 }
 
 .portal-top-header {
-    height: 70px;
+    height: auto;
+    min-height: calc(70px + env(safe-area-inset-top, 0px));
     background: #fff;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.5rem;
+    padding: env(safe-area-inset-top, 0px) 1.5rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -740,18 +765,17 @@ export default {
 
 /* Mobile */
 @media (max-width: 768px) {
-    .portal-mobile-toggle { display: flex; }
     .portal-user-info { display: none; }
 
-    .portal-sidebar {
-        position: fixed; top: 70px; left: 0; bottom: 0;
-        z-index: 1000; transform: translateX(-100%);
-        transition: transform 0.3s ease;
+    /* En móvil el bottom nav reemplaza la barra lateral del portal */
+    .portal-mobile-toggle { display: none; }
+    .portal-sidebar { display: none; }
+    .portal-bottom-footer { display: none; }
+
+    .portal-main-inner {
+        padding: 0.75rem;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
     }
-    .portal-mobile-open .portal-sidebar {
-        transform: translateX(0);
-    }
-    .portal-main-inner { padding: 0.75rem; }
 }
 
 /* ═══ Admin Layout ═══ */
@@ -847,6 +871,18 @@ export default {
 
     .app-main .app-main__inner {
         padding: 0.75rem !important;
+        /* espacio para el bottom nav fijo (60px + safe-area) */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)) !important;
+    }
+
+    /* En móvil el bottom nav reemplaza al footer */
+    .app-footer {
+        display: none !important;
+    }
+
+    /* El engranaje flotante (panel rápido) estorba el bottom nav en móvil */
+    .ui-theme-settings {
+        display: none !important;
     }
 }
 
@@ -885,7 +921,7 @@ export default {
     .sidebar-mobile-backdrop {
         display: block;
         position: fixed;
-        top: 70px;
+        top: calc(70px + env(safe-area-inset-top, 0px));
         left: 0;
         right: 0;
         bottom: 0;

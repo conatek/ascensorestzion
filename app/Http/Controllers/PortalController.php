@@ -13,7 +13,8 @@ class PortalController extends Controller
     private function getClientId(Request $request): int
     {
         $clientId = $request->user()->client_id;
-        abort_if(!$clientId, 403, 'No tienes un cliente asignado.');
+        abort_if(! $clientId, 403, 'No tienes un cliente asignado.');
+
         return $clientId;
     }
 
@@ -21,9 +22,9 @@ class PortalController extends Controller
     {
         $clientId = $this->getClientId($request);
 
-        $totalEquipment  = Equipment::whereHas('site', fn($q) => $q->where('client_id', $clientId))->count();
-        $activeEquipment = Equipment::whereHas('site', fn($q) => $q->where('client_id', $clientId))->where('status', 'activo')->count();
-        $totalReports    = ServiceReport::where('client_id', $clientId)->count();
+        $totalEquipment = Equipment::whereHas('site', fn ($q) => $q->where('client_id', $clientId))->count();
+        $activeEquipment = Equipment::whereHas('site', fn ($q) => $q->where('client_id', $clientId))->where('status', 'activo')->count();
+        $totalReports = ServiceReport::where('client_id', $clientId)->count();
         $reportsThisMonth = ServiceReport::where('client_id', $clientId)
             ->whereMonth('service_date', now()->month)
             ->whereYear('service_date', now()->year)
@@ -40,7 +41,7 @@ class PortalController extends Controller
             ->get(['id', 'report_number', 'report_type', 'service_date', 'status', 'equipment_id']);
 
         // Cumplimiento mantenimiento
-        $equipConContrato = Equipment::whereHas('site', fn($q) => $q->where('client_id', $clientId))
+        $equipConContrato = Equipment::whereHas('site', fn ($q) => $q->where('client_id', $clientId))
             ->where('status', 'activo')
             ->whereNotNull('contract_type')
             ->count();
@@ -63,12 +64,12 @@ class PortalController extends Controller
         $months = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $key  = $date->format('Y-m');
+            $key = $date->format('Y-m');
             $months[$key] = [
                 'month' => $date->translatedFormat('M Y'),
-                'rstp'  => 0,
-                'rstc'  => 0,
-                'rste'  => 0,
+                'rstp' => 0,
+                'rstc' => 0,
+                'rste' => 0,
             ];
         }
         foreach ($rawByMonth as $row) {
@@ -78,17 +79,17 @@ class PortalController extends Controller
         }
 
         return response()->json([
-            'total_equipment'                => $totalEquipment,
-            'active_equipment'               => $activeEquipment,
-            'total_sites'                    => $totalSites,
-            'total_reports'                  => $totalReports,
-            'reports_this_month'             => $reportsThisMonth,
+            'total_equipment' => $totalEquipment,
+            'active_equipment' => $activeEquipment,
+            'total_sites' => $totalSites,
+            'total_reports' => $totalReports,
+            'reports_this_month' => $reportsThisMonth,
             'maintenance_compliance_percent' => $compliance,
-            'recent_reports'                 => $recentReports,
-            'reports_by_month'               => array_values($months),
-            'compliance_detail'              => [
+            'recent_reports' => $recentReports,
+            'reports_by_month' => array_values($months),
+            'compliance_detail' => [
                 'completed' => $rstpMes,
-                'expected'  => $equipConContrato,
+                'expected' => $equipConContrato,
             ],
         ]);
     }
@@ -98,7 +99,7 @@ class PortalController extends Controller
         $clientId = $this->getClientId($request);
 
         $query = Equipment::with(['site:id,name,client_id'])
-            ->whereHas('site', fn($q) => $q->where('client_id', $clientId));
+            ->whereHas('site', fn ($q) => $q->where('client_id', $clientId));
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -110,8 +111,8 @@ class PortalController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('internal_code', 'like', "%{$s}%")
-                  ->orWhere('brand', 'like', "%{$s}%")
-                  ->orWhere('model', 'like', "%{$s}%");
+                    ->orWhere('brand', 'like', "%{$s}%")
+                    ->orWhere('model', 'like', "%{$s}%");
             });
         }
 
@@ -169,6 +170,7 @@ class PortalController extends Controller
             'equipment.site.client',
             'technician:id,name',
             'initialConditions',
+            'attachments',
         ];
 
         if ($serviceReport->report_type === 'RSTP') {

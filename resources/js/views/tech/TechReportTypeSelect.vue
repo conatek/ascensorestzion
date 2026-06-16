@@ -63,6 +63,7 @@
 
 <script>
 import reportService from '@/services/reportService.js';
+import offlineManager from '@/utils/offlineManager.js';
 
 export default {
     name: 'TechReportTypeSelect',
@@ -103,6 +104,17 @@ export default {
         async selectType(type) {
             this.selectedType = type;
             this.creating = true;
+
+            // OFFLINE: no se puede crear en el servidor; abrir el formulario en modo
+            // local (se encolará al finalizar y subirá al reconectar).
+            if (!offlineManager.state.isOnline) {
+                const localId = 'local-' + ((crypto.randomUUID && crypto.randomUUID()) || Date.now());
+                this.$router.push({
+                    name: 'tech.report.create',
+                    query: { report_id: localId, type, equipment_id: this.equipmentId, offline: '1' },
+                });
+                return;
+            }
 
             try {
                 // Crear reporte borrador con datos del check-in

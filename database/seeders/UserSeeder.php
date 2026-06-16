@@ -27,6 +27,16 @@ class UserSeeder extends Seeder
         $master->assignRole('master');
         $tzion->update(['user_id' => $master->id]);
 
+        $super = User::create([
+            'company_id' => $tzion->id,
+            'name'       => 'Super Administrador',
+            'email'      => 'super@ascensorestzion.com',
+            'password'   => Hash::make('password'),
+            'phone'      => '+57 302 000 0000',
+            'active'     => true,
+        ]);
+        $super->assignRole('super');
+
         $coordinator = User::create([
             'company_id' => $tzion->id,
             'name'       => 'Sandra Mejía',

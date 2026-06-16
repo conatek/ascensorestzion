@@ -44,6 +44,19 @@
         <div class="editor-container" v-if="!loading">
             <!-- Panel de Controles (Izquierda) -->
             <div class="controls-panel">
+                <!-- Móvil: selector de tarjeta + botón de vista previa (ocultos en desktop) -->
+                <div v-if="cards.length > 0" class="mobile-card-selector mb-3">
+                    <label class="form-label fw-bold"><i class="fa fa-id-card me-1"></i> Tarjeta</label>
+                    <select v-model="selectedCardIndex" class="form-select">
+                        <option v-for="(card, i) in cards" :key="card.id" :value="i">
+                            {{ card.first_name }} {{ card.last_name }} — {{ card.job_title || 'Sin cargo' }}
+                        </option>
+                    </select>
+                </div>
+                <button v-if="hasCards" type="button" class="mobile-preview-inline-btn" @click="mobilePreviewOpen = true">
+                    <i class="fa fa-eye"></i> Ver vista previa
+                </button>
+
                 <!-- Selector de Plantilla -->
                 <div class="template-selector mb-4">
                     <label class="form-label fw-bold">Plantilla Base</label>
@@ -330,6 +343,34 @@
                 </div>
             </div>
         </Teleport>
+
+        <!-- Móvil: modal de vista previa -->
+        <Teleport to="body">
+            <div v-if="mobilePreviewOpen" class="mobile-preview-overlay" @click.self="mobilePreviewOpen = false">
+                <div class="mobile-preview-modal">
+                    <div class="mobile-preview-header">
+                        <button class="mobile-preview-back" @click="mobilePreviewOpen = false">
+                            <i class="fa fa-arrow-left"></i> Volver al editor
+                        </button>
+                        <select v-if="cards.length > 1" v-model="selectedCardIndex" class="mobile-preview-card-select">
+                            <option v-for="(card, i) in cards" :key="card.id" :value="i">
+                                {{ card.first_name }} {{ card.last_name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="mobile-preview-body" :style="cssVariables">
+                        <LivePreview
+                            :customization="customization"
+                            :template-name="selectedTemplate"
+                            :company="company"
+                            :sample-card="sampleCard"
+                            :services="services"
+                            :products="products"
+                        />
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </div>
 </template>
 
@@ -365,6 +406,7 @@ export default {
             originalCustomization: {},
             activeSection: 'general',
             previewMode: 'mobile',
+            mobilePreviewOpen: false,
             cards: [],
             services: [],
             products: [],
@@ -391,6 +433,10 @@ export default {
     computed: {
         companyId() {
             return useAuth().companyId.value
+        },
+
+        hasCards() {
+            return this.cards.length > 0
         },
 
         sampleCard() {
@@ -1122,5 +1168,107 @@ export default {
     .preview-panel {
         order: -1;
     }
+}
+
+/* Elementos móviles — ocultos en desktop */
+.mobile-card-selector { display: none; }
+.mobile-preview-inline-btn { display: none; }
+
+/* Móvil: editor en una columna; el preview se ve en un modal */
+@media (max-width: 768px) {
+    .editor-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        gap: 0;
+    }
+
+    /* El panel de preview inline se oculta; se muestra vía modal */
+    .preview-panel { display: none; }
+
+    .controls-panel {
+        max-height: none;
+        order: 1;
+        padding-right: 0;
+    }
+
+    .mobile-card-selector { display: block; }
+
+    .mobile-preview-inline-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #30ab0a, #279208);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(48, 171, 10, 0.25);
+    }
+}
+
+/* Modal de vista previa (móvil) — teletransportado a body; conserva el scopeId */
+.mobile-preview-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-preview-modal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: white;
+}
+
+.mobile-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    padding-top: calc(0.625rem + env(safe-area-inset-top, 0px));
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+    flex-shrink: 0;
+}
+
+.mobile-preview-back {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.875rem;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.mobile-preview-card-select {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.mobile-preview-body {
+    flex: 1;
+    overflow-y: auto;
+    background: #f8fafc;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>

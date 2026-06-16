@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +11,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
@@ -33,8 +34,8 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at'        => 'datetime',
-        'active'                   => 'boolean',
+        'email_verified_at' => 'datetime',
+        'active' => 'boolean',
         'notification_preferences' => 'array',
     ];
 
@@ -55,5 +56,14 @@ class User extends Authenticatable
     public function routeNotificationForWhatsApp($notification = null): ?string
     {
         return $this->phone;
+    }
+
+    /**
+     * Envía la notificación de restablecimiento con el estilo de marca Tzion
+     * (en vez del email por defecto de Laravel).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

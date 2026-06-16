@@ -386,16 +386,15 @@ export default {
         },
         isMaster() {
             const auth = useAuth();
-            return auth.isMaster();
+            return auth.isMasterOrSuper();
         },
         fromAdmin() {
             return this.$route.query.from === 'admin';
         },
         backRoute() {
-            if (this.fromAdmin) {
-                return { name: 'admin.companies' };
-            }
-            return { name: 'admin.companies' };
+            // /tarjetas es una sección de primer nivel (no hay listado de empresas);
+            // "Volver" regresa al panel de administración.
+            return { name: 'admin.dashboard' };
         },
         canEditCompany() {
             const auth = useAuth();
@@ -1114,12 +1113,53 @@ export default {
         grid-template-columns: 1fr;
     }
 
+    /* Listados (tarjetas / servicios / productos) como cards independientes
+       sobre el fondo gris del body, igual que en otras secciones */
+    .section-card {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .section-header {
+        background: transparent;
+        border-bottom: none;
+        padding: 0.25rem 0 0.75rem;
+    }
+
+    .section-body {
+        padding: 0;
+    }
+
+    .items-list {
+        padding: 0;
+    }
+
     .list-item {
         flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 0.85rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .list-item:last-child {
+        margin-bottom: 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .list-item:hover {
+        background: #fff;
     }
 
     .item-info {
-        flex: 1 1 60%;
+        flex: 1 1 55%;
+        min-width: 0;
     }
 
     .item-url,
@@ -1133,8 +1173,34 @@ export default {
         flex: 0 0 auto;
     }
 
+    /* Acciones: fila completa al pie, alineadas a la derecha, separadas por línea */
     .item-actions {
         order: 2;
+        flex: 1 0 100%;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding-top: 0.65rem;
+        margin-top: 0.15rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    /* Botones de acción uniformes y con más contraste (igual que en los listados) */
+    .item-actions .action-btn {
+        box-sizing: border-box;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 8px;
+        background: #e9eef4;
+        border: 1px solid #cdd7e3;
+        color: #334155;
+        font-size: 0.95rem;
+    }
+
+    .item-actions .action-delete {
+        background: #fdeef0;
+        border-color: #f1c2c7;
+        color: #ba2831;
     }
 }
 </style>

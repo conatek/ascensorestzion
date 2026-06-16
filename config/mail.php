@@ -98,6 +98,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Contact Form Recipient
+    |--------------------------------------------------------------------------
+    |
+    | Dirección que recibe los mensajes del formulario público de contacto.
+    |
+    */
+
+    'contact_to' => env('CONTACT_MAIL_TO', 'operaciones@ascensorestzion.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |

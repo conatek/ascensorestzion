@@ -8,6 +8,7 @@ use App\Services\CloudinaryService;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\Browsershot\Browsershot;
 
 class EquipmentController extends Controller
 {
@@ -175,6 +176,63 @@ class EquipmentController extends Controller
         return response()->json($attachment->load('uploader:id,name'), 201);
     }
 
+    public function qrCodesPdf(Request $request)
+    {
+        abort_if(! $request->user()->can('view_equipment'), 403, 'No autorizado.');
+
+        $query = Equipment::with(['site:id,name,client_id', 'site.client:id,business_name'])
+            ->where('status', '!=', 'retirado');
+
+        if ($request->filled('client_id')) {
+            $query->whereHas('site', fn ($q) => $q->where('client_id', $request->client_id));
+        }
+        if ($request->filled('site_id')) {
+            $query->where('site_id', $request->site_id);
+        }
+
+        $items = $query->get()
+            ->sortBy([
+                fn ($a, $b) => strcasecmp($a->site->client->business_name ?? '', $b->site->client->business_name ?? ''),
+                fn ($a, $b) => strcasecmp($a->internal_code ?? '', $b->internal_code ?? ''),
+            ])
+            ->map(fn ($e) => [
+                'code'   => $e->internal_code,
+                'client' => $e->site?->client?->business_name ?? '—',
+                'site'   => $e->site?->name ?? '',
+                'qr'     => $this->qrService->getBase64($e),
+            ])
+            ->values();
+
+        $html = view('pdf.qrcodes', ['items' => $items])->render();
+        $pdf = $this->generatePdf($html);
+
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="codigos-qr-equipos-' . now()->format('Y-m-d') . '.pdf"',
+        ]);
+    }
+
+    private function generatePdf(string $html): string
+    {
+        $browsershot = Browsershot::html($html)
+            ->format('Letter')
+            ->margins(10, 10, 10, 10)
+            ->showBackground()
+            ->noSandbox();
+
+        $chromePath = env('BROWSERSHOT_CHROME_PATH');
+        $nodePath = env('BROWSERSHOT_NODE_PATH');
+
+        if ($chromePath) {
+            $browsershot->setChromePath($chromePath);
+        }
+        if ($nodePath) {
+            $browsershot->setNodeBinary($nodePath);
+        }
+
+        return $browsershot->pdf();
+    }
+
     public function generateQr(Request $request, Equipment $equipment): JsonResponse
     {
         abort_if(! $request->user()->can('edit_equipment'), 403, 'No autorizado.');
@@ -185,6 +243,7 @@ class EquipmentController extends Controller
         return response()->json([
             'qr_code_path' => $path,
             'qr_code_url' => $url,
+            'qr_code_base64' => $this->qrService->getBase64($equipment),
             'content' => $this->qrService->getContent($equipment),
         ]);
     }

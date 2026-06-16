@@ -168,7 +168,7 @@
                 </div>
                 <div class="section-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
+                        <table class="table table-hover mb-0 data-table">
                             <thead>
                                 <tr>
                                     <th class="ps-4">Cliente</th>
@@ -180,13 +180,13 @@
                             </thead>
                             <tbody>
                                 <tr v-for="row in complianceData" :key="row.client_name">
-                                    <td class="ps-4 fw-medium">{{ row.client_name }}</td>
-                                    <td class="text-center">{{ row.expected }}</td>
-                                    <td class="text-center">{{ row.completed }}</td>
-                                    <td class="text-center fw-bold" :class="complianceTextClass(row.compliance_percent)">
+                                    <td class="ps-4 fw-medium" data-label="Cliente">{{ row.client_name }}</td>
+                                    <td class="text-center" data-label="Esperados">{{ row.expected }}</td>
+                                    <td class="text-center" data-label="Realizados">{{ row.completed }}</td>
+                                    <td class="text-center fw-bold" :class="complianceTextClass(row.compliance_percent)" data-label="Cumplimiento">
                                         {{ row.compliance_percent }}%
                                     </td>
-                                    <td>
+                                    <td data-label="Progreso">
                                         <div class="progress" style="height: 10px;">
                                             <div
                                                 class="progress-bar"
@@ -243,7 +243,7 @@ export default {
 
     computed: {
         isAdmin() {
-            return this.auth.isMaster() || this.auth.isAdmin() || this.auth.isCoordinator();
+            return this.auth.isMaster() || this.auth.isSuper() || this.auth.isAdmin() || this.auth.isCoordinator();
         },
 
         complianceCardClass() {
@@ -280,6 +280,15 @@ export default {
                 dataLabels: { enabled: false },
                 grid: { borderColor: '#f1f5f9' },
                 tooltip: { y: { formatter: (val) => val + ' reportes' } },
+                responsive: [{
+                    breakpoint: 768,
+                    options: {
+                        chart: { height: 240 },
+                        plotOptions: { bar: { columnWidth: '78%' } },
+                        legend: { position: 'bottom', fontSize: '11px', offsetY: 4 },
+                        xaxis: { labels: { rotate: -55, rotateAlways: true, trim: true, hideOverlappingLabels: false, style: { fontSize: '9px' } } },
+                    },
+                }],
             };
         },
 
@@ -307,6 +316,15 @@ export default {
                 dataLabels: { enabled: false },
                 grid: { borderColor: '#f1f5f9' },
                 tooltip: { y: { formatter: (val) => val + ' fallas' } },
+                responsive: [{
+                    breakpoint: 768,
+                    options: {
+                        chart: { height: 300 },
+                        plotOptions: { bar: { horizontal: true, barHeight: '62%' } },
+                        yaxis: { labels: { maxWidth: 130, style: { fontSize: '10px' } } },
+                        dataLabels: { enabled: true, style: { fontSize: '10px', colors: ['#ffffff'] } },
+                    },
+                }],
             };
         },
 
@@ -336,6 +354,15 @@ export default {
                 dataLabels: { enabled: false },
                 grid: { borderColor: '#f1f5f9' },
                 tooltip: { y: { formatter: (val) => val + ' ocurrencias' } },
+                responsive: [{
+                    breakpoint: 768,
+                    options: {
+                        chart: { height: 300 },
+                        plotOptions: { bar: { horizontal: true, barHeight: '62%' } },
+                        yaxis: { labels: { maxWidth: 130, style: { fontSize: '10px' } } },
+                        dataLabels: { enabled: true, style: { fontSize: '10px', colors: ['#ffffff'] } },
+                    },
+                }],
             };
         },
 
@@ -367,6 +394,15 @@ export default {
                 dataLabels: { enabled: false },
                 grid: { borderColor: '#f1f5f9' },
                 tooltip: { y: { formatter: (val) => val + ' reportes' } },
+                responsive: [{
+                    breakpoint: 768,
+                    options: {
+                        chart: { height: 260 },
+                        plotOptions: { bar: { columnWidth: '70%' } },
+                        legend: { position: 'bottom', fontSize: '11px', offsetY: 4 },
+                        xaxis: { labels: { rotate: -45, rotateAlways: true, trim: true, style: { fontSize: '9px' } } },
+                    },
+                }],
             };
         },
 
@@ -414,7 +450,8 @@ export default {
                 const clientsRes = await clientService.all();
                 this.clients = clientsRes.data?.data || clientsRes.data || [];
 
-                if (this.isAdmin) {
+                // El listado de usuarios es solo para master (super no gestiona usuarios)
+                if (this.auth.isMaster()) {
                     const usersRes = await adminService.getUsers({ role: 'technician' });
                     this.technicians = usersRes.data?.data || usersRes.data || [];
                 }

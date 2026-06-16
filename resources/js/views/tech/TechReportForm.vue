@@ -344,6 +344,7 @@ import ConditionItem from '@/components/tech/ConditionItem.vue';
 import ActivityItem from '@/components/tech/ActivityItem.vue';
 import VideoCapture from '@/components/tech/VideoCapture.vue';
 import reportService from '@/services/reportService.js';
+import offlineManager from '@/utils/offlineManager.js';
 
 const GROUP_LABELS = {
     cuarto_maquinas: 'Cuarto de Máquinas',
@@ -365,6 +366,7 @@ export default {
             currentStep: 0,
             steps: ['Condición Inicial', 'Actividades', 'Conclusión', 'Firma'],
             reportId: null,
+            isOffline: false,
             reportNumber: null,
             reportType: this.$route.query.type || 'RSTP',
             equipmentId: null,
@@ -486,6 +488,12 @@ export default {
 
     async created() {
         this.reportId = this.$route.query.report_id;
+        // Modo offline: el reporte aún no existe en el servidor (id local)
+        this.isOffline = this.$route.query.offline === '1'
+            || String(this.reportId || '').startsWith('local-');
+        if (this.isOffline) {
+            this.equipmentId = this.$route.query.equipment_id || this.equipmentId;
+        }
         await this.loadCatalogs();
 
         // Leer time_in del checkin
@@ -577,8 +585,9 @@ export default {
                     this.rsteWorkGroups = Object.values(grouped);
                 }
 
-                // Si hay reporte existente, cargar datos
-                if (this.reportId) {
+                // Si hay reporte existente en el servidor, cargar datos
+                // (en modo offline el reporte aún no existe; se omite el fetch)
+                if (this.reportId && !this.isOffline) {
                     try {
                         const rpt = await reportService.get(this.reportId);
                         const data = rpt.data;
@@ -603,7 +612,7 @@ export default {
             if (this.canAdvance && this.currentStep < this.steps.length - 1) {
                 this.currentStep++;
                 this.autosave();
-                window.scrollTo(0, 0);
+                this.scrollStepTop();
                 if (this.currentStep === 3) {
                     this.$nextTick(() => this.initSignatureCanvases());
                 }
@@ -613,7 +622,7 @@ export default {
         prevStep() {
             if (this.currentStep > 0) {
                 this.currentStep--;
-                window.scrollTo(0, 0);
+                this.scrollStepTop();
             }
         },
 
@@ -621,8 +630,19 @@ export default {
             // Solo permitir ir a pasos completados o el actual
             if (step <= this.currentStep) {
                 this.currentStep = step;
-                window.scrollTo(0, 0);
+                this.scrollStepTop();
             }
+        },
+
+        // Al cambiar de paso, volver al inicio. El contenedor scrolleable es
+        // .tech-content (overflow-y:auto del TechLayout), así que window.scrollTo
+        // no basta: hay que resetear su scrollTop.
+        scrollStepTop() {
+            this.$nextTick(() => {
+                const container = this.$el?.closest('.tech-content');
+                if (container) container.scrollTop = 0;
+                window.scrollTo(0, 0);
+            });
         },
 
         buildPayload() {
@@ -668,10 +688,69 @@ export default {
             return payload;
         },
 
+        // Recolecta las fotos capturadas (Blobs) con su contexto. Las fotos de
+        // condiciones aplican a todos los tipos; las de actividades/trabajos según
+        // el tipo de reporte. `_item` permite limpiar el Blob al subirlo online.
+        collectAttachments() {
+            const list = [];
+            const push = (item, ctx) => {
+                if (item.photo instanceof Blob) {
+                    list.push({ blob: item.photo, media_type: 'foto', _item: item, ...ctx });
+                }
+            };
+            this.conditions.forEach(c => push(c, { condition_key: c.key }));
+            if (this.reportType === 'RSTP') {
+                this.allActivities.forEach(a => push(a, { group_key: a.group_key, activity_key: a.key }));
+            }
+            if (this.reportType === 'RSTE') {
+                this.allRsteWorks.forEach(w => push(w, { group_key: w.group_key, activity_key: w.key }));
+            }
+            // Video del servicio (paso Conclusión). El backend detecta el tipo real
+            // en Cloudinary; aquí marcamos media_type para nombrar el archivo.
+            if (this.conclusion.video instanceof Blob) {
+                list.push({ blob: this.conclusion.video, media_type: 'video', _video: true });
+            }
+            return list;
+        },
+
+        attachmentFilename(att) {
+            if (att.media_type === 'video') {
+                return `video-${Date.now()}.mp4`;
+            }
+            const ctx = att.condition_key || att.activity_key || 'foto';
+            return `${ctx}-${Date.now()}.jpg`;
+        },
+
+        // Sube las fotos al servidor (flujo online). Cada foto lleva su propio
+        // client_uuid para que un reintento no la duplique; al subir con éxito se
+        // libera el Blob del item para no re-subirla si una firma posterior falla.
+        async uploadAttachmentsOnline(reportId, attachments) {
+            for (const att of attachments) {
+                const fd = new FormData();
+                fd.append('file', att.blob, this.attachmentFilename(att));
+                fd.append('type', 'otro');
+                fd.append('media_type', att.media_type || 'foto');
+                fd.append('client_uuid', (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.round(Math.random() * 1e9)}`);
+                if (att.condition_key) fd.append('condition_key', att.condition_key);
+                if (att.activity_key) fd.append('activity_key', att.activity_key);
+                if (att.group_key) fd.append('group_key', att.group_key);
+
+                await reportService.uploadAttachment(reportId, fd);
+                // Liberar el Blob al subir con éxito (evita re-subir si una firma falla).
+                if (att._video) this.conclusion.video = null;
+                else if (att._item) att._item.photo = null;
+            }
+        },
+
         async autosave() {
             if (!this.reportId || this.saving) return;
             try {
-                await reportService.update(this.reportId, this.buildPayload());
+                if (this.isOffline) {
+                    // Sin servidor: guardar el borrador en el dispositivo
+                    await offlineManager.saveDraftReport(this.reportId, this.buildPayload());
+                } else {
+                    await reportService.update(this.reportId, this.buildPayload());
+                }
                 this.lastSaved = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             } catch {}
         },
@@ -693,15 +772,57 @@ export default {
 
             this.saving = true;
             try {
+                const techSig = this.$refs.techSignature.toDataURL('image/png');
+                const custSig = this.$refs.customerSignature.toDataURL('image/png');
+                const attachments = this.collectAttachments();
+
+                // OFFLINE: encolar el reporte completo (datos + firmas) para subir al
+                // reconectar. El syncEngine hace create → firmar técnico → firmar cliente.
+                if (this.isOffline) {
+                    const reportClientUuid = await offlineManager.queueReportForSync({
+                        payload: this.buildPayload(),
+                        techSignature: techSig,
+                        custSignature: custSig,
+                        custName: this.customerSigner.name,
+                        custDoc: this.customerSigner.document,
+                    });
+                    // Encolar las fotos enlazadas al reporte; el syncEngine las sube
+                    // una vez que el reporte se crea y obtiene su id real.
+                    for (const att of attachments) {
+                        await offlineManager.queueAttachment({
+                            report_client_uuid: reportClientUuid,
+                            blob: att.blob,
+                            type: 'otro',
+                            media_type: att.media_type || 'foto',
+                            condition_key: att.condition_key || null,
+                            activity_key: att.activity_key || null,
+                            group_key: att.group_key || null,
+                            filename: this.attachmentFilename(att),
+                        });
+                    }
+                    await offlineManager.removeDraftReport(this.reportId);
+                    sessionStorage.removeItem('current_checkin');
+                    this.$router.push({ name: 'tech.dashboard' });
+                    this.$swal.fire({
+                        icon: 'success',
+                        title: 'Reporte guardado sin conexión',
+                        text: 'Se enviará automáticamente cuando vuelva la conexión.',
+                        confirmButtonText: 'Aceptar',
+                    });
+                    return;
+                }
+
                 // 1. Guardar datos del reporte
                 await reportService.update(this.reportId, this.buildPayload());
 
-                // 2. Firmar como tecnico
-                const techSig = this.$refs.techSignature.toDataURL('image/png');
+                // 2. Subir fotos (antes de firmar; si falla, el usuario reintenta sin
+                //    re-firmar y sin re-subir las ya cargadas).
+                await this.uploadAttachmentsOnline(this.reportId, attachments);
+
+                // 3. Firmar como tecnico
                 await reportService.signTechnician(this.reportId, { signature: techSig });
 
-                // 3. Firmar como cliente
-                const custSig = this.$refs.customerSignature.toDataURL('image/png');
+                // 4. Firmar como cliente
                 await reportService.signCustomer(this.reportId, {
                     signature: custSig,
                     signer_name: this.customerSigner.name,

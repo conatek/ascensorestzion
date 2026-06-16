@@ -456,6 +456,46 @@
                 </div>
             </div>
 
+            <!-- Seccion: Anexos (fotos y video) -->
+            <div class="info-card" v-if="report.attachments && report.attachments.length">
+                <div class="info-header">
+                    <i class="fa fa-images"></i>
+                    <span>Anexos — {{ anexosCountLabel }}</span>
+                </div>
+                <div class="info-body">
+                    <!-- Fotos agrupadas por punto -->
+                    <div v-for="group in photoGroups" :key="group.label" class="anexo-group">
+                        <h6 class="anexo-group-label">{{ group.label }}</h6>
+                        <div class="anexo-grid">
+                            <button
+                                v-for="photo in group.photos"
+                                :key="photo.id"
+                                type="button"
+                                class="anexo-thumb"
+                                @click="openLightbox(photo)"
+                            >
+                                <img :src="thumbUrl(photo.url)" :alt="group.label" loading="lazy">
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Video(s) -->
+                    <div v-if="videoAttachments.length" class="anexo-group">
+                        <h6 class="anexo-group-label"><i class="fa fa-video me-1"></i>Video del servicio</h6>
+                        <div class="anexo-videos">
+                            <video
+                                v-for="v in videoAttachments"
+                                :key="v.id"
+                                :src="v.url"
+                                controls
+                                preload="metadata"
+                                class="anexo-video"
+                            ></video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Seccion 5: Firmas -->
             <div class="info-card">
                 <div class="info-header">
@@ -564,6 +604,17 @@
                 </div>
             </div>
         </div>
+
+        <!-- Lightbox de fotos -->
+        <Teleport to="body">
+            <div v-if="lightboxPhoto" class="lightbox-overlay" @click.self="closeLightbox">
+                <button class="lightbox-close" @click="closeLightbox" title="Cerrar"><i class="fa fa-times"></i></button>
+                <button v-if="allPhotos.length > 1" class="lightbox-nav lightbox-prev" @click.stop="lightboxPrev"><i class="fa fa-chevron-left"></i></button>
+                <img :src="transformUrl(lightboxPhoto.url, 'q_auto,f_auto')" class="lightbox-img" alt="">
+                <button v-if="allPhotos.length > 1" class="lightbox-nav lightbox-next" @click.stop="lightboxNext"><i class="fa fa-chevron-right"></i></button>
+                <div class="lightbox-counter">{{ lightboxIndex + 1 }} / {{ allPhotos.length }}</div>
+            </div>
+        </Teleport>
     </div>
 </template>
 
@@ -581,6 +632,7 @@ export default {
             emailTo: '',
             sendingEmail: false,
             emailSent: false,
+            lightboxIndex: null,
 
             statusLabels: {
                 borrador: 'Borrador',
@@ -753,6 +805,39 @@ export default {
             if (!this.report.fault_codes) return [];
             return this.report.fault_codes.slice(10, 20);
         },
+
+        // ── Anexos (fotos/video) ──
+        videoAttachments() {
+            return (this.report.attachments || []).filter(a => a.media_type === 'video');
+        },
+
+        photoGroups() {
+            const photos = (this.report.attachments || []).filter(a => a.media_type !== 'video');
+            const map = new Map();
+            photos.forEach(a => {
+                const label = this.attachmentPointLabel(a);
+                if (!map.has(label)) map.set(label, []);
+                map.get(label).push(a);
+            });
+            return Array.from(map, ([label, items]) => ({ label, photos: items }));
+        },
+
+        allPhotos() {
+            return this.photoGroups.flatMap(g => g.photos);
+        },
+
+        lightboxPhoto() {
+            return this.lightboxIndex !== null ? this.allPhotos[this.lightboxIndex] : null;
+        },
+
+        anexosCountLabel() {
+            const p = this.allPhotos.length;
+            const v = this.videoAttachments.length;
+            const parts = [];
+            if (p) parts.push(`${p} foto${p > 1 ? 's' : ''}`);
+            if (v) parts.push(`${v} video${v > 1 ? 's' : ''}`);
+            return parts.join(' · ');
+        },
     },
 
     async mounted() {
@@ -773,6 +858,54 @@ export default {
         getGroupActivities(groupKey) {
             if (!this.report.rstp_activities) return [];
             return this.report.rstp_activities.filter(a => a.group_key === groupKey);
+        },
+
+        // ── Anexos: etiquetas, miniaturas y lightbox ──
+        humanize(key) {
+            return (key || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        },
+
+        attachmentPointLabel(att) {
+            if (att.condition_key) {
+                return this.conditionLabels[att.condition_key]
+                    || this.conditionLabelsRstcRste[att.condition_key]
+                    || this.humanize(att.condition_key);
+            }
+            if (att.activity_key) {
+                const group = this.activityGroups[att.group_key] || this.workGroups[att.group_key] || '';
+                const act = this.activityLabels[att.activity_key]
+                    || this.workLabels[att.activity_key]
+                    || this.humanize(att.activity_key);
+                return group ? `${group} — ${act}` : act;
+            }
+            return 'General';
+        },
+
+        transformUrl(url, t) {
+            // Inserta transformaciones de Cloudinary tras /upload/
+            if (!url || !url.includes('/upload/')) return url;
+            return url.replace('/upload/', `/upload/${t}/`);
+        },
+
+        thumbUrl(url) {
+            return this.transformUrl(url, 'w_320,h_320,c_fill,q_auto,f_auto');
+        },
+
+        openLightbox(att) {
+            const idx = this.allPhotos.findIndex(p => p.id === att.id);
+            this.lightboxIndex = idx >= 0 ? idx : 0;
+        },
+
+        closeLightbox() {
+            this.lightboxIndex = null;
+        },
+
+        lightboxNext() {
+            this.lightboxIndex = (this.lightboxIndex + 1) % this.allPhotos.length;
+        },
+
+        lightboxPrev() {
+            this.lightboxIndex = (this.lightboxIndex - 1 + this.allPhotos.length) % this.allPhotos.length;
         },
 
         getGroupWorks(groupKey) {
@@ -1571,5 +1704,135 @@ export default {
         flex-direction: column;
         gap: 0.25rem;
     }
+}
+
+/* ── Anexos (galería) ── */
+.anexo-group {
+    margin-bottom: 1.1rem;
+}
+
+.anexo-group:last-child {
+    margin-bottom: 0;
+}
+
+.anexo-group-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 0.5rem;
+}
+
+.anexo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 0.5rem;
+}
+
+.anexo-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 0;
+    cursor: pointer;
+    background: #f8fafc;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.anexo-thumb:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.anexo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.anexo-videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+}
+
+.anexo-video {
+    width: 100%;
+    border-radius: 10px;
+    background: #000;
+    max-height: 280px;
+}
+
+/* ── Lightbox ── */
+.lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.92);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.lightbox-img {
+    max-width: 92vw;
+    max-height: 88vh;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close,
+.lightbox-nav {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.lightbox-close:hover,
+.lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.lightbox-close {
+    top: 1.2rem;
+    right: 1.2rem;
+}
+
+.lightbox-prev {
+    left: 1.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-next {
+    right: 1.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-counter {
+    position: absolute;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
 }
 </style>

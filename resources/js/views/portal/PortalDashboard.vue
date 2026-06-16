@@ -194,7 +194,7 @@
                     Reportes del Mes
                 </h3>
                 <div class="table-responsive">
-                    <table class="reports-table">
+                    <table class="reports-table data-table">
                         <thead>
                             <tr>
                                 <th>N° Reporte</th>
@@ -207,20 +207,20 @@
                         </thead>
                         <tbody>
                             <tr v-for="report in stats.recent_reports" :key="report.id">
-                                <td class="fw-500">{{ report.report_number }}</td>
-                                <td>
+                                <td class="fw-500" data-label="N° Reporte">{{ report.report_number }}</td>
+                                <td data-label="Tipo">
                                     <span class="tipo-badge" :class="'tipo-' + (report.report_type || '').toLowerCase()">
                                         {{ report.report_type }}
                                     </span>
                                 </td>
-                                <td>{{ report.equipment?.internal_code || '-' }}</td>
-                                <td>{{ formatDate(report.service_date) }}</td>
-                                <td>
+                                <td data-label="Equipo">{{ report.equipment?.internal_code || '-' }}</td>
+                                <td data-label="Fecha">{{ formatDate(report.service_date) }}</td>
+                                <td data-label="Estado">
                                     <span class="status-badge" :class="'status-' + report.status">
                                         {{ statusLabels[report.status] || report.status }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="cell-actions" data-label="Acciones">
                                     <div class="item-actions">
                                         <router-link :to="'/reportes/' + report.id"
                                                      class="action-btn" title="Ver detalle">
@@ -368,6 +368,15 @@ export default {
                 tooltip: {
                     y: { formatter: (val) => val + ' reportes' },
                 },
+                responsive: [{
+                    breakpoint: 768,
+                    options: {
+                        chart: { height: 260 },
+                        plotOptions: { bar: { columnWidth: '70%' } },
+                        legend: { position: 'bottom', fontSize: '11px', offsetY: 4, itemMargin: { horizontal: 6 } },
+                        xaxis: { labels: { rotate: -45, rotateAlways: true, trim: true, style: { fontSize: '9px' } } },
+                    },
+                }],
             };
         },
 

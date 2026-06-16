@@ -21,6 +21,9 @@ class StoreSiteRequest extends FormRequest
             'contact_name_onsite'  => ['nullable', 'string', 'max:255'],
             'contact_phone_onsite' => ['nullable', 'string', 'max:20'],
             'contact_email_onsite' => ['nullable', 'email', 'max:255'],
+            'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
+            'geo_radius_meters'    => ['nullable', 'integer', 'min:10', 'max:10000'],
             'notes'                => ['nullable', 'string'],
             'active'               => ['nullable', 'boolean'],
         ];

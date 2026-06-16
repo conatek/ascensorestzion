@@ -30,25 +30,36 @@ class CloudinaryService
      */
     public static function companyFolder(string $slug, string $category): string
     {
-        return self::envFolder() . '/' . $slug . '/' . $category;
+        return self::envFolder().'/'.$slug.'/'.$category;
     }
 
     /**
      * Sube un archivo a Cloudinary y retorna la URL pública y el public_id.
+     * Para video incluye además resource_type ('video') y duration (segundos).
      *
-     * @return array{url: string, public_id: string}
+     * @return array{url: string, public_id: string, resource_type: string, duration: float|null}
      */
     public function upload(UploadedFile $file, string $folder = 'general'): array
     {
         $result = $this->client->uploadApi()->upload($file->getRealPath(), [
-            'folder'        => $folder,
+            'folder' => $folder,
             'resource_type' => 'auto',
         ]);
 
         return [
-            'url'       => $result['secure_url'],
+            'url' => $result['secure_url'],
             'public_id' => $result['public_id'],
+            'resource_type' => $result['resource_type'] ?? 'image',
+            'duration' => isset($result['duration']) ? (float) $result['duration'] : null,
         ];
+    }
+
+    /**
+     * Elimina un recurso de video (resource_type video requiere especificarlo).
+     */
+    public function destroyVideo(string $publicId): void
+    {
+        $this->client->uploadApi()->destroy($publicId, ['resource_type' => 'video']);
     }
 
     /**

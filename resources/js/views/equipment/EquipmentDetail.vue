@@ -83,7 +83,7 @@
             <!-- Tab navigation -->
             <div class="tab-nav">
                 <button
-                    v-for="tab in tabs"
+                    v-for="tab in visibleTabs"
                     :key="tab.key"
                     class="tab-btn"
                     :class="{ active: activeTab === tab.key }"
@@ -330,7 +330,7 @@
                             </div>
                             <div class="info-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover mb-0" v-if="rstpReports.length">
+                                    <table class="table table-hover mb-0 data-table" v-if="rstpReports.length">
                                         <thead>
                                             <tr>
                                                 <th>Fecha</th>
@@ -341,15 +341,15 @@
                                         </thead>
                                         <tbody>
                                             <tr v-for="r in rstpReports" :key="r.id">
-                                                <td>{{ formatDateShort(r.service_date) }}</td>
-                                                <td>
+                                                <td data-label="Fecha">{{ formatDateShort(r.service_date) }}</td>
+                                                <td data-label="Reporte">
                                                     <router-link v-if="r.id" :to="{ name: 'reports.show', params: { id: r.id } }" class="report-link">
                                                         {{ r.report_number || '#' + r.id }}
                                                     </router-link>
                                                     <span v-else>-</span>
                                                 </td>
-                                                <td>{{ r.technician?.name || '-' }}</td>
-                                                <td>
+                                                <td data-label="Tecnico">{{ r.technician?.name || '-' }}</td>
+                                                <td data-label="Estado">
                                                     <span v-if="r.status" class="report-status-badge" :class="'rs-' + r.status">
                                                         {{ reportStatusLabels[r.status] || r.status }}
                                                     </span>
@@ -410,7 +410,7 @@
                         </div>
                         <div class="info-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0" v-if="attachments.length">
+                                <table class="table table-hover mb-0 data-table" v-if="attachments.length">
                                     <thead>
                                         <tr>
                                             <th>Nombre</th>
@@ -422,17 +422,17 @@
                                     </thead>
                                     <tbody>
                                         <tr v-for="att in attachments" :key="att.id">
-                                            <td>
+                                            <td data-label="Nombre">
                                                 <i class="fa fa-file me-1 text-muted"></i>{{ att.original_name || 'Archivo' }}
                                             </td>
-                                            <td>
+                                            <td data-label="Tipo">
                                                 <span class="att-type-badge" :class="'att-' + (att.type || 'otro')">
                                                     {{ attTypeLabels[att.type] || att.type || 'Otro' }}
                                                 </span>
                                             </td>
-                                            <td>{{ formatDateShort(att.created_at) }}</td>
-                                            <td>{{ att.uploader?.name || '-' }}</td>
-                                            <td class="text-end">
+                                            <td data-label="Fecha">{{ formatDateShort(att.created_at) }}</td>
+                                            <td data-label="Subido por">{{ att.uploader?.name || '-' }}</td>
+                                            <td class="text-end cell-actions" data-label="Acciones">
                                                 <button class="btn btn-sm btn-outline-danger" @click="confirmDeleteAttachment(att)" :disabled="att.deleting">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
@@ -500,7 +500,7 @@
                             </div>
                             <div class="info-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
+                                    <table class="table table-hover mb-0 data-table">
                                         <thead>
                                             <tr>
                                                 <th>Tipo</th>
@@ -512,19 +512,19 @@
                                         </thead>
                                         <tbody>
                                             <tr v-for="type in ['RSTP', 'RSTC', 'RSTE']" :key="type">
-                                                <td>
+                                                <td data-label="Tipo">
                                                     <span class="report-type-badge" :class="'badge-' + type.toLowerCase()">{{ type }}</span>
                                                     <span class="ms-1 text-muted" style="font-size:0.8rem;">{{ {RSTP:'Preventivo',RSTC:'Correctivo',RSTE:'Especial'}[type] }}</span>
                                                 </td>
-                                                <td v-if="statsLast[type]">
+                                                <td v-if="statsLast[type]" data-label="Reporte">
                                                     <router-link :to="{ name: 'reports.show', params: { id: statsLast[type].id } }" class="report-link">
                                                         {{ statsLast[type].report_number }}
                                                     </router-link>
                                                 </td>
-                                                <td v-else class="text-muted">Sin registro</td>
-                                                <td>{{ statsLast[type] ? formatDateShort(statsLast[type].service_date) : '-' }}</td>
-                                                <td>{{ statsLast[type]?.technician_name || '-' }}</td>
-                                                <td>
+                                                <td v-else class="text-muted" data-label="Reporte">Sin registro</td>
+                                                <td data-label="Fecha">{{ statsLast[type] ? formatDateShort(statsLast[type].service_date) : '-' }}</td>
+                                                <td data-label="Técnico">{{ statsLast[type]?.technician_name || '-' }}</td>
+                                                <td data-label="Estado">
                                                     <span v-if="statsLast[type]?.status" class="report-status-badge" :class="'rs-' + statsLast[type].status">
                                                         {{ reportStatusLabels[statsLast[type].status] || statsLast[type].status }}
                                                     </span>
@@ -537,6 +537,69 @@
                             </div>
                         </div>
                     </template>
+                </div>
+
+                <!-- Tab 6: Código QR -->
+                <div v-if="activeTab === 'qr'">
+                    <div class="qr-layout">
+                        <!-- Visor del QR -->
+                        <div class="info-card qr-viewer-card">
+                            <div class="info-header">
+                                <i class="fa fa-qrcode"></i>
+                                <span>Código QR del equipo</span>
+                            </div>
+                            <div class="info-body qr-viewer-body">
+                                <div v-if="qrLoading" class="loading-state loading-state-sm">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                    <p class="text-muted mt-2 mb-0">Generando código QR...</p>
+                                </div>
+
+                                <div v-else-if="qrError" class="empty-state">
+                                    <i class="fa fa-exclamation-triangle empty-icon text-danger"></i>
+                                    <p>{{ qrError }}</p>
+                                    <button class="btn-action btn-edit-action mt-2" @click="loadQr">
+                                        <i class="fa fa-redo me-1"></i> Reintentar
+                                    </button>
+                                </div>
+
+                                <div v-else-if="qrImage" class="qr-display">
+                                    <img :src="qrImage" :alt="'QR ' + equipment.internal_code" class="qr-image" />
+                                    <div class="qr-code-label">{{ equipment.internal_code }}</div>
+                                    <p class="qr-url">{{ qrContent }}</p>
+                                    <div class="qr-actions">
+                                        <button class="btn-action btn-report" @click="printQr">
+                                            <i class="fa fa-print me-1"></i> Imprimir
+                                        </button>
+                                        <a class="btn-action btn-edit-action" :href="qrImage" :download="'qr-' + equipment.internal_code + '.png'">
+                                            <i class="fa fa-download me-1"></i> Descargar
+                                        </a>
+                                        <button class="btn-action btn-back" @click="loadQr">
+                                            <i class="fa fa-redo me-1"></i> Regenerar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instrucciones -->
+                        <div class="info-card qr-help-card">
+                            <div class="info-header">
+                                <i class="fa fa-info-circle"></i>
+                                <span>¿Cómo se usa?</span>
+                            </div>
+                            <div class="info-body">
+                                <ol class="qr-steps">
+                                    <li>Imprime el código y pégalo de forma visible en el ascensor o en su cuarto de máquinas.</li>
+                                    <li>El técnico, al llegar, abre <strong>Registrar Llegada</strong> y escanea este QR con la cámara.</li>
+                                    <li>El check-in queda registrado automáticamente con el equipo <strong>{{ equipment.internal_code }}</strong>.</li>
+                                </ol>
+                                <p class="qr-note">
+                                    <i class="fa fa-lightbulb me-1"></i>
+                                    El QR equivale a ingresar el código manual <strong>{{ equipment.internal_code }}</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -569,12 +632,17 @@ export default {
                 type: 'foto',
             },
             uploading: false,
+            qrImage: null,
+            qrContent: '',
+            qrLoading: false,
+            qrError: '',
             tabs: [
                 { key: 'ficha', label: 'Ficha Tecnica', icon: 'fa fa-id-card' },
                 { key: 'vida', label: 'Hoja de Vida', icon: 'fa fa-clipboard-list' },
                 { key: 'mantenimientos', label: 'Mantenimientos', icon: 'fa fa-wrench' },
                 { key: 'adjuntos', label: 'Adjuntos', icon: 'fa fa-paperclip' },
                 { key: 'estadisticas', label: 'Estadisticas', icon: 'fa fa-chart-bar' },
+                { key: 'qr', label: 'Código QR', icon: 'fa fa-qrcode', roles: ['master', 'coordinator'] },
             ],
             typeLabels: {
                 ascensor: 'Ascensor',
@@ -613,6 +681,10 @@ export default {
     computed: {
         auth() {
             return useAuth();
+        },
+
+        visibleTabs() {
+            return this.tabs.filter(tab => !tab.roles || tab.roles.some(r => this.auth.hasRole(r)));
         },
 
         attachments() {
@@ -739,6 +811,59 @@ export default {
             if ((tab === 'vida' || tab === 'mantenimientos' || tab === 'estadisticas') && !this.historyLoaded && !this.historyLoading) {
                 this.loadHistory();
             }
+            if (tab === 'qr' && !this.qrImage && !this.qrLoading) {
+                this.loadQr();
+            }
+        },
+
+        async loadQr() {
+            if (this.qrLoading) return;
+            this.qrLoading = true;
+            this.qrError = '';
+            try {
+                const { data } = await equipmentService.generateQr(this.equipment.id);
+                this.qrImage = data.qr_code_base64;
+                this.qrContent = data.content;
+            } catch (e) {
+                console.error('Error generando QR:', e);
+                this.qrError = 'No se pudo generar el código QR. Inténtalo de nuevo.';
+            } finally {
+                this.qrLoading = false;
+            }
+        },
+
+        printQr() {
+            if (!this.qrImage) return;
+            const code = this.equipment.internal_code || '';
+            const client = this.equipment.site?.client?.business_name || '';
+            const site = this.equipment.site?.name || '';
+            const win = window.open('', '_blank', 'width=600,height=700');
+            if (!win) return;
+            win.document.write(`
+                <html>
+                    <head>
+                        <title>QR ${code}</title>
+                        <style>
+                            * { font-family: Arial, sans-serif; }
+                            body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+                            .label { text-align: center; padding: 24px; border: 2px solid #000; border-radius: 12px; }
+                            .label img { width: 260px; height: 260px; }
+                            .code { font-size: 22px; font-weight: 700; margin-top: 12px; }
+                            .meta { font-size: 13px; color: #444; margin-top: 4px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="label">
+                            <img src="${this.qrImage}" alt="QR ${code}" />
+                            <div class="code">${code}</div>
+                            ${client ? `<div class="meta">${client}</div>` : ''}
+                            ${site ? `<div class="meta">${site}</div>` : ''}
+                        </div>
+                        <script>window.onload = function () { window.print(); }<\/script>
+                    </body>
+                </html>
+            `);
+            win.document.close();
         },
 
         async loadHistory() {
@@ -1616,6 +1741,90 @@ export default {
     font-size: 0.8rem;
     color: #64748b;
     font-weight: 500;
+}
+
+/* QR tab */
+.qr-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(280px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.qr-viewer-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+}
+
+.qr-display {
+    text-align: center;
+    width: 100%;
+}
+
+.qr-image {
+    width: 240px;
+    height: 240px;
+    max-width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px;
+    background: white;
+}
+
+.qr-code-label {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 0.75rem;
+}
+
+.qr-url {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    word-break: break-all;
+    margin: 0.35rem auto 1rem;
+    max-width: 320px;
+}
+
+.qr-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.qr-steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #475569;
+    line-height: 1.7;
+    font-size: 0.9rem;
+}
+
+.qr-steps li {
+    margin-bottom: 0.5rem;
+}
+
+.qr-note {
+    margin: 1rem 0 0;
+    padding: 0.75rem 1rem;
+    background: #f8faf8;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.qr-note i {
+    color: #d97706;
+}
+
+@media (max-width: 768px) {
+    .qr-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Empty state */

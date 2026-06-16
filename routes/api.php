@@ -1,35 +1,45 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\SiteController;
-use App\Http\Controllers\EquipmentController;
-use App\Http\Controllers\CatalogController;
-use App\Http\Controllers\ServiceReportController;
-use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\CompanySettingController;
-use App\Http\Controllers\CardController;
-use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\PublicCardController;
+use App\Http\Controllers\Admin\CompanyAdminController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserAdminController;
-use App\Http\Controllers\Admin\CompanyAdminController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CardController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanySettingController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicCardController;
+use App\Http\Controllers\ReportConfirmationController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceReportController;
+use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TechnicianCheckinController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReportConfirmationController;
+use Illuminate\Support\Facades\Route;
 
 // Autenticación pública
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
+// Recuperación de contraseña (pública)
+Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
+
+// Formulario de contacto (público)
+Route::post('/contact', [ContactController::class, 'send'])->middleware('throttle:5,1');
+
 // Vistas públicas de tarjetas (sin auth)
 Route::prefix('public')->group(function () {
-    Route::get('/card/{cardSlug}',           [PublicCardController::class, 'cardBySlug']);
-    Route::get('/{companySlug}',             [PublicCardController::class, 'company']);
-    Route::get('/{companySlug}/{cardSlug}',  [PublicCardController::class, 'card']);
+    Route::get('/card/{cardSlug}', [PublicCardController::class, 'cardBySlug']);
+    Route::get('/{companySlug}', [PublicCardController::class, 'company']);
+    Route::get('/{companySlug}/{cardSlug}', [PublicCardController::class, 'card']);
 });
 
 // Plantillas públicas (para consultar schemas)
@@ -50,14 +60,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/impersonate/{client}', [AuthController::class, 'impersonate']);
     Route::post('/stop-impersonating', [AuthController::class, 'stopImpersonating']);
 
-    // Panel Admin (solo master)
-    Route::middleware('role:master')->prefix('admin')->group(function () {
+    // Perfil propio (todos los roles)
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+
+    // Panel Admin general (master y super)
+    Route::middleware('role:master|super')->prefix('admin')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index']);
+        Route::get('companies', [CompanyAdminController::class, 'index']);
+    });
+
+    // Gestión de usuarios (solo master)
+    Route::middleware('role:master')->prefix('admin')->group(function () {
         Route::get('users', [UserAdminController::class, 'index']);
         Route::post('users', [UserAdminController::class, 'store']);
         Route::get('users/{user}', [UserAdminController::class, 'show']);
         Route::put('users/{user}', [UserAdminController::class, 'update']);
-        Route::get('companies', [CompanyAdminController::class, 'index']);
+        Route::delete('users/{user}', [UserAdminController::class, 'destroy']);
     });
 
     // Clientes
@@ -67,6 +88,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('clients.sites', SiteController::class);
 
     // Equipos (flat con filtros)
+    Route::get('equipment/qr-codes-pdf', [EquipmentController::class, 'qrCodesPdf'])
+        ->middleware('role:master|super|coordinator');
     Route::apiResource('equipment', EquipmentController::class);
     Route::get('equipment/{equipment}/history', [EquipmentController::class, 'history']);
     Route::post('equipment/{equipment}/attachments', [EquipmentController::class, 'uploadAttachment']);

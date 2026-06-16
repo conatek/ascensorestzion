@@ -24,6 +24,11 @@ export default {
     signCustomer(id, data) {
         return api.post(`${resource}/${id}/sign-customer`, data);
     },
+    uploadAttachment(id, formData) {
+        return api.post(`${resource}/${id}/attachments`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
     getPdf(id) {
         return api.get(`${resource}/${id}/pdf`, { responseType: 'blob' });
     },

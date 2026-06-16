@@ -44,7 +44,7 @@ class UserAdminController extends Controller
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|unique:users',
             'password'        => 'required|string|min:8',
-            'role'            => 'required|in:master,coordinator,technician,admin',
+            'role'            => 'required|in:master,super,coordinator,technician,admin',
             'phone'           => 'nullable|string|max:20',
             'document_type'   => 'nullable|in:CC,CE,NIT,PP',
             'document_number' => 'nullable|string|max:30',
@@ -74,7 +74,7 @@ class UserAdminController extends Controller
         $data = $request->validate([
             'name'            => 'sometimes|string|max:255',
             'email'           => 'sometimes|email|unique:users,email,' . $user->id,
-            'role'            => 'sometimes|string|in:master,coordinator,technician,admin',
+            'role'            => 'sometimes|string|in:master,super,coordinator,technician,admin',
             'phone'           => 'nullable|string|max:20',
             'document_type'   => 'nullable|in:CC,CE,NIT,PP',
             'document_number' => 'nullable|string|max:30',
@@ -91,5 +91,22 @@ class UserAdminController extends Controller
         $user->update($data);
 
         return response()->json($user->fresh()->load(['company:id,name', 'client:id,business_name', 'roles:id,name']));
+    }
+
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        // No permitir auto-eliminación
+        if ((int) $user->id === (int) $request->user()->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propio usuario.'], 422);
+        }
+
+        // No dejar el sistema sin ningún master
+        if ($user->hasRole('master') && User::role('master')->count() <= 1) {
+            return response()->json(['message' => 'No se puede eliminar el último usuario master.'], 422);
+        }
+
+        $user->delete();
+
+        return response()->json(null, 204);
     }
 }

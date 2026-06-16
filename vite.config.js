@@ -73,7 +73,7 @@ export default defineConfig({
             registerType: 'autoUpdate',
             scope: '/',
             devOptions: { enabled: false },
-            includeAssets: ['images/favicon.ico', 'images/logo.png'],
+            includeAssets: ['images/favicon/favicon.ico', 'images/favicon/apple-touch-icon.png'],
             manifest: {
                 name: 'Ascensores Tzion',
                 short_name: 'Atzion',
@@ -86,20 +86,16 @@ export default defineConfig({
                 scope: '/',
                 icons: [
                     {
-                        src: '/images/pwa/icon-192.png',
+                        src: '/images/favicon/android-chrome-192x192.png',
                         sizes: '192x192',
                         type: 'image/png',
+                        purpose: 'any',
                     },
                     {
-                        src: '/images/pwa/icon-512.png',
+                        src: '/images/favicon/android-chrome-512x512.png',
                         sizes: '512x512',
                         type: 'image/png',
-                    },
-                    {
-                        src: '/images/pwa/icon-512.png',
-                        sizes: '512x512',
-                        type: 'image/png',
-                        purpose: 'maskable',
+                        purpose: 'any',
                     },
                 ],
             },

@@ -51,7 +51,15 @@ export default { name: 'PublicFooter' };
 </script>
 
 <style scoped>
-.pf-footer { background: #1e293b; color: #cbd5e1; font-family: 'Poppins', sans-serif; }
+.pf-footer {
+    background: #080d18; color: #cbd5e1; font-family: 'Poppins', sans-serif;
+    border-top: 1px solid rgba(48, 171, 10, 0.25);
+    position: relative;
+}
+.pf-footer::before {
+    content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(48, 171, 10, 0.6), transparent);
+}
 
 .pf-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
 
@@ -82,7 +90,7 @@ export default { name: 'PublicFooter' };
 .pf-contact-item i { color: #30ab0a; margin-top: 0.2rem; flex-shrink: 0; width: 16px; }
 
 .pf-bottom {
-    border-top: 1px solid #334155; padding: 1.25rem 0; text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.06); padding: 1.25rem 0; text-align: center;
 }
 .pf-bottom p { font-size: 0.8rem; color: #64748b; margin: 0; }
 

@@ -15,6 +15,7 @@ class StoreServiceReportRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'client_uuid'        => ['nullable', 'uuid'],
             'report_type'        => ['required', Rule::in(['RSTP', 'RSTC', 'RSTE'])],
             'equipment_id'       => ['required', 'exists:equipment,id'],
             'service_date'       => ['required', 'date'],

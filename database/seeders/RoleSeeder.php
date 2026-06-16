@@ -17,6 +17,16 @@ class RoleSeeder extends Seeder
         $master = Role::firstOrCreate(['name' => 'master', 'guard_name' => 'web']);
         $master->syncPermissions(Permission::all());
 
+        // ── super: igual que master, pero SIN gestión de usuarios ni de roles/permisos ──
+        $superExcluded = [
+            'view_users', 'create_user', 'edit_user', 'delete_user',
+            'manage_roles',
+        ];
+        $super = Role::firstOrCreate(['name' => 'super', 'guard_name' => 'web']);
+        $super->syncPermissions(
+            Permission::whereNotIn('name', $superExcluded)->get()
+        );
+
         // ── coordinator: seguimiento de reportes, gestión de clientes/sedes/equipos ──
         $coordinator = Role::firstOrCreate(['name' => 'coordinator', 'guard_name' => 'web']);
         $coordinator->syncPermissions([

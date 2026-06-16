@@ -92,23 +92,23 @@
                     </thead>
                     <tbody>
                         <tr v-for="report in filteredReports" :key="report.id">
-                            <td>
+                            <td data-label="N° Reporte">
                                 <span class="code-text">{{ report.report_number || '-' }}</span>
                             </td>
-                            <td>
+                            <td data-label="Tipo">
                                 <span class="tipo-badge" :class="'tipo-' + (report.report_type || '').toLowerCase()">
                                     {{ report.report_type }}
                                 </span>
                             </td>
-                            <td>{{ formatDate(report.service_date) }}</td>
-                            <td>{{ report.equipment?.internal_code || '-' }}</td>
-                            <td>{{ report.technician?.name || '-' }}</td>
-                            <td>
+                            <td data-label="Fecha">{{ formatDate(report.service_date) }}</td>
+                            <td data-label="Equipo">{{ report.equipment?.internal_code || '-' }}</td>
+                            <td data-label="Tecnico">{{ report.technician?.name || '-' }}</td>
+                            <td data-label="Estado">
                                 <span class="status-badge" :class="'status-' + report.status">
                                     {{ statusLabels[report.status] || report.status }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="cell-actions" data-label="Acciones">
                                 <div class="item-actions">
                                     <router-link :to="'/reportes/' + report.id"
                                                  class="action-btn" title="Ver">

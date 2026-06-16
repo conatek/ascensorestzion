@@ -12,6 +12,7 @@ class ServiceReport extends Model
 
     protected $fillable = [
         'report_number',
+        'client_uuid',
         'report_type',
         'equipment_id',
         'client_id',

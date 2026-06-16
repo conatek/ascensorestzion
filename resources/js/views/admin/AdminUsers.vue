@@ -13,6 +13,11 @@
                         </div>
                     </div>
                 </div>
+                <div class="page-title-actions">
+                    <button class="btn-new-user" @click="openCreate">
+                        <i class="fa fa-plus me-1"></i> Nuevo Usuario
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -31,6 +36,7 @@
                 <select v-model="filterRole" class="filter-select">
                     <option value="">Todos los roles</option>
                     <option value="master">Master</option>
+                    <option value="super">Super</option>
                     <option value="coordinator">Coordinador</option>
                     <option value="technician">Tecnico</option>
                     <option value="admin">Admin</option>
@@ -73,9 +79,18 @@
                         </span>
 
                         <span v-else-if="props.column.field === 'actions'">
-                            <button @click="openDetail(props.row)" class="action-btn" title="Ver detalle">
-                                <i class="fa fa-eye"></i>
-                            </button>
+                            <div class="action-group">
+                                <button @click="openDetail(props.row)" class="action-btn" title="Ver detalle">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                                <button @click="openEdit(props.row)" class="action-btn" title="Editar">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button @click="confirmDelete(props.row)" class="action-btn action-danger" title="Eliminar" :disabled="deletingId === props.row.id">
+                                    <i v-if="deletingId === props.row.id" class="fa fa-spinner fa-spin"></i>
+                                    <i v-else class="fa fa-trash"></i>
+                                </button>
+                            </div>
                         </span>
 
                         <span v-else>
@@ -153,6 +168,110 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal crear/editar usuario -->
+        <div v-if="showForm" class="modal-overlay" @click.self="closeForm">
+            <div class="modal-container modal-form">
+                <div class="modal-header">
+                    <div class="modal-user-info">
+                        <div class="modal-avatar">
+                            <i :class="editingId ? 'fa fa-user-edit' : 'fa fa-user-plus'"></i>
+                        </div>
+                        <div>
+                            <h4 class="modal-name">{{ editingId ? 'Editar usuario' : 'Nuevo usuario' }}</h4>
+                            <p class="modal-email">{{ editingId ? 'Actualiza los datos del usuario' : 'Crea un usuario para la plataforma' }}</p>
+                        </div>
+                    </div>
+                    <button @click="closeForm" class="modal-close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitForm">
+                    <div class="modal-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Nombre <span class="req">*</span></label>
+                                <input v-model="form.name" type="text" class="form-input" :class="{ 'has-error': formErrors.name }" />
+                                <span v-if="formErrors.name" class="error-text">{{ formErrors.name[0] }}</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email <span class="req">*</span></label>
+                                <input v-model="form.email" type="email" class="form-input" :class="{ 'has-error': formErrors.email }" />
+                                <span v-if="formErrors.email" class="error-text">{{ formErrors.email[0] }}</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Contraseña <span v-if="!editingId" class="req">*</span>
+                                    <span v-else class="optional">(dejar vacío para no cambiar)</span>
+                                </label>
+                                <input v-model="form.password" type="password" class="form-input" :class="{ 'has-error': formErrors.password }" autocomplete="new-password" />
+                                <span v-if="formErrors.password" class="error-text">{{ formErrors.password[0] }}</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Rol <span class="req">*</span></label>
+                                <select v-model="form.role" class="form-input" :class="{ 'has-error': formErrors.role }">
+                                    <option value="master">Master</option>
+                                    <option value="super">Super</option>
+                                    <option value="coordinator">Coordinador</option>
+                                    <option value="technician">Técnico</option>
+                                    <option value="admin">Admin (cliente)</option>
+                                </select>
+                                <span v-if="formErrors.role" class="error-text">{{ formErrors.role[0] }}</span>
+                            </div>
+
+                            <div v-if="form.role === 'admin'" class="form-group form-group-full">
+                                <label class="form-label">Cliente <span class="req">*</span></label>
+                                <select v-model="form.client_id" class="form-input" :class="{ 'has-error': formErrors.client_id }">
+                                    <option :value="null" disabled>Selecciona un cliente</option>
+                                    <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.business_name }}</option>
+                                </select>
+                                <span v-if="formErrors.client_id" class="error-text">{{ formErrors.client_id[0] }}</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Teléfono</label>
+                                <input v-model="form.phone" type="text" class="form-input" />
+                            </div>
+                            <div class="form-group form-group-doc">
+                                <label class="form-label">Documento</label>
+                                <div class="doc-row">
+                                    <select v-model="form.document_type" class="form-input doc-type">
+                                        <option :value="null">Tipo</option>
+                                        <option value="CC">CC</option>
+                                        <option value="CE">CE</option>
+                                        <option value="NIT">NIT</option>
+                                        <option value="PP">PP</option>
+                                    </select>
+                                    <input v-model="form.document_number" type="text" class="form-input" placeholder="Número" />
+                                </div>
+                            </div>
+
+                            <div v-if="editingId" class="form-group form-group-full">
+                                <label class="form-label">Estado</label>
+                                <label class="active-toggle">
+                                    <input v-model="form.active" type="checkbox" />
+                                    <span>{{ form.active ? 'Activo' : 'Inactivo' }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div v-if="formGeneralError" class="form-general-error">
+                            <i class="fa fa-exclamation-circle me-1"></i> {{ formGeneralError }}
+                        </div>
+                    </div>
+
+                    <div class="modal-footer modal-footer-actions">
+                        <button type="button" class="btn-cancel" @click="closeForm">Cancelar</button>
+                        <button type="submit" class="btn-save" :disabled="saving">
+                            <span v-if="saving" class="spinner-sm"></span>
+                            <i v-else class="fa fa-check me-1"></i>
+                            {{ saving ? 'Guardando...' : (editingId ? 'Guardar cambios' : 'Crear usuario') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -161,6 +280,7 @@ import { VueGoodTable } from 'vue-good-table-next';
 import 'vue-good-table-next/dist/vue-good-table-next.css';
 import adminService from '@/services/adminService.js';
 import clientService from '@/services/clientService.js';
+import { useAuth } from '@/stores/auth';
 
 export default {
     name: 'AdminUsers',
@@ -178,8 +298,16 @@ export default {
             filterRole: '',
             filterClient: '',
             selectedUser: null,
+            showForm: false,
+            editingId: null,
+            saving: false,
+            deletingId: null,
+            formErrors: {},
+            formGeneralError: null,
+            form: this.emptyForm(),
             roleLabels: {
                 master: 'Master',
+                super: 'Super',
                 coordinator: 'Coordinador',
                 technician: 'Tecnico',
                 admin: 'Admin',
@@ -189,7 +317,7 @@ export default {
                 { label: 'Rol', field: 'role', sortable: false, width: '130px' },
                 { label: 'Cliente', field: 'company', sortable: false },
                 { label: 'Registro', field: 'created_at', sortable: false },
-                { label: '', field: 'actions', sortable: false, tdClass: 'text-center', width: '60px' },
+                { label: '', field: 'actions', sortable: false, tdClass: 'text-center', width: '130px' },
             ],
             paginationOptions: {
                 enabled: true,
@@ -205,6 +333,10 @@ export default {
     },
 
     computed: {
+        auth() {
+            return useAuth();
+        },
+
         filteredRows() {
             let rows = this.users;
 
@@ -275,11 +407,123 @@ export default {
         closeDetail() {
             this.selectedUser = null;
         },
+
+        emptyForm() {
+            return {
+                name: '',
+                email: '',
+                password: '',
+                role: 'technician',
+                phone: '',
+                document_type: null,
+                document_number: '',
+                client_id: null,
+                active: true,
+            };
+        },
+
+        openCreate() {
+            this.editingId = null;
+            this.formErrors = {};
+            this.formGeneralError = null;
+            this.form = this.emptyForm();
+            this.showForm = true;
+        },
+
+        openEdit(user) {
+            this.editingId = user.id;
+            this.formErrors = {};
+            this.formGeneralError = null;
+            this.form = {
+                name: user.name || '',
+                email: user.email || '',
+                password: '',
+                role: this.roleName(user),
+                phone: user.phone || '',
+                document_type: user.document_type || null,
+                document_number: user.document_number || '',
+                client_id: user.client?.id || null,
+                active: user.active ?? true,
+            };
+            this.showForm = true;
+        },
+
+        closeForm() {
+            this.showForm = false;
+        },
+
+        async submitForm() {
+            this.saving = true;
+            this.formErrors = {};
+            this.formGeneralError = null;
+
+            // Payload: roles internos -> company de la empresa; admin -> cliente
+            const isAdmin = this.form.role === 'admin';
+            const payload = {
+                name: this.form.name,
+                email: this.form.email,
+                role: this.form.role,
+                phone: this.form.phone || null,
+                document_type: this.form.document_type || null,
+                document_number: this.form.document_number || null,
+                client_id: isAdmin ? this.form.client_id : null,
+                company_id: isAdmin ? null : (this.auth.state.user?.company_id || null),
+            };
+            if (this.form.password) payload.password = this.form.password;
+            if (this.editingId) payload.active = this.form.active;
+
+            try {
+                if (this.editingId) {
+                    await adminService.updateUser(this.editingId, payload);
+                } else {
+                    await adminService.createUser(payload);
+                }
+                this.showForm = false;
+                await this.load();
+            } catch (err) {
+                if (err.response?.status === 422) {
+                    this.formErrors = err.response.data.errors || {};
+                    this.formGeneralError = err.response.data.message || 'Revisa los campos marcados.';
+                } else {
+                    this.formGeneralError = err.response?.data?.message || 'Error al guardar el usuario.';
+                }
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async confirmDelete(user) {
+            if (!confirm(`¿Eliminar al usuario "${user.name}"? Esta acción no se puede deshacer.`)) return;
+            this.deletingId = user.id;
+            try {
+                await adminService.deleteUser(user.id);
+                await this.load();
+            } catch (err) {
+                alert(err.response?.data?.message || 'No se pudo eliminar el usuario.');
+            } finally {
+                this.deletingId = null;
+            }
+        },
     },
 };
 </script>
 
 <style scoped>
+/* Etiquetas por columna para las cards en móvil (≤768px) — scoped a esta vista.
+   Cols: 1 Usuario(título) · 2 Rol · 3 Cliente · 4 Registro · 5 Acciones */
+@media (max-width: 768px) {
+    :deep(.vgt-table tbody td:nth-of-type(2))::before { content: 'Rol'; }
+    :deep(.vgt-table tbody td:nth-of-type(3))::before { content: 'Cliente'; }
+    :deep(.vgt-table tbody td:nth-of-type(4))::before { content: 'Registro'; }
+
+    /* Contenedor transparente: las cards van sobre el fondo del body */
+    .section-card {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+}
+
 /* Filtros */
 .filters-bar {
     display: flex;
@@ -379,6 +623,39 @@ export default {
     background: linear-gradient(135deg, #dbeafe, #e0f2fe);
     color: #2563eb;
 }
+
+.role-super {
+    background: linear-gradient(135deg, #fee2e2, #fde4e4);
+    color: #ba2831;
+}
+
+/* Botón nuevo usuario */
+.btn-new-user {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #279208;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-new-user:hover { background: #1f7506; }
+
+/* Grupo de acciones en tabla */
+.action-group {
+    display: inline-flex;
+    gap: 0.35rem;
+    justify-content: center;
+}
+
+.action-danger { color: #dc2626; }
+.action-danger:hover { background: #fef2f2 !important; color: #b91c1c !important; }
+.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .role-sin {
     background: #fef2f2;
@@ -543,8 +820,123 @@ export default {
 
 .modal-link:hover { color: #1f7506; text-decoration: underline; }
 
+/* ───── Modal formulario ───── */
+.modal-form { width: min(600px, 95vw); }
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group { display: flex; flex-direction: column; }
+.form-group-full { grid-column: 1 / -1; }
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.4rem;
+}
+
+.req { color: #ba2831; }
+.optional { color: #94a3b8; font-weight: 400; font-size: 0.78rem; }
+
+.form-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
+}
+
+.form-input.has-error { border-color: #ba2831; }
+
+.error-text {
+    font-size: 0.78rem;
+    color: #ba2831;
+    margin-top: 0.3rem;
+}
+
+.doc-row { display: flex; gap: 0.5rem; }
+.doc-type { max-width: 90px; }
+
+.active-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #334155;
+    cursor: pointer;
+}
+
+.form-general-error {
+    margin-top: 1rem;
+    padding: 0.7rem 0.9rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.85rem;
+}
+
+.modal-footer-actions {
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.btn-cancel {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover { background: #e2e8f0; }
+
+.btn-save {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1.2rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    background: #279208;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-save:hover:not(:disabled) { background: #1f7506; }
+.btn-save:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.spinner-sm {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (max-width: 640px) {
     .filter-select { flex: 1; min-width: 0; }
+    .form-grid { grid-template-columns: 1fr; }
 }
 </style>
 

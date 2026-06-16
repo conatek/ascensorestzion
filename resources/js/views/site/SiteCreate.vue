@@ -62,6 +62,20 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Ubicacion geografica -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <i class="fa fa-map-marked-alt section-icon"></i>
+                            <span>Ubicacion geografica</span>
+                        </div>
+                        <div class="section-body">
+                            <LocationPicker
+                                v-model:latitude="form.latitude"
+                                v-model:longitude="form.longitude"
+                                v-model:radius="form.geo_radius_meters" />
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Columna derecha: Contacto en Sitio -->
@@ -137,10 +151,15 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue';
 import siteService from '@/services/siteService.js';
 
 export default {
     name: 'SiteCreate',
+
+    components: {
+        LocationPicker: defineAsyncComponent(() => import('@/components/LocationPicker.vue')),
+    },
 
     data() {
         return {
@@ -156,6 +175,9 @@ export default {
                 contact_name_onsite: '',
                 contact_phone_onsite: '',
                 contact_email_onsite: '',
+                latitude: null,
+                longitude: null,
+                geo_radius_meters: 500,
                 notes: '',
                 active: true,
             },

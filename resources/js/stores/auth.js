@@ -26,10 +26,14 @@ export function useAuth() {
     }
 
     function isMaster()      { return hasRole('master'); }
+    function isSuper()       { return hasRole('super'); }
     function isCoordinator() { return hasRole('coordinator'); }
     function isTechnician()  { return hasRole('technician'); }
     function isAdmin()       { return hasRole('admin'); }
-    function isInternal()    { return isMaster() || isCoordinator() || isTechnician(); }
+    function isInternal()    { return isMaster() || isSuper() || isCoordinator() || isTechnician(); }
+
+    // Acceso al Panel Admin (master y super comparten casi todo)
+    function isMasterOrSuper() { return isMaster() || isSuper(); }
 
     function can(permission) {
         return isMaster() || hasPermission(permission);
@@ -74,6 +78,17 @@ export function useAuth() {
         localStorage.removeItem('original_token');
         localStorage.removeItem('original_user');
         localStorage.removeItem('original_permissions');
+    }
+
+    function setUser(user, permissions = null) {
+        if (user) {
+            state.user = user;
+            localStorage.setItem('auth_user', JSON.stringify(user));
+        }
+        if (permissions) {
+            state.permissions = permissions;
+            localStorage.setItem('auth_permissions', JSON.stringify(permissions));
+        }
     }
 
     async function fetchUser() {
@@ -181,6 +196,8 @@ export function useAuth() {
         hasRole,
         hasPermission,
         isMaster,
+        isSuper,
+        isMasterOrSuper,
         isCoordinator,
         isTechnician,
         isAdmin,
@@ -188,6 +205,7 @@ export function useAuth() {
         can,
         login,
         logout,
+        setUser,
         fetchUser,
         loadFromStorage,
         impersonate,

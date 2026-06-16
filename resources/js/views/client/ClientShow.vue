@@ -149,13 +149,13 @@
                             </thead>
                             <tbody>
                                 <tr v-for="site in client.sites" :key="site.id">
-                                    <td class="td-name">{{ site.name }}</td>
-                                    <td>{{ site.address || '—' }}</td>
-                                    <td>{{ site.contact_name || '—' }}</td>
-                                    <td class="text-center">
+                                    <td class="td-name" data-label="Nombre">{{ site.name }}</td>
+                                    <td data-label="Direccion">{{ site.address || '—' }}</td>
+                                    <td data-label="Contacto">{{ site.contact_name || '—' }}</td>
+                                    <td class="text-center" data-label="Equipos">
                                         <span class="count-badge">{{ site.equipment_count ?? 0 }}</span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center cell-actions" data-label="Acciones">
                                         <div class="table-actions">
                                             <router-link :to="{ name: 'equipment.index', query: { client_id: client.id } }"
                                                          class="action-btn action-view" title="Ver Equipos">

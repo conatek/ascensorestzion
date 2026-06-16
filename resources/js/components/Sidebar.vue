@@ -14,10 +14,10 @@
             <!-- Navigation -->
             <nav class="sidebar-nav">
                 <ul class="nav-menu">
-                    <li class="nav-item" :class="{ 'active': isMaster ? $route.path === '/admin' : $route.path === '/' }">
-                        <router-link :to="isMaster ? '/admin' : '/'" class="nav-link" :title="isMaster ? 'Panel Admin' : 'Panel de Control'">
+                    <li class="nav-item" :class="{ 'active': isMasterOrSuper ? $route.path === '/admin' : $route.path === '/' }">
+                        <router-link :to="isMasterOrSuper ? '/admin' : '/'" class="nav-link" :title="isMasterOrSuper ? 'Panel Admin' : 'Panel de Control'">
                             <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
-                            <span class="nav-text">{{ isMaster ? 'Panel Admin' : 'Panel de Control' }}</span>
+                            <span class="nav-text">{{ isMasterOrSuper ? 'Panel Admin' : 'Panel de Control' }}</span>
                         </router-link>
                     </li>
                     <li v-if="isInternal" class="nav-item" :class="{ 'active': $route.path.startsWith('/clientes') }">
@@ -45,8 +45,8 @@
                             <span class="nav-text">Usuarios</span>
                         </router-link>
                     </li>
-                    <li v-if="isMaster || isCoordinator" class="nav-separator"><span class="separator-text">Tarjetas Digitales</span></li>
-                    <li v-if="isMaster || isCoordinator" class="nav-item" :class="{ 'active': $route.path.startsWith('/tarjetas') }">
+                    <li v-if="isMasterOrSuper || isCoordinator" class="nav-separator"><span class="separator-text">Tarjetas Digitales</span></li>
+                    <li v-if="isMasterOrSuper || isCoordinator" class="nav-item" :class="{ 'active': $route.path.startsWith('/tarjetas') }">
                         <router-link to="/tarjetas" class="nav-link" title="Tarjetas Tzion">
                             <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg></span>
                             <span class="nav-text">Tarjetas Atzion</span>
@@ -69,6 +69,7 @@ export default {
     },
     computed: {
         isMaster() { return useAuth().isMaster(); },
+        isMasterOrSuper() { return useAuth().isMasterOrSuper(); },
         isCoordinator() { return useAuth().isCoordinator(); },
         isInternal() { return useAuth().isInternal(); },
         isAdmin() { return useAuth().isAdmin(); },
@@ -88,6 +89,27 @@ export default {
     overflow: hidden;
     margin-top: 0 !important;
     padding-top: 0 !important;
+}
+
+/* Móvil: el sidebar se vuelve overlay deslizante y NO ocupa espacio del contenido.
+   Va aquí (estilo scoped) porque su especificidad gana sobre base.css/PublicApp. */
+@media (max-width: 768px) {
+    .app-sidebar {
+        position: fixed;
+        top: calc(70px + env(safe-area-inset-top, 0px));
+        left: 0;
+        bottom: 0;
+        height: auto;
+        width: 280px !important;
+        min-width: 280px !important;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .sidebar-mobile-open .app-sidebar {
+        transform: translateX(0);
+    }
 }
 
 .sidebar-inner {

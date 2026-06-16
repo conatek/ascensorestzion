@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Language" content="en">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no, viewport-fit=cover">
     <meta name="description" content="{{ $ogDescription ?? 'Ascensores Tzion - Gestion de equipos de transporte vertical' }}">
 
     <!-- Open Graph -->
@@ -48,14 +48,18 @@
 
     @cloudinaryJS
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon/favicon-16x16.png') }}">
 
     <!-- PWA -->
     <meta name="theme-color" content="#30ab0a">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Atzion">
-    <link rel="apple-touch-icon" href="{{ asset('images/pwa/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/favicon/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('build/manifest.webmanifest') }}">
 
     <title>{{ $ogTitle ?? 'Ascensores Tzion' }}</title>

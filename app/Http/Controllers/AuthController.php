@@ -71,7 +71,7 @@ class AuthController extends Controller
     {
         $master = $request->user();
 
-        if (! $master->hasRole('master')) {
+        if (! $master->hasRole('master') && ! $master->hasRole('super')) {
             return response()->json(['message' => 'No autorizado.'], 403);
         }
 

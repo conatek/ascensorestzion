@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\ReportCompleted;
 use App\Http\Requests\StoreServiceReportRequest;
+use App\Mail\ServiceReportMail;
 use App\Models\Equipment;
 use App\Models\ServiceReport;
 use App\Models\ServiceReportAuditLog;
@@ -11,7 +12,6 @@ use App\Models\User;
 use App\Notifications\ReportCompletedNotification;
 use App\Services\ServiceReportNumberingService;
 use App\Services\ServiceReportSigningService;
-use App\Mail\ServiceReportMail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -24,12 +24,13 @@ class ServiceReportController extends Controller
     public function __construct(
         private ServiceReportNumberingService $numbering,
         private ServiceReportSigningService $signing,
+        private \App\Services\CloudinaryService $cloudinary,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_reports'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_reports'), 403, 'No autorizado.');
 
         $query = ServiceReport::with([
             'equipment:id,internal_code,brand,model',
@@ -72,7 +73,7 @@ class ServiceReportController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('report_number', 'like', "%{$s}%")
-                  ->orWhereHas('equipment', fn($eq) => $eq->where('internal_code', 'like', "%{$s}%"));
+                    ->orWhereHas('equipment', fn ($eq) => $eq->where('internal_code', 'like', "%{$s}%"));
             });
         }
 
@@ -82,65 +83,79 @@ class ServiceReportController extends Controller
     public function store(StoreServiceReportRequest $request): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('create_report'), 403, 'No autorizado.');
+        abort_if(! $user->can('create_report'), 403, 'No autorizado.');
 
         $data = $request->validated();
+
+        // Idempotencia para sync offline: si el reporte ya existe (mismo client_uuid),
+        // devolverlo sin duplicar.
+        if (! empty($data['client_uuid'])) {
+            $existing = ServiceReport::where('client_uuid', $data['client_uuid'])->first();
+            if ($existing) {
+                return response()->json(
+                    $existing->load(['equipment.site.client', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks', 'technician']),
+                    200
+                );
+            }
+        }
+
         $equipment = Equipment::with('site.client')->findOrFail($data['equipment_id']);
 
         // Crear reporte base
         $report = ServiceReport::create([
-            'report_number'          => $this->numbering->generate($data['report_type']),
-            'report_type'            => $data['report_type'],
-            'equipment_id'           => $equipment->id,
-            'client_id'              => $equipment->site->client_id,
-            'site_id'                => $equipment->site_id,
-            'customer_order_ref'     => $data['customer_order_ref'] ?? null,
-            'service_date'           => $data['service_date'],
-            'time_in'                => $data['time_in'] ?? null,
-            'time_out'               => $data['time_out'] ?? null,
-            'technician_id'          => $user->id,
+            'report_number' => $this->numbering->generate($data['report_type']),
+            'client_uuid' => $data['client_uuid'] ?? null,
+            'report_type' => $data['report_type'],
+            'equipment_id' => $equipment->id,
+            'client_id' => $equipment->site->client_id,
+            'site_id' => $equipment->site_id,
+            'customer_order_ref' => $data['customer_order_ref'] ?? null,
+            'service_date' => $data['service_date'],
+            'time_in' => $data['time_in'] ?? null,
+            'time_out' => $data['time_out'] ?? null,
+            'technician_id' => $user->id,
             'secondary_technician_id' => $data['secondary_technician_id'] ?? null,
-            'equipment_functional'   => $data['equipment_functional'] ?? null,
-            'generates_quotation'    => $data['generates_quotation'] ?? false,
-            'requires_parts_change'  => $data['requires_parts_change'] ?? false,
-            'conclusion_notes'       => $data['conclusion_notes'] ?? null,
-            'status'                 => 'borrador',
-            'created_by'             => $user->id,
+            'equipment_functional' => $data['equipment_functional'] ?? null,
+            'generates_quotation' => $data['generates_quotation'] ?? false,
+            'requires_parts_change' => $data['requires_parts_change'] ?? false,
+            'conclusion_notes' => $data['conclusion_notes'] ?? null,
+            'status' => 'borrador',
+            'created_by' => $user->id,
         ]);
 
         // Guardar condiciones iniciales
-        if (!empty($data['initial_conditions'])) {
+        if (! empty($data['initial_conditions'])) {
             foreach ($data['initial_conditions'] as $condition) {
                 $report->initialConditions()->create($condition);
             }
         }
 
         // RSTP: actividades
-        if ($data['report_type'] === 'RSTP' && !empty($data['rstp_activities'])) {
+        if ($data['report_type'] === 'RSTP' && ! empty($data['rstp_activities'])) {
             foreach ($data['rstp_activities'] as $activity) {
                 $report->rstpActivities()->create($activity);
             }
         }
 
         // RSTP: mes del mantenimiento
-        if ($data['report_type'] === 'RSTP' && !empty($data['rstp_month'])) {
+        if ($data['report_type'] === 'RSTP' && ! empty($data['rstp_month'])) {
             $report->rstpMonth()->create($data['rstp_month']);
         }
 
         // RSTC: detalles de análisis
-        if ($data['report_type'] === 'RSTC' && !empty($data['rstc_details'])) {
+        if ($data['report_type'] === 'RSTC' && ! empty($data['rstc_details'])) {
             $report->rstcDetails()->create($data['rstc_details']);
         }
 
         // RSTC/RSTE: códigos de falla
-        if (in_array($data['report_type'], ['RSTC', 'RSTE']) && !empty($data['fault_codes'])) {
+        if (in_array($data['report_type'], ['RSTC', 'RSTE']) && ! empty($data['fault_codes'])) {
             foreach ($data['fault_codes'] as $code) {
                 $report->faultCodes()->create($code);
             }
         }
 
         // RSTE: trabajos
-        if ($data['report_type'] === 'RSTE' && !empty($data['rste_works'])) {
+        if ($data['report_type'] === 'RSTE' && ! empty($data['rste_works'])) {
             foreach ($data['rste_works'] as $work) {
                 $report->rsteWorks()->create($work);
             }
@@ -149,11 +164,11 @@ class ServiceReportController extends Controller
         // Audit log
         ServiceReportAuditLog::create([
             'service_report_id' => $report->id,
-            'user_id'           => $user->id,
-            'action'            => 'created',
-            'ip'                => $request->ip(),
-            'user_agent'        => $request->userAgent(),
-            'created_at'        => now(),
+            'user_id' => $user->id,
+            'action' => 'created',
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
         return response()->json(
@@ -165,7 +180,7 @@ class ServiceReportController extends Controller
     public function show(Request $request, ServiceReport $serviceReport): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_reports'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_reports'), 403, 'No autorizado.');
 
         if ($user->hasRole('admin') && $user->client_id !== $serviceReport->client_id) {
             abort(403, 'No autorizado.');
@@ -176,6 +191,7 @@ class ServiceReportController extends Controller
             'technician:id,name,document_type,document_number',
             'secondaryTechnician:id,name',
             'initialConditions',
+            'attachments',
             'auditLog.user:id,name',
         ];
 
@@ -199,25 +215,25 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
 
-        if ($serviceReport->status !== 'borrador' && !$user->can('edit_any_report')) {
+        if ($serviceReport->status !== 'borrador' && ! $user->can('edit_any_report')) {
             abort(403, 'Solo se pueden editar reportes en borrador.');
         }
-        if ($serviceReport->status === 'borrador' && $serviceReport->created_by !== $user->id && !$user->can('edit_any_report')) {
+        if ($serviceReport->status === 'borrador' && $serviceReport->created_by !== $user->id && ! $user->can('edit_any_report')) {
             abort(403, 'No autorizado.');
         }
 
         $data = $request->validated();
 
         $serviceReport->update([
-            'customer_order_ref'     => $data['customer_order_ref'] ?? $serviceReport->customer_order_ref,
-            'service_date'           => $data['service_date'],
-            'time_in'                => $data['time_in'] ?? $serviceReport->time_in,
-            'time_out'               => $data['time_out'] ?? $serviceReport->time_out,
-            'equipment_functional'   => $data['equipment_functional'] ?? $serviceReport->equipment_functional,
-            'generates_quotation'    => $data['generates_quotation'] ?? $serviceReport->generates_quotation,
-            'requires_parts_change'  => $data['requires_parts_change'] ?? $serviceReport->requires_parts_change,
-            'conclusion_notes'       => $data['conclusion_notes'] ?? $serviceReport->conclusion_notes,
-            'last_edited_by'         => $user->id,
+            'customer_order_ref' => $data['customer_order_ref'] ?? $serviceReport->customer_order_ref,
+            'service_date' => $data['service_date'],
+            'time_in' => $data['time_in'] ?? $serviceReport->time_in,
+            'time_out' => $data['time_out'] ?? $serviceReport->time_out,
+            'equipment_functional' => $data['equipment_functional'] ?? $serviceReport->equipment_functional,
+            'generates_quotation' => $data['generates_quotation'] ?? $serviceReport->generates_quotation,
+            'requires_parts_change' => $data['requires_parts_change'] ?? $serviceReport->requires_parts_change,
+            'conclusion_notes' => $data['conclusion_notes'] ?? $serviceReport->conclusion_notes,
+            'last_edited_by' => $user->id,
         ]);
 
         // Sincronizar condiciones iniciales
@@ -266,11 +282,11 @@ class ServiceReportController extends Controller
 
         ServiceReportAuditLog::create([
             'service_report_id' => $serviceReport->id,
-            'user_id'           => $user->id,
-            'action'            => 'edited',
-            'ip'                => $request->ip(),
-            'user_agent'        => $request->userAgent(),
-            'created_at'        => now(),
+            'user_id' => $user->id,
+            'action' => 'edited',
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
         return response()->json($serviceReport->fresh()->load([
@@ -287,7 +303,7 @@ class ServiceReportController extends Controller
             abort(403, 'Solo se pueden eliminar reportes en borrador.');
         }
 
-        abort_if(!$user->can('edit_any_report') && $serviceReport->created_by !== $user->id, 403, 'No autorizado.');
+        abort_if(! $user->can('edit_any_report') && $serviceReport->created_by !== $user->id, 403, 'No autorizado.');
 
         $serviceReport->delete();
 
@@ -297,7 +313,7 @@ class ServiceReportController extends Controller
     public function signTechnician(Request $request, ServiceReport $serviceReport): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('sign_report_technician'), 403, 'No autorizado.');
+        abort_if(! $user->can('sign_report_technician'), 403, 'No autorizado.');
 
         $request->validate([
             'signature' => ['required', 'string'],
@@ -311,11 +327,11 @@ class ServiceReportController extends Controller
     public function signCustomer(Request $request, ServiceReport $serviceReport): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('sign_report_customer') && !$user->can('sign_report_technician'), 403, 'No autorizado.');
+        abort_if(! $user->can('sign_report_customer') && ! $user->can('sign_report_technician'), 403, 'No autorizado.');
 
         $request->validate([
-            'signature'       => ['required', 'string'],
-            'signer_name'     => ['required', 'string', 'max:255'],
+            'signature' => ['required', 'string'],
+            'signer_name' => ['required', 'string', 'max:255'],
             'signer_document' => ['required', 'string', 'max:50'],
         ]);
 
@@ -363,7 +379,7 @@ class ServiceReportController extends Controller
     public function pdf(Request $request, ServiceReport $serviceReport)
     {
         $user = $request->user();
-        abort_if(!$user->can('export_report_pdf'), 403, 'No autorizado.');
+        abort_if(! $user->can('export_report_pdf'), 403, 'No autorizado.');
 
         if ($user->hasRole('admin') && $user->client_id !== $serviceReport->client_id) {
             abort(403, 'No autorizado.');
@@ -378,9 +394,10 @@ class ServiceReportController extends Controller
             'rstcDetails',
             'faultCodes',
             'rsteWorks',
+            'attachments',
         ]);
 
-        $view = 'pdf.' . strtolower($serviceReport->report_type);
+        $view = 'pdf.'.strtolower($serviceReport->report_type);
         $html = view($view, ['report' => $serviceReport])->render();
 
         $pdf = $this->generatePdf($html);
@@ -388,7 +405,7 @@ class ServiceReportController extends Controller
         $filename = "{$serviceReport->report_number}.pdf";
 
         return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => "inline; filename=\"{$filename}\"",
         ]);
     }
@@ -396,15 +413,15 @@ class ServiceReportController extends Controller
     public function sendEmail(Request $request, ServiceReport $serviceReport): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('export_report_pdf'), 403, 'No autorizado.');
+        abort_if(! $user->can('export_report_pdf'), 403, 'No autorizado.');
 
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        $serviceReport->load(['equipment.site.client', 'technician', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks']);
+        $serviceReport->load(['equipment.site.client', 'technician', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks', 'attachments']);
 
-        $view = 'pdf.' . strtolower($serviceReport->report_type);
+        $view = 'pdf.'.strtolower($serviceReport->report_type);
         $html = view($view, ['report' => $serviceReport])->render();
 
         $pdf = $this->generatePdf($html);
@@ -417,18 +434,28 @@ class ServiceReportController extends Controller
     public function export(Request $request)
     {
         $user = $request->user();
-        abort_if(!$user->can('view_reports'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_reports'), 403, 'No autorizado.');
 
         $query = ServiceReport::with(['equipment:id,internal_code', 'client:id,business_name', 'technician:id,name']);
 
         if ($user->hasRole('admin') && $user->client_id) {
             $query->where('client_id', $user->client_id);
         }
-        if ($request->filled('report_type')) $query->where('report_type', $request->report_type);
-        if ($request->filled('client_id'))   $query->where('client_id', $request->client_id);
-        if ($request->filled('status'))      $query->where('status', $request->status);
-        if ($request->filled('date_from'))   $query->where('service_date', '>=', $request->date_from);
-        if ($request->filled('date_to'))     $query->where('service_date', '<=', $request->date_to);
+        if ($request->filled('report_type')) {
+            $query->where('report_type', $request->report_type);
+        }
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('date_from')) {
+            $query->where('service_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('service_date', '<=', $request->date_to);
+        }
 
         $reports = $query->orderByDesc('service_date')->get();
 
@@ -436,7 +463,7 @@ class ServiceReportController extends Controller
 
         $callback = function () use ($reports, $headers) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
             fputcsv($file, $headers, ';');
 
             foreach ($reports as $r) {
@@ -458,8 +485,8 @@ class ServiceReportController extends Controller
         };
 
         return response()->stream($callback, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="reportes-' . now()->format('Y-m-d') . '.csv"',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="reportes-'.now()->format('Y-m-d').'.csv"',
         ]);
     }
 
@@ -467,8 +494,9 @@ class ServiceReportController extends Controller
     {
         $browsershot = Browsershot::html($html)
             ->format('Letter')
-            ->margins(10, 10, 10, 10)
+            ->margins(8, 8, 8, 8)
             ->showBackground()
+            ->waitUntilNetworkIdle() // esperar imágenes remotas (anexo Cloudinary)
             ->noSandbox();
 
         $chromePath = env('BROWSERSHOT_CHROME_PATH');
@@ -495,27 +523,51 @@ class ServiceReportController extends Controller
         abort_if(! $canEdit, 403, 'No autorizado.');
 
         $request->validate([
-            'file' => ['required', 'file', 'max:51200'], // 50MB max
+            'file' => ['required', 'file', 'max:61440'], // 60MB max (video de hasta 1 min)
             'type' => ['required', 'in:foto_antes,foto_despues,cotizacion,otro'],
             'condition_key' => ['nullable', 'string', 'max:50'],
             'activity_key' => ['nullable', 'string', 'max:50'],
             'group_key' => ['nullable', 'string', 'max:50'],
             'media_type' => ['nullable', 'in:foto,video'],
+            'client_uuid' => ['nullable', 'uuid'],
         ]);
 
+        // Idempotencia para sync offline: si el adjunto ya existe (mismo
+        // client_uuid), devolverlo sin volver a subir el archivo.
+        if ($request->filled('client_uuid')) {
+            $existing = $serviceReport->attachments()
+                ->where('client_uuid', $request->client_uuid)
+                ->first();
+            if ($existing) {
+                return response()->json($existing->load('uploader:id,name'), 200);
+            }
+        }
+
         $file = $request->file('file');
-        $path = $file->store(
-            "report-attachments/{$serviceReport->id}",
-            'local',
-        );
+        $folder = \App\Services\CloudinaryService::envFolder()."/reportes/{$serviceReport->id}";
+        $uploaded = $this->cloudinary->upload($file, $folder);
+
+        // Video: tope de 1 minuto. Si excede, borrar de Cloudinary y rechazar.
+        $isVideo = $uploaded['resource_type'] === 'video';
+        if ($isVideo && $uploaded['duration'] !== null && $uploaded['duration'] > 61) {
+            $this->cloudinary->destroyVideo($uploaded['public_id']);
+
+            return response()->json([
+                'message' => 'El video supera el límite de 1 minuto.',
+                'errors' => ['file' => ['El video supera el límite de 1 minuto.']],
+            ], 422);
+        }
 
         $attachment = $serviceReport->attachments()->create([
+            'client_uuid' => $request->client_uuid,
             'type' => $request->type,
             'condition_key' => $request->condition_key,
             'activity_key' => $request->activity_key,
             'group_key' => $request->group_key,
-            'media_type' => $request->media_type ?? 'foto',
-            'file_path' => $path,
+            'media_type' => $isVideo ? 'video' : ($request->media_type ?? 'foto'),
+            'url' => $uploaded['url'],
+            'cloudinary_public_id' => $uploaded['public_id'],
+            'duration' => $uploaded['duration'] !== null ? (int) round($uploaded['duration']) : null,
             'original_name' => $file->getClientOriginalName(),
             'uploaded_by' => $user->id,
         ]);

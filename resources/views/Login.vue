@@ -2,66 +2,86 @@
     <div class="auth-page">
         <!-- Left Side - Illustration -->
         <div class="auth-illustration">
+            <!-- Fondo decorativo -->
+            <div class="ai-glow ai-glow--1"></div>
+            <div class="ai-glow ai-glow--2"></div>
+            <div class="ai-grid"></div>
+
             <div class="illustration-content">
-                <!-- Decorative Background Elements -->
-                <div class="bg-shapes">
-                    <div class="shape shape-1"></div>
-                    <div class="shape shape-2"></div>
-                    <div class="shape shape-3"></div>
-                </div>
+                <svg class="auth-svg" viewBox="0 0 420 460" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Halo -->
+                    <circle cx="210" cy="210" r="160" fill="url(#halo)" opacity="0.6"/>
 
-                <!-- Main SVG Illustration -->
-                <svg class="auth-svg" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Background Circle -->
-                    <circle cx="200" cy="200" r="150" fill="white" opacity="0.1"/>
+                    <!-- Edificio -->
+                    <rect x="120" y="60" width="180" height="320" rx="10" fill="#0f2417" stroke="#30ab0a" stroke-width="1.5" opacity="0.95"/>
 
-                    <!-- Lock/Security Icon -->
-                    <g transform="translate(140, 100)">
-                        <!-- Lock Body -->
-                        <rect x="20" y="80" width="80" height="70" rx="10" fill="white" opacity="0.95"/>
-                        <rect x="20" y="80" width="80" height="70" rx="10" stroke="white" stroke-width="2"/>
+                    <!-- Pisos -->
+                    <line x1="120" y1="140" x2="300" y2="140" stroke="#2f6b3a" stroke-width="1" opacity="0.5"/>
+                    <line x1="120" y1="220" x2="300" y2="220" stroke="#2f6b3a" stroke-width="1" opacity="0.5"/>
+                    <line x1="120" y1="300" x2="300" y2="300" stroke="#2f6b3a" stroke-width="1" opacity="0.5"/>
 
-                        <!-- Lock Arc -->
-                        <path d="M35 80V60C35 40 50 25 60 25C70 25 85 40 85 60V80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none"/>
+                    <!-- Ventanas izquierda -->
+                    <rect x="138" y="78" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="138" y="158" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="138" y="238" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="138" y="318" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
 
-                        <!-- Keyhole -->
-                        <circle cx="60" cy="110" r="10" fill="#30ab0a"/>
-                        <rect x="56" y="115" width="8" height="15" rx="2" fill="#30ab0a"/>
+                    <!-- Ventanas derecha -->
+                    <rect x="248" y="78" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="248" y="158" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="248" y="238" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+                    <rect x="248" y="318" width="34" height="44" rx="3" fill="#13351f" stroke="#37c20c" stroke-width="1" opacity="0.7"/>
+
+                    <!-- Ducto del ascensor -->
+                    <rect x="185" y="66" width="50" height="308" rx="4" fill="#08130c" stroke="#37c20c" stroke-width="1.5"/>
+                    <line x1="200" y1="66" x2="200" y2="150" stroke="#37c20c" stroke-width="1" stroke-dasharray="5 4" opacity="0.8"/>
+                    <line x1="220" y1="66" x2="220" y2="150" stroke="#37c20c" stroke-width="1" stroke-dasharray="5 4" opacity="0.8"/>
+
+                    <!-- Cabina -->
+                    <rect x="190" y="150" width="40" height="58" rx="4" fill="#30ab0a" stroke="#9bf06f" stroke-width="1.5"/>
+                    <line x1="210" y1="154" x2="210" y2="204" stroke="#08130c" stroke-width="1.5"/>
+                    <polygon points="204,170 210,162 216,170" fill="#0b1120"/>
+                    <polygon points="204,188 210,196 216,188" fill="#0b1120"/>
+
+                    <!-- Entrada -->
+                    <rect x="192" y="350" width="36" height="24" rx="2" fill="#08130c" stroke="#37c20c" stroke-width="1"/>
+
+                    <!-- Tarjetas flotantes -->
+                    <g opacity="0.9">
+                        <rect x="40" y="150" width="74" height="50" rx="10" fill="#101a2e" stroke="#30ab0a" stroke-width="1"/>
+                        <rect x="52" y="164" width="34" height="6" rx="3" fill="#37c20c" opacity="0.8"/>
+                        <rect x="52" y="178" width="50" height="5" rx="2.5" fill="#3a4a63"/>
+                        <circle cx="98" cy="178" r="6" fill="#ba2831" opacity="0.85"/>
+                    </g>
+                    <g opacity="0.9">
+                        <rect x="306" y="250" width="74" height="50" rx="10" fill="#101a2e" stroke="#30ab0a" stroke-width="1"/>
+                        <circle cx="324" cy="275" r="9" fill="none" stroke="#37c20c" stroke-width="2"/>
+                        <path d="M320 275 l3 3 l6 -6" stroke="#37c20c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="340" y="270" width="30" height="5" rx="2.5" fill="#3a4a63"/>
+                        <rect x="340" y="280" width="20" height="4" rx="2" fill="#2a3850"/>
                     </g>
 
-                    <!-- Floating Cards -->
-                    <g class="floating-card" style="animation-delay: 0s">
-                        <rect x="50" y="250" width="80" height="50" rx="8" fill="white" opacity="0.2"/>
-                        <rect x="60" y="265" width="40" height="6" rx="3" fill="white" opacity="0.5"/>
-                        <rect x="60" y="280" width="25" height="4" rx="2" fill="white" opacity="0.3"/>
-                    </g>
+                    <!-- Puntos decorativos -->
+                    <circle cx="70" cy="90" r="4" fill="#37c20c" opacity="0.6"/>
+                    <circle cx="350" cy="120" r="5" fill="#37c20c" opacity="0.4"/>
+                    <circle cx="360" cy="380" r="4" fill="#ba2831" opacity="0.5"/>
+                    <circle cx="60" cy="360" r="4" fill="#37c20c" opacity="0.5"/>
 
-                    <g class="floating-card" style="animation-delay: 0.5s">
-                        <rect x="270" y="200" width="80" height="50" rx="8" fill="white" opacity="0.2"/>
-                        <circle cx="290" cy="225" r="10" fill="white" opacity="0.3"/>
-                        <rect x="310" y="220" width="30" height="4" rx="2" fill="white" opacity="0.4"/>
-                        <rect x="310" y="230" width="20" height="3" rx="1.5" fill="white" opacity="0.3"/>
-                    </g>
+                    <!-- Líneas de conexión -->
+                    <path d="M114 175 Q 150 175 185 185" stroke="#30ab0a" stroke-width="1.2" opacity="0.4" fill="none"/>
+                    <path d="M306 275 Q 270 275 235 250" stroke="#30ab0a" stroke-width="1.2" opacity="0.4" fill="none"/>
 
-                    <!-- Decorative Dots -->
-                    <circle cx="100" cy="150" r="4" fill="white" opacity="0.4"/>
-                    <circle cx="300" cy="120" r="5" fill="white" opacity="0.3"/>
-                    <circle cx="330" cy="300" r="3" fill="white" opacity="0.5"/>
-                    <circle cx="80" cy="320" r="4" fill="white" opacity="0.3"/>
-
-                    <!-- Connection Lines -->
-                    <path d="M100 200 Q 150 180 200 200" stroke="white" stroke-width="1" opacity="0.2" fill="none"/>
-                    <path d="M200 200 Q 250 220 300 200" stroke="white" stroke-width="1" opacity="0.2" fill="none"/>
+                    <defs>
+                        <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+                            <stop offset="0%" stop-color="#30ab0a" stop-opacity="0.35"/>
+                            <stop offset="100%" stop-color="#30ab0a" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
                 </svg>
-
-                <!-- Brand -->
-                <div class="illustration-brand">
-                    <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" style="height: 60px; filter: brightness(0) invert(1);" />
-                </div>
 
                 <div class="illustration-text">
                     <h2>Bienvenido</h2>
-                    <p>Sistema integral de gestion de equipos de transporte vertical.</p>
+                    <p>Sistema integral de gestión de equipos de transporte vertical.</p>
                 </div>
             </div>
         </div>
@@ -69,13 +89,13 @@
         <!-- Right Side - Form -->
         <div class="auth-form-container">
             <div class="auth-form-wrapper">
-                <!-- Mobile Logo -->
-                <div class="mobile-logo">
-                    <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" style="height: 60px;" />
+                <!-- Logo (versión original) -->
+                <div class="auth-logo">
+                    <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" class="auth-logo-img" />
                 </div>
 
                 <div class="auth-header">
-                    <h1>Iniciar Sesion</h1>
+                    <h1>Iniciar Sesión</h1>
                     <p>Ingresa tus credenciales para acceder a tu cuenta</p>
                 </div>
 
@@ -90,9 +110,7 @@
                 <form @submit.prevent="handleLogin" class="auth-form">
                     <!-- Email Field -->
                     <div class="form-group">
-                        <label for="email" class="form-label">
-                            Correo electronico
-                        </label>
+                        <label for="email" class="form-label">Correo electrónico</label>
                         <div class="input-wrapper">
                             <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
@@ -104,7 +122,7 @@
                                 type="email"
                                 class="form-input"
                                 :class="{ 'has-error': errors.email }"
-                                placeholder="tu@email.com"
+                                placeholder="tu@correo.com"
                                 required
                                 autofocus
                             >
@@ -114,9 +132,7 @@
 
                     <!-- Password Field -->
                     <div class="form-group">
-                        <label for="password" class="form-label">
-                            Contrasena
-                        </label>
+                        <label for="password" class="form-label">Contraseña</label>
                         <div class="input-wrapper">
                             <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
@@ -127,7 +143,7 @@
                                 :type="showPassword ? 'text' : 'password'"
                                 class="form-input"
                                 :class="{ 'has-error': errors.password }"
-                                placeholder="Tu contrasena"
+                                placeholder="Tu contraseña"
                                 required
                             >
                             <button type="button" class="toggle-password" @click="showPassword = !showPassword">
@@ -151,15 +167,14 @@
                     </button>
                 </form>
 
-                <!-- Register Link -->
+                <!-- ¿Olvidó su contraseña? -->
                 <div class="auth-footer">
                     <p>
-                        No tienes una cuenta?
-                        <router-link to="/register" class="auth-link">Registrate aqui</router-link>
+                        <router-link to="/recuperar-contrasena" class="auth-link">¿Olvidaste tu contraseña?</router-link>
                     </p>
                 </div>
 
-                <!-- Back to Home -->
+                <!-- Volver al inicio -->
                 <router-link to="/inicio" class="back-link">
                     <svg viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
@@ -202,12 +217,12 @@ export default {
                     if (error.response.status === 422) {
                         this.errors = error.response.data.errors || {};
                     } else if (error.response.status === 401) {
-                        this.errorMessage = error.response.data.message || 'Credenciales invalidas';
+                        this.errorMessage = error.response.data.message || 'Credenciales inválidas';
                     } else {
-                        this.errorMessage = 'Error al iniciar sesion. Intenta de nuevo.';
+                        this.errorMessage = 'Error al iniciar sesión. Intenta de nuevo.';
                     }
                 } else {
-                    this.errorMessage = 'Error de conexion. Verifica tu red.';
+                    this.errorMessage = 'Error de conexión. Verifica tu red.';
                 }
             } finally {
                 this.loading = false;
@@ -222,119 +237,92 @@ export default {
 .auth-page {
     display: flex;
     min-height: 100vh;
+    background: #0b1120;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Left Side - Illustration */
+/* ===== Left Side - Illustration ===== */
 .auth-illustration {
-    flex: 0 0 45%;
-    background: linear-gradient(135deg, #30ab0a 0%, #ba2831 100%);
+    flex: 0 0 48%;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 3rem;
-    position: relative;
     overflow: hidden;
+    background:
+        radial-gradient(circle at 28% 22%, rgba(48, 171, 10, 0.16), transparent 42%),
+        linear-gradient(165deg, #0a1f12 0%, #0b1120 52%, #0a1626 100%);
+}
+
+.ai-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+}
+.ai-glow--1 {
+    width: 360px; height: 360px;
+    top: -80px; left: -60px;
+    background: rgba(48, 171, 10, 0.25);
+}
+.ai-glow--2 {
+    width: 300px; height: 300px;
+    bottom: -60px; right: -40px;
+    background: rgba(186, 40, 49, 0.16);
+}
+.ai-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 75%);
+    z-index: 0;
 }
 
 .illustration-content {
     position: relative;
     z-index: 1;
     text-align: center;
-    color: white;
-}
-
-/* Background Shapes */
-.bg-shapes {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-}
-
-.shape {
-    position: absolute;
-    border-radius: 50%;
-    background: white;
-    opacity: 0.05;
-}
-
-.shape-1 {
-    width: 400px;
-    height: 400px;
-    top: -100px;
-    left: -100px;
-}
-
-.shape-2 {
-    width: 300px;
-    height: 300px;
-    bottom: -50px;
-    right: -50px;
-}
-
-.shape-3 {
-    width: 200px;
-    height: 200px;
-    top: 50%;
-    right: 10%;
+    color: #e8eef7;
+    width: 100%;
+    max-width: 440px;
 }
 
 .auth-svg {
     width: 100%;
-    max-width: 350px;
+    max-width: 360px;
     height: auto;
-    margin-bottom: 2rem;
-}
-
-.floating-card {
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
-
-.illustration-brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.brand-logo {
-    width: 40px;
-    height: 40px;
-}
-
-.brand-name {
-    font-size: 1.5rem;
-    font-weight: 700;
+    margin: 0 auto 1.5rem;
+    display: block;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45));
 }
 
 .illustration-text h2 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.6rem;
+    color: #f1f5f9;
 }
-
 .illustration-text p {
     font-size: 1rem;
-    opacity: 0.9;
-    max-width: 300px;
+    line-height: 1.65;
+    color: #93a3bb;
     margin: 0 auto;
-    line-height: 1.6;
+    max-width: 360px;
 }
 
-/* Right Side - Form */
+/* ===== Right Side - Form ===== */
 .auth-form-container {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3rem;
-    background: white;
+    padding: 2.5rem;
+    background: #0b1120;
 }
 
 .auth-form-wrapper {
@@ -342,69 +330,61 @@ export default {
     max-width: 400px;
 }
 
-.mobile-logo {
-    display: none;
-    margin-bottom: 2rem;
+.auth-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
 }
-
-.mobile-logo svg {
-    width: 48px;
-    height: 48px;
+.auth-logo-img {
+    height: 58px;
+    width: auto;
 }
 
 .auth-header {
+    text-align: center;
     margin-bottom: 2rem;
 }
-
 .auth-header h1 {
-    font-size: 1.875rem;
+    font-size: 1.8rem;
     font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
+    color: #f1f5f9;
+    margin: 0 0 0.5rem;
 }
-
 .auth-header p {
-    color: #64748b;
     font-size: 0.95rem;
+    color: #93a3bb;
+    margin: 0;
 }
 
 /* Error Alert */
 .error-alert {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
+    gap: 0.6rem;
+    background: rgba(186, 40, 49, 0.12);
+    border: 1px solid rgba(186, 40, 49, 0.35);
+    color: #f1909a;
+    padding: 0.8rem 1rem;
     border-radius: 10px;
-    color: #dc2626;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
 }
-
 .alert-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
 }
 
 /* Form */
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    margin-bottom: 1.25rem;
 }
-
 .form-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #c3cfe0;
+    margin-bottom: 0.5rem;
 }
 
 .input-wrapper {
@@ -412,175 +392,120 @@ export default {
     display: flex;
     align-items: center;
 }
-
 .input-icon {
     position: absolute;
-    left: 1rem;
+    left: 0.9rem;
     width: 18px;
     height: 18px;
-    color: #94a3b8;
+    color: #5d6f8a;
     pointer-events: none;
 }
-
 .form-input {
     width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    font-size: 0.95rem;
-    border: 1px solid #e2e8f0;
+    padding: 0.8rem 0.9rem 0.8rem 2.6rem;
+    background: #111c30;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    background: white;
-    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #e8eef7;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
-
+.form-input::placeholder { color: #54637c; }
 .form-input:focus {
     outline: none;
     border-color: #30ab0a;
-    box-shadow: 0 0 0 3px rgba(48, 171, 10, 0.1);
+    box-shadow: 0 0 0 3px rgba(48, 171, 10, 0.18);
 }
-
 .form-input.has-error {
     border-color: #ba2831;
 }
 
-.form-input::placeholder {
-    color: #94a3b8;
-}
-
 .toggle-password {
     position: absolute;
-    right: 1rem;
+    right: 0.75rem;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
-    color: #94a3b8;
-    transition: color 0.2s;
+    color: #5d6f8a;
+    padding: 0.25rem;
+    display: flex;
 }
-
-.toggle-password:hover {
-    color: #64748b;
-}
-
-.toggle-password svg {
-    width: 18px;
-    height: 18px;
-}
+.toggle-password svg { width: 18px; height: 18px; }
+.toggle-password:hover { color: #30ab0a; }
 
 .error-text {
-    font-size: 0.8rem;
-    color: #ba2831;
+    display: block;
+    color: #f1909a;
+    font-size: 0.78rem;
+    margin-top: 0.35rem;
 }
 
-/* Submit Button */
 .btn-submit {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #30ab0a, #248007);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    width: 100%;
-    padding: 0.875rem;
-    background: linear-gradient(135deg, #30ab0a, #279208);
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.25);
-    margin-top: 0.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 24px rgba(48, 171, 10, 0.25);
 }
-
 .btn-submit:hover:not(:disabled) {
-    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
     transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(48, 171, 10, 0.35);
 }
-
-.btn-submit:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
+.btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
 
 .spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Footer */
-.auth-footer {
-    text-align: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #f1f5f9;
-}
-
-.auth-footer p {
-    color: #64748b;
-    font-size: 0.95rem;
-}
-
-.auth-link {
-    color: #30ab0a;
-    font-weight: 600;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.auth-link:hover {
-    color: #279208;
-    text-decoration: underline;
-}
-
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-    color: #64748b;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.back-link:hover {
-    color: #30ab0a;
-}
-
-.back-link svg {
     width: 16px;
     height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Responsive */
-@media (max-width: 992px) {
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+.auth-link {
+    color: #4cc40f;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+.auth-link:hover { text-decoration: underline; }
+
+.back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    color: #6b7c96;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.back-link svg { width: 16px; height: 16px; }
+.back-link:hover { color: #93a3bb; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
     .auth-illustration {
         display: none;
     }
-
     .auth-form-container {
-        padding: 2rem;
-    }
-
-    .mobile-logo {
-        display: block;
-    }
-}
-
-@media (max-width: 576px) {
-    .auth-form-container {
-        padding: 1.5rem;
-    }
-
-    .auth-header h1 {
-        font-size: 1.5rem;
+        flex: 1;
     }
 }
 </style>

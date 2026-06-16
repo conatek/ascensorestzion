@@ -3,25 +3,31 @@
 namespace App\Services;
 
 use App\Models\Equipment;
-use chillerlan\QRCode\{QRCode, QROptions};
+use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Output\QRGdImagePNG;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Facades\Storage;
 
 class QrCodeService
 {
+    private function options(bool $base64): QROptions
+    {
+        return new QROptions([
+            'outputInterface' => QRGdImagePNG::class,
+            'outputBase64' => $base64,
+            'scale' => 10,
+            'eccLevel' => EccLevel::H,
+            'addQuietzone' => true,
+            'quietzoneSize' => 2,
+        ]);
+    }
+
     public function generate(Equipment $equipment): string
     {
         $content = $this->getContent($equipment);
 
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'scale' => 10,
-            'imageBase64' => false,
-            'eccLevel' => QRCode::ECC_H,
-            'addQuietzone' => true,
-            'quietzoneSize' => 2,
-        ]);
-
-        $qrImage = (new QRCode($options))->render($content);
+        $qrImage = (new QRCode($this->options(false)))->render($content);
 
         $directory = 'qrcodes';
         $filename = "equipment-{$equipment->internal_code}.png";
@@ -32,6 +38,11 @@ class QrCodeService
         $equipment->update(['qr_code_path' => $path]);
 
         return $path;
+    }
+
+    public function getBase64(Equipment $equipment): string
+    {
+        return (new QRCode($this->options(true)))->render($this->getContent($equipment));
     }
 
     public function getContent(Equipment $equipment): string

@@ -104,6 +104,10 @@
                     Fuera del rango — {{ checkinResult.proximity.distance_meters }}m del sitio
                 </span>
             </div>
+            <div v-else-if="checkinResult.checkin.latitude" class="proximity-badge proximity-neutral">
+                <i class="fa fa-info-circle"></i>
+                <span>Ubicación registrada (la sede no tiene coordenadas para validar el rango).</span>
+            </div>
 
             <!-- Tiempo de respuesta si emergencia -->
             <div v-if="checkinResult.checkin.is_emergency && checkinResult.checkin.response_time_minutes != null" class="response-time-badge">
@@ -148,7 +152,11 @@ export default {
         };
     },
 
-    created() {
+    async created() {
+        // Obtener la ubicacion ANTES de cualquier check-in para que el QR
+        // (que auto-registra al llegar) incluya las coordenadas y se valide la proximidad.
+        await this.requestGeolocation();
+
         // Pre-cargar codigo de query params (viene del QR URL)
         const code = this.$route.query.code;
         if (code) {
@@ -156,8 +164,6 @@ export default {
             this.manualCode = code;
             this.submitManualCode();
         }
-
-        this.requestGeolocation();
     },
 
     methods: {
@@ -531,6 +537,11 @@ export default {
 .proximity-warn {
     background: #fffbeb;
     color: #d97706;
+}
+
+.proximity-neutral {
+    background: #f1f5f9;
+    color: #606060;
 }
 
 .response-time-badge {

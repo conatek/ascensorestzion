@@ -60,8 +60,14 @@ class PermissionSeeder extends Seeder
             'edit_equipment',
             'delete_equipment',
 
-            // Usuarios
-            'manage_users',
+            // Usuarios (CRUD granular)
+            'view_users',
+            'create_user',
+            'edit_user',
+            'delete_user',
+
+            // Roles y permisos
+            'manage_roles',
 
             // Catalogos
             'manage_catalogs',

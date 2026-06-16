@@ -26,12 +26,12 @@
 
         <!-- Modal cropper -->
         <Teleport to="body">
-            <div v-if="showCropper" class="cropper-modal">
-                <div class="cropper-modal__header">
+            <div v-if="showCropper" class="dm-cropper">
+                <div class="dm-cropper__header">
                     <span>Recortar foto</span>
                     <button type="button" @click="cancelCrop"><i class="fa fa-times"></i></button>
                 </div>
-                <div class="cropper-modal__body">
+                <div class="dm-cropper__body">
                     <Cropper
                         ref="cropper"
                         :src="cropperSrc"
@@ -39,7 +39,7 @@
                         class="cropper-component"
                     />
                 </div>
-                <div class="cropper-modal__footer">
+                <div class="dm-cropper__footer">
                     <button type="button" class="crop-btn crop-btn--secondary" @click="cancelCrop">
                         Cancelar
                     </button>
@@ -214,7 +214,7 @@ export default {
 }
 
 /* Cropper modal */
-.cropper-modal {
+.dm-cropper {
     position: fixed;
     top: 0;
     left: 0;
@@ -226,7 +226,7 @@ export default {
     flex-direction: column;
 }
 
-.cropper-modal__header {
+.dm-cropper__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -237,7 +237,7 @@ export default {
     flex-shrink: 0;
 }
 
-.cropper-modal__header button {
+.dm-cropper__header button {
     background: none;
     border: none;
     font-size: 1.1rem;
@@ -246,7 +246,7 @@ export default {
     padding: 0.25rem;
 }
 
-.cropper-modal__body {
+.dm-cropper__body {
     flex: 1;
     overflow: hidden;
     background: #000;
@@ -257,7 +257,7 @@ export default {
     width: 100%;
 }
 
-.cropper-modal__footer {
+.dm-cropper__footer {
     display: flex;
     gap: 0.75rem;
     padding: 0.75rem 1rem;

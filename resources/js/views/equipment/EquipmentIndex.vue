@@ -15,6 +15,10 @@
                     </div>
                 </div>
                 <div class="page-title-actions">
+                    <button v-if="canDownloadQr" class="btn-qr-pdf" @click="downloadQrPdf" :disabled="downloadingQr">
+                        <i :class="downloadingQr ? 'fa fa-spinner fa-spin' : 'fa fa-qrcode'" class="me-2"></i>
+                        {{ downloadingQr ? 'Generando...' : 'Descargar QR (PDF)' }}
+                    </button>
                     <router-link :to="{ name: 'equipment.create' }" class="btn-create">
                         <i class="fa fa-plus me-2"></i> Nuevo Equipo
                     </router-link>
@@ -115,24 +119,24 @@
                     </thead>
                     <tbody>
                         <tr v-for="eq in equipments" :key="eq.id">
-                            <td>
+                            <td data-label="Codigo">
                                 <span class="code-text">{{ eq.internal_code }}</span>
                             </td>
-                            <td>
+                            <td data-label="Tipo">
                                 <span class="type-badge">{{ typeLabels[eq.equipment_type] || eq.equipment_type }}</span>
                             </td>
-                            <td>
+                            <td data-label="Marca / Modelo">
                                 <span class="brand-text">{{ eq.brand }}</span>
                                 <span v-if="eq.model" class="model-text">{{ eq.model }}</span>
                             </td>
-                            <td>{{ eq.site?.name || '-' }}</td>
-                            <td>{{ eq.site?.client?.business_name || '-' }}</td>
-                            <td>
+                            <td data-label="Sede">{{ eq.site?.name || '-' }}</td>
+                            <td data-label="Cliente">{{ eq.site?.client?.business_name || '-' }}</td>
+                            <td data-label="Estado">
                                 <span class="status-badge" :class="'status-' + eq.status">
                                     {{ statusLabels[eq.status] || eq.status }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="cell-actions" data-label="Acciones">
                                 <div class="item-actions">
                                     <router-link :to="{ name: 'equipment.show', params: { id: eq.id } }"
                                                  class="action-btn" title="Ver">
@@ -183,6 +187,7 @@
 <script>
 import equipmentService from '@/services/equipmentService.js';
 import clientService from '@/services/clientService.js';
+import { useAuth } from '@/stores/auth';
 
 export default {
     name: 'EquipmentIndex',
@@ -194,6 +199,7 @@ export default {
             loading: true,
             toDelete: null,
             deleting: false,
+            downloadingQr: false,
             searchTimeout: null,
             filters: {
                 client_id: '',
@@ -216,6 +222,15 @@ export default {
         };
     },
 
+    computed: {
+        auth() {
+            return useAuth();
+        },
+        canDownloadQr() {
+            return this.auth.isMasterOrSuper() || this.auth.isCoordinator();
+        },
+    },
+
     async created() {
         if (this.$route.query.client_id) {
             this.filters.client_id = this.$route.query.client_id;
@@ -224,6 +239,27 @@ export default {
     },
 
     methods: {
+        async downloadQrPdf() {
+            this.downloadingQr = true;
+            try {
+                const params = {};
+                if (this.filters.client_id) params.client_id = this.filters.client_id;
+                const { data } = await equipmentService.qrCodesPdf(params);
+                const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'codigos-qr-equipos.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo generar el PDF de códigos QR.');
+            } finally {
+                this.downloadingQr = false;
+            }
+        },
+
         async load() {
             this.loading = true;
             try {
@@ -294,6 +330,29 @@ export default {
     background: #1f7506;
     box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
     color: white;
+}
+
+.btn-qr-pdf {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    margin-right: 0.6rem;
+    background: white;
+    color: #279208;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid #30ab0a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-qr-pdf:hover:not(:disabled) {
+    background: #e8f5e4;
+}
+
+.btn-qr-pdf:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 /* Filtros */

@@ -34,4 +34,10 @@ export default {
     deleteAttachment(id, attachmentId) {
         return api.delete(`${resource}/${id}/attachments/${attachmentId}`);
     },
+    generateQr(id) {
+        return api.post(`${resource}/${id}/generate-qr`);
+    },
+    qrCodesPdf(params = {}) {
+        return api.get(`${resource}/qr-codes-pdf`, { params, responseType: 'blob' });
+    },
 };

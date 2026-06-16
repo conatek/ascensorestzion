@@ -9,10 +9,13 @@ class TechnicianCheckin extends Model
     protected $fillable = [
         'equipment_id',
         'technician_id',
+        'client_uuid',
         'checked_in_at',
         'latitude',
         'longitude',
         'accuracy',
+        'distance_meters',
+        'within_radius',
         'method',
         'is_emergency',
         'call_received_at',
@@ -27,6 +30,8 @@ class TechnicianCheckin extends Model
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'accuracy' => 'decimal:2',
+        'distance_meters' => 'integer',
+        'within_radius' => 'boolean',
         'response_time_minutes' => 'integer',
     ];
 

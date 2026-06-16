@@ -23,7 +23,8 @@
             <div class="user-menu" ref="userMenu">
                 <button class="user-trigger" @click="toggleUserMenu">
                     <div class="user-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <img v-if="userAvatar" :src="userAvatar" alt="Avatar" class="user-avatar-img" />
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <circle cx="12" cy="8" r="4"/>
                             <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
                         </svg>
@@ -42,7 +43,8 @@
                     <div v-if="isUserMenuOpen" class="user-dropdown">
                         <div class="dropdown-header">
                             <div class="dropdown-avatar">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <img v-if="userAvatar" :src="userAvatar" alt="Avatar" class="dropdown-avatar-img" />
+                                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <circle cx="12" cy="8" r="4"/>
                                     <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
                                 </svg>
@@ -57,13 +59,13 @@
                         <div class="dropdown-divider"></div>
 
                         <div class="dropdown-body">
-                            <a href="#" class="dropdown-item">
+                            <router-link :to="{ name: 'profile' }" class="dropdown-item" @click="isUserMenuOpen = false">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="3"/>
-                                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                                    <circle cx="12" cy="8" r="4"/>
+                                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
                                 </svg>
-                                <span>Configuracion</span>
-                            </a>
+                                <span>Mi Perfil</span>
+                            </router-link>
                         </div>
 
                         <div class="dropdown-divider"></div>
@@ -112,6 +114,9 @@ export default {
         userName() {
             const auth = useAuth();
             return auth.state.user?.name || 'Usuario';
+        },
+        userAvatar() {
+            return useAuth().state.user?.image_url || null;
         },
         userEmail() {
             const auth = useAuth();
@@ -171,13 +176,14 @@ export default {
 
 <style scoped>
 .app-header {
-    height: 70px;
+    height: auto;
+    min-height: calc(70px + env(safe-area-inset-top, 0px));
     background: white;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.5rem;
+    padding: env(safe-area-inset-top, 0px) 1.5rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -280,11 +286,19 @@ export default {
     align-items: center;
     justify-content: center;
     color: white;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .user-avatar svg {
     width: 20px;
     height: 20px;
+}
+
+.user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .user-info {
@@ -351,11 +365,18 @@ export default {
     justify-content: center;
     color: white;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .dropdown-avatar svg {
     width: 26px;
     height: 26px;
+}
+
+.dropdown-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .dropdown-user-info {

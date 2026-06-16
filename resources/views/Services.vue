@@ -4,8 +4,13 @@
 
         <!-- Hero Banner -->
         <section class="sv-hero">
-            <div class="sv-container">
-                <h1 class="sv-hero-title">Nuestros Servicios</h1>
+            <div class="sv-hero-bg">
+                <div class="orb orb--green"></div>
+                <div class="grid-texture"></div>
+            </div>
+            <div class="sv-container sv-hero-inner">
+                <span class="eyebrow">Qué ofrecemos</span>
+                <h1 class="sv-hero-title">Nuestros <span class="accent">servicios</span></h1>
                 <p class="sv-hero-subtitle">Nuestro equipo de expertos trabaja con precisión y compromiso para ofrecer soluciones confiables que aseguren la seguridad, comodidad y eficiencia en cada detalle de su experiencia.</p>
             </div>
         </section>
@@ -247,7 +252,7 @@
                     <div class="sv-equipo-card">
                         <div class="sv-equipo-icon">
                             <svg viewBox="0 0 64 64" fill="none">
-                                <rect x="14" y="6" width="36" height="52" rx="4" stroke="#1e293b" stroke-width="2"/>
+                                <rect x="14" y="6" width="36" height="52" rx="4" stroke="#93a3bb" stroke-width="2"/>
                                 <rect x="20" y="12" width="10" height="14" rx="2" fill="#30ab0a" opacity="0.15" stroke="#30ab0a" stroke-width="1.5"/>
                                 <rect x="34" y="12" width="10" height="14" rx="2" fill="#30ab0a" opacity="0.15" stroke="#30ab0a" stroke-width="1.5"/>
                                 <rect x="24" y="32" width="16" height="20" rx="2" stroke="#30ab0a" stroke-width="2"/>
@@ -264,8 +269,8 @@
                             <svg viewBox="0 0 64 64" fill="none">
                                 <path d="M8 18h14v10h12v10h12v10h10" stroke="#30ab0a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M8 24h14v10h12v10h12v10h10" stroke="#30ab0a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
-                                <circle cx="16" cy="14" r="3" stroke="#1e293b" stroke-width="1.5"/>
-                                <line x1="16" y1="17" x2="16" y2="18" stroke="#1e293b" stroke-width="1.5"/>
+                                <circle cx="16" cy="14" r="3" stroke="#93a3bb" stroke-width="1.5"/>
+                                <line x1="16" y1="17" x2="16" y2="18" stroke="#93a3bb" stroke-width="1.5"/>
                                 <path d="M6 18h4M6 24h4" stroke="#606060" stroke-width="1.5" stroke-linecap="round"/>
                                 <path d="M54 48h4M54 54h4" stroke="#606060" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
@@ -277,7 +282,7 @@
                     <div class="sv-equipo-card">
                         <div class="sv-equipo-icon">
                             <svg viewBox="0 0 64 64" fill="none">
-                                <rect x="12" y="14" width="28" height="34" rx="3" stroke="#1e293b" stroke-width="2"/>
+                                <rect x="12" y="14" width="28" height="34" rx="3" stroke="#93a3bb" stroke-width="2"/>
                                 <rect x="18" y="20" width="16" height="10" rx="2" fill="#30ab0a" opacity="0.15" stroke="#30ab0a" stroke-width="1.5"/>
                                 <rect x="18" y="34" width="16" height="8" rx="2" fill="#30ab0a" opacity="0.1" stroke="#30ab0a" stroke-width="1"/>
                                 <path d="M44 28h8v22h-8" stroke="#30ab0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -349,26 +354,50 @@ export default {
 <style scoped>
 .services-page {
     font-family: 'Poppins', sans-serif;
-    color: #1e293b;
+    background: #0b1120;
+    color: #e8eef7;
+}
+
+.eyebrow {
+    display: inline-block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #37c20c; margin-bottom: 0.75rem;
+}
+.accent {
+    background: linear-gradient(120deg, #37c20c, #9bf06f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(90px); }
+.orb--green { width: 480px; height: 480px; top: -150px; left: 50%; transform: translateX(-50%); background: rgba(48, 171, 10, 0.18); }
+.grid-texture {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(circle at 50% 30%, #000 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(circle at 50% 30%, #000 20%, transparent 70%);
 }
 
 /* Hero */
 .sv-hero {
-    background: #1e293b;
-    color: #fff;
-    padding: 120px 2rem 4rem;
+    position: relative;
+    padding: 150px 2rem 4rem;
     text-align: center;
+    overflow: hidden;
 }
+.sv-hero-bg { position: absolute; inset: 0; z-index: 0; }
+.sv-hero-inner { position: relative; z-index: 1; }
 
 .sv-hero-title {
-    font-size: 2.75rem;
-    font-weight: 700;
+    font-size: 2.9rem;
+    font-weight: 800;
+    color: #f8fafc;
     margin-bottom: 1.25rem;
 }
 
 .sv-hero-subtitle {
     font-size: 1.1rem;
-    color: #cbd5e1;
+    color: #93a3bb;
     max-width: 720px;
     margin: 0 auto;
     line-height: 1.8;
@@ -387,11 +416,13 @@ export default {
 }
 
 .sv-bg-white {
-    background: #fff;
+    background: #0b1120;
 }
 
 .sv-bg-alt {
-    background: #f8fafc;
+    background: #0d1424;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sv-service-grid {
@@ -412,7 +443,8 @@ export default {
 .sv-service-icon-wrap {
     width: 72px;
     height: 72px;
-    background: #e8f5e4;
+    background: rgba(48, 171, 10, 0.12);
+    border: 1px solid rgba(48, 171, 10, 0.25);
     border-radius: 16px;
     display: flex;
     align-items: center;
@@ -429,12 +461,12 @@ export default {
     font-size: 1.75rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    color: #1e293b;
+    color: #f8fafc;
 }
 
 .sv-service-desc {
     font-size: 1rem;
-    color: #606060;
+    color: #93a3bb;
     line-height: 1.8;
     margin-bottom: 1.5rem;
 }
@@ -450,7 +482,7 @@ export default {
     align-items: flex-start;
     gap: 0.5rem;
     font-size: 0.9rem;
-    color: #475569;
+    color: #9aa9c0;
 }
 
 .sv-check {
@@ -471,14 +503,14 @@ export default {
     width: 100%;
     max-width: 420px;
     height: 320px;
-    border: 2px dashed #cbd5e1;
-    border-radius: 16px;
+    border: 1px dashed rgba(48, 171, 10, 0.3);
+    border-radius: 18px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    background: #f8fafc;
+    background: radial-gradient(circle at 50% 40%, rgba(48, 171, 10, 0.08), transparent 70%), rgba(255, 255, 255, 0.02);
 }
 
 .sv-placeholder-icon {
@@ -488,15 +520,17 @@ export default {
 
 .sv-placeholder-text {
     font-size: 0.9rem;
-    color: #94a3b8;
+    color: #6b7c96;
     font-weight: 500;
 }
 
 /* Equipos Section */
 .sv-equipos {
-    background: #1e293b;
+    background: #0d1424;
     color: #fff;
     padding: 5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sv-section-title {
@@ -504,11 +538,11 @@ export default {
     font-weight: 700;
     text-align: center;
     margin-bottom: 3rem;
-    color: #1e293b;
+    color: #f8fafc;
 }
 
 .sv-title-light {
-    color: #fff;
+    color: #f8fafc;
 }
 
 .sv-equipos-grid {
@@ -518,15 +552,17 @@ export default {
 }
 
 .sv-equipo-card {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     padding: 2rem;
     text-align: center;
-    transition: transform 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .sv-equipo-card:hover {
     transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
 }
 
 .sv-equipo-icon {
@@ -543,20 +579,20 @@ export default {
 .sv-equipo-title {
     font-size: 1.15rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #f1f5f9;
     margin-bottom: 0.75rem;
 }
 
 .sv-equipo-desc {
     font-size: 0.9rem;
-    color: #606060;
+    color: #93a3bb;
     line-height: 1.6;
     margin: 0;
 }
 
 /* Proceso Section */
 .sv-proceso {
-    background: #fff;
+    background: #0b1120;
     padding: 5rem 0;
 }
 
@@ -576,7 +612,7 @@ export default {
 .sv-paso-number {
     width: 52px;
     height: 52px;
-    background: #30ab0a;
+    background: linear-gradient(135deg, #30ab0a, #248007);
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -587,6 +623,7 @@ export default {
     margin: 0 auto 1.25rem;
     position: relative;
     z-index: 2;
+    box-shadow: 0 8px 22px rgba(48, 171, 10, 0.35);
 }
 
 .sv-paso-line {
@@ -606,49 +643,59 @@ export default {
 .sv-paso-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #f1f5f9;
     margin-bottom: 0.5rem;
 }
 
 .sv-paso-desc {
     font-size: 0.9rem;
-    color: #606060;
+    color: #93a3bb;
     line-height: 1.5;
     margin: 0;
 }
 
 /* CTA Section */
 .sv-cta {
-    background: #30ab0a;
-    padding: 4rem 0;
+    position: relative;
+    padding: 5rem 0;
+    overflow: hidden;
+    background: #0d1424;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.sv-cta::before {
+    content: ''; position: absolute; width: 600px; height: 280px; left: 50%; top: 50%;
+    transform: translate(-50%, -50%); background: rgba(48, 171, 10, 0.16); filter: blur(100px);
 }
 
 .sv-cta-content {
+    position: relative;
+    z-index: 1;
     text-align: center;
 }
 
 .sv-cta-title {
-    font-size: 1.75rem;
+    font-size: 1.9rem;
     font-weight: 700;
-    color: #fff;
-    margin-bottom: 1.5rem;
+    color: #f8fafc;
+    margin-bottom: 1.75rem;
 }
 
 .sv-cta-btn {
     display: inline-block;
-    padding: 0.875rem 2.5rem;
-    background: #fff;
-    color: #30ab0a;
-    font-weight: 600;
+    padding: 0.9rem 2.5rem;
+    background: linear-gradient(135deg, #30ab0a, #248007);
+    color: #fff;
+    font-weight: 700;
     font-size: 1rem;
     border-radius: 10px;
     text-decoration: none;
-    transition: all 0.2s;
+    box-shadow: 0 12px 30px rgba(48, 171, 10, 0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .sv-cta-btn:hover {
-    background: #f0faf0;
     transform: translateY(-2px);
+    box-shadow: 0 16px 38px rgba(48, 171, 10, 0.5);
 }
 
 /* Responsive: 992px */
