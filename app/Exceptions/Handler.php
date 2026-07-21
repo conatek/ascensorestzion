@@ -47,4 +47,16 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * La API siempre responde JSON, aunque el cliente no mande Accept.
+     *
+     * Sin esto una peticion cruda a api/* sin autenticar terminaba en 500:
+     * el handler intentaba redirigir a la ruta `login`, que no existe porque
+     * Fortify esta desactivado. Ahora devuelve el 401 que corresponde.
+     */
+    protected function shouldReturnJson($request, Throwable $e): bool
+    {
+        return $request->is('api/*') || parent::shouldReturnJson($request, $e);
+    }
 }
