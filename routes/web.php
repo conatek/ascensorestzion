@@ -26,17 +26,25 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
         if ($card) {
             $image = $card->thumbnail_path ?? $card->photo_path;
 
-            // Transformar URL de Cloudinary: imagen cuadrada → 1200x630 con padding
-            // para que WhatsApp no recorte los bordes
+            // Transformar URL de Cloudinary a 300x300 con padding.
+            //
+            // El tamaño decide el formato de la vista previa en WhatsApp: con una
+            // imagen grande (1200x630) muestra la tarjeta alta, con la foto arriba
+            // y el texto debajo. Con una imagen pequeña y cuadrada vuelve al
+            // formato horizontal (miniatura a la izquierda, textos a la derecha),
+            // que es el que queremos. 300x300 es el tamaño nativo del thumbnail.
+            //
+            // c_pad en vez de c_fill para que una foto no cuadrada (el fallback a
+            // photo_path) se rellene en vez de recortarse.
             if ($image) {
-                $image = str_replace('/image/upload/', '/image/upload/w_1200,h_630,c_pad,b_white/', $image);
+                $image = str_replace('/image/upload/', '/image/upload/w_300,h_300,c_pad,b_white/', $image);
             }
 
             return view('app', [
-                'ogTitle'       => $card->full_name,
-                'ogDescription' => trim(($card->job_title ? $card->job_title . ' — ' : '') . $company->name),
-                'ogImage'       => $image,
-                'ogUrl'         => url($card->slug),
+                'ogTitle' => $card->full_name,
+                'ogDescription' => trim(($card->job_title ? $card->job_title.' — ' : '').$company->name),
+                'ogImage' => $image,
+                'ogUrl' => url($card->slug),
             ]);
         }
     }
