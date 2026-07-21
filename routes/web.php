@@ -26,18 +26,31 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
         if ($card) {
             $image = $card->thumbnail_path ?? $card->photo_path;
 
-            // Transformar URL de Cloudinary a 300x300 con padding.
+            // Transformar la URL de Cloudinary: contenido de 210x210 centrado en un
+            // lienzo blanco de 300x300 (margen del 15% por lado).
             //
-            // El tamaño decide el formato de la vista previa en WhatsApp: con una
-            // imagen grande (1200x630) muestra la tarjeta alta, con la foto arriba
-            // y el texto debajo. Con una imagen pequeña y cuadrada vuelve al
-            // formato horizontal (miniatura a la izquierda, textos a la derecha),
-            // que es el que queremos. 300x300 es el tamaño nativo del thumbnail.
+            // Dos cosas que decide esta transformacion:
             //
-            // c_pad en vez de c_fill para que una foto no cuadrada (el fallback a
-            // photo_path) se rellene en vez de recortarse.
+            // 1. El TAMAÑO elige el formato de la vista previa en WhatsApp. Con una
+            //    imagen grande (1200x630) muestra la tarjeta alta: foto arriba y
+            //    textos debajo. Con una imagen pequeña y cuadrada usa el formato
+            //    horizontal (miniatura a la izquierda), que es el que queremos.
+            //
+            // 2. El MARGEN evita que recorte contenido. Aunque la miniatura es
+            //    cuadrada como la imagen, WhatsApp la muestra con un zoom que se
+            //    come ~10% por lado: sin margen desaparecian el marco de la foto,
+            //    la parte superior de la cabeza y la franja inferior del logo.
+            //    Con el 15% de blanco alrededor el recorte muerde margen.
+            //
+            // Si hiciera falta afinar: subir w/h del primer paso agranda la foto y
+            // reduce el margen; bajarlos hacen lo contrario. El lienzo (300x300) no
+            // conviene tocarlo, porque es lo que mantiene el formato horizontal.
             if ($image) {
-                $image = str_replace('/image/upload/', '/image/upload/w_300,h_300,c_pad,b_white/', $image);
+                $image = str_replace(
+                    '/image/upload/',
+                    '/image/upload/w_210,h_210,c_fit/w_300,h_300,c_pad,b_white/',
+                    $image
+                );
             }
 
             return view('app', [
