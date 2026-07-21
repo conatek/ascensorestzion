@@ -19,10 +19,10 @@ class ReportSequence extends Model
                 ->where('year', $year)
                 ->first();
 
-            if (!$sequence) {
+            if (! $sequence) {
                 $sequence = static::create([
-                    'type'        => $type,
-                    'year'        => $year,
+                    'type' => $type,
+                    'year' => $year,
                     'last_number' => 0,
                 ]);
             }

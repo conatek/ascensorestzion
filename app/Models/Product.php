@@ -22,10 +22,10 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'price'     => 'decimal:2',
-        'discount'  => 'decimal:2',
+        'price' => 'decimal:2',
+        'discount' => 'decimal:2',
         'is_active' => 'boolean',
-        'order'     => 'integer',
+        'order' => 'integer',
     ];
 
     // Precio con descuento aplicado

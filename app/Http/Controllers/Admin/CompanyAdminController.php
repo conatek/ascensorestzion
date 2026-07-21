@@ -14,23 +14,23 @@ class CompanyAdminController extends Controller
         $query = Company::withCount(['cards', 'services', 'products', 'users'])
             ->with(['subscriptions' => function ($q) {
                 $q->whereIn('status', ['trial', 'active', 'past_due'])
-                  ->latest()
-                  ->with('plan:id,name,display_name')
-                  ->limit(1);
+                    ->latest()
+                    ->with('plan:id,name,display_name')
+                    ->limit(1);
             }]);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('plan_id')) {
             $query->whereHas('subscriptions', function ($q) use ($request) {
                 $q->where('plan_id', $request->plan_id)
-                  ->whereIn('status', ['trial', 'active', 'past_due']);
+                    ->whereIn('status', ['trial', 'active', 'past_due']);
             });
         }
 
@@ -49,6 +49,7 @@ class CompanyAdminController extends Controller
             $company->subscription_status = $sub?->status;
             $company->subscription_ends = $sub?->current_period_end;
             unset($company->subscriptions);
+
             return $company;
         });
 

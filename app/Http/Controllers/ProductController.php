@@ -18,14 +18,14 @@ class ProductController extends Controller
 
     public function index(Request $request, Company $company): JsonResponse
     {
-        abort_if(!$request->user()->can('view_products'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('view_products'), 403, 'No autorizado.');
 
         return response()->json($company->products);
     }
 
     public function show(Request $request, Company $company, Product $product): JsonResponse
     {
-        abort_if(!$request->user()->can('view_products'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('view_products'), 403, 'No autorizado.');
         abort_if($product->company_id !== $company->id, 404);
 
         return response()->json($product);
@@ -33,7 +33,7 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request, Company $company): JsonResponse
     {
-        abort_if(!$request->user()->can('create_product'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('create_product'), 403, 'No autorizado.');
 
         $data = $request->validated();
         $data['company_id'] = $company->id;
@@ -54,7 +54,7 @@ class ProductController extends Controller
 
     public function update(StoreProductRequest $request, Company $company, Product $product): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_product'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_product'), 403, 'No autorizado.');
         abort_if($product->company_id !== $company->id, 404);
 
         $data = $request->validated();
@@ -78,7 +78,7 @@ class ProductController extends Controller
 
     public function destroy(Request $request, Company $company, Product $product): JsonResponse
     {
-        abort_if(!$request->user()->can('delete_product'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('delete_product'), 403, 'No autorizado.');
         abort_if($product->company_id !== $company->id, 404);
 
         if ($product->image_path) {

@@ -37,14 +37,14 @@ class Equipment extends Model
     ];
 
     protected $casts = [
-        'capacity_kg'               => 'integer',
-        'capacity_persons'          => 'integer',
-        'stops'                     => 'integer',
-        'speed_mps'                 => 'decimal:2',
-        'installation_date'         => 'date',
-        'commissioning_date'        => 'date',
-        'contract_start'            => 'date',
-        'contract_end'              => 'date',
+        'capacity_kg' => 'integer',
+        'capacity_persons' => 'integer',
+        'stops' => 'integer',
+        'speed_mps' => 'decimal:2',
+        'installation_date' => 'date',
+        'commissioning_date' => 'date',
+        'contract_start' => 'date',
+        'contract_end' => 'date',
         'maintenance_frequency_days' => 'integer',
     ];
 

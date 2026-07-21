@@ -17,7 +17,7 @@ class ServiceReportRstpMonth extends Model
     ];
 
     protected $casts = [
-        'year'  => 'integer',
+        'year' => 'integer',
         'month' => 'integer',
     ];
 

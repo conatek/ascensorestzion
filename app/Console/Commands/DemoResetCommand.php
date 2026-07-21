@@ -13,14 +13,15 @@ class DemoResetCommand extends Command
 
     public function handle(): int
     {
-        if (app()->environment('production') && !$this->option('force')) {
+        if (app()->environment('production') && ! $this->option('force')) {
             $this->error('Use --force para ejecutar en producción.');
+
             return 1;
         }
 
         $this->info('Reseteando datos demo...');
 
-        $seeder = new DemoSeeder();
+        $seeder = new DemoSeeder;
         $seeder->setCommand($this);
         $seeder->run();
 

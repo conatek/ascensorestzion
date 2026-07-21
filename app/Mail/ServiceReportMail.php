@@ -36,7 +36,7 @@ class ServiceReportMail extends Mailable
     {
         return [
             \Illuminate\Mail\Mailables\Attachment::fromData(
-                fn() => $this->pdfContent,
+                fn () => $this->pdfContent,
                 "{$this->report->report_number}.pdf"
             )->withMime('application/pdf'),
         ];

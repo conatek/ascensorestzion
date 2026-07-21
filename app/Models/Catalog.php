@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class Catalog extends Model
 {
@@ -19,7 +19,7 @@ class Catalog extends Model
 
     protected $casts = [
         'sort_order' => 'integer',
-        'active'     => 'boolean',
+        'active' => 'boolean',
     ];
 
     public function scopeForScope(Builder $query, string $scope): Builder

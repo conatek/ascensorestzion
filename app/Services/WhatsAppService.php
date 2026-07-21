@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppService
 {
     private string $apiUrl;
+
     private string $phoneNumberId;
+
     private string $accessToken;
 
     public function __construct()
@@ -21,10 +23,10 @@ class WhatsAppService
     /**
      * Enviar mensaje de template a un numero de WhatsApp.
      *
-     * @param string $to Numero con codigo de pais (ej: 573001234567)
-     * @param string $templateName Nombre del template aprobado por Meta
-     * @param array $parameters Parametros del template [{type: text, text: value}]
-     * @param string $language Codigo de idioma (default: es)
+     * @param  string  $to  Numero con codigo de pais (ej: 573001234567)
+     * @param  string  $templateName  Nombre del template aprobado por Meta
+     * @param  array  $parameters  Parametros del template [{type: text, text: value}]
+     * @param  string  $language  Codigo de idioma (default: es)
      */
     public function sendTemplate(string $to, string $templateName, array $parameters = [], string $language = 'es'): bool
     {
@@ -33,6 +35,7 @@ class WhatsAppService
                 'to' => $to,
                 'template' => $templateName,
             ]);
+
             return false;
         }
 
@@ -72,6 +75,7 @@ class WhatsAppService
                     'template' => $templateName,
                     'message_id' => $response->json('messages.0.id'),
                 ]);
+
                 return true;
             }
 
@@ -81,6 +85,7 @@ class WhatsAppService
                 'status' => $response->status(),
                 'error' => $response->json('error'),
             ]);
+
             return false;
         } catch (\Exception $e) {
             Log::error('WhatsApp: excepcion al enviar mensaje.', [
@@ -88,6 +93,7 @@ class WhatsAppService
                 'template' => $templateName,
                 'exception' => $e->getMessage(),
             ]);
+
             return false;
         }
     }

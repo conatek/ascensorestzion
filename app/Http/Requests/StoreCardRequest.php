@@ -17,9 +17,9 @@ class StoreCardRequest extends FormRequest
         $companyId = $this->route('company');
 
         return [
-            'first_name'   => ['required', 'string', 'max:80'],
-            'last_name'    => ['required', 'string', 'max:80'],
-            'slug'         => [
+            'first_name' => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
+            'slug' => [
                 'required',
                 'string',
                 'max:80',
@@ -27,16 +27,16 @@ class StoreCardRequest extends FormRequest
                 // Único SOLO dentro de la misma empresa
                 Rule::unique('cards', 'slug')->where('company_id', $companyId),
             ],
-            'job_title'    => ['nullable', 'string', 'max:120'],
-            'photo'        => ['nullable', 'image', 'max:5120'],
-            'thumbnail'    => ['nullable', 'image', 'max:2048'],
+            'job_title' => ['nullable', 'string', 'max:120'],
+            'photo' => ['nullable', 'image', 'max:5120'],
+            'thumbnail' => ['nullable', 'image', 'max:2048'],
             'mobile_phone' => ['nullable', 'string', 'max:30'],
-            'whatsapp'     => ['nullable', 'string', 'max:30'],
-            'email'        => ['nullable', 'email', 'max:150'],
-            'linkedin'     => ['nullable', 'url', 'max:255'],
+            'whatsapp' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'linkedin' => ['nullable', 'url', 'max:255'],
             'whatsapp_message' => ['nullable', 'string', 'max:500'],
-            'description'  => ['nullable', 'string', 'max:1000'],
-            'is_active'    => ['nullable', 'in:0,1,true,false'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'is_active' => ['nullable', 'in:0,1,true,false'],
         ];
     }
 
@@ -44,7 +44,7 @@ class StoreCardRequest extends FormRequest
     {
         return [
             'slug.alpha_dash' => 'El slug solo puede contener letras, números, guiones (-) y underscores (_).',
-            'slug.unique'     => 'Ya existe una tarjeta con este slug en esta empresa.',
+            'slug.unique' => 'Ya existe una tarjeta con este slug en esta empresa.',
         ];
     }
 }

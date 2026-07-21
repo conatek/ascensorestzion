@@ -62,17 +62,21 @@ class Company extends Model
     {
         $settings = $this->settings()->first();
 
-        if (!$settings) {
+        if (! $settings) {
             $templateName = 'modern';
             $defaults = config("templates.schemas.{$templateName}", []);
 
             // Extraer solo los valores del schema
             $values = [];
             foreach ($defaults as $sectionKey => $section) {
-                if (!is_array($section)) continue;
+                if (! is_array($section)) {
+                    continue;
+                }
                 $values[$sectionKey] = [];
                 foreach ($section as $fieldKey => $field) {
-                    if (str_starts_with($fieldKey, '_')) continue;
+                    if (str_starts_with($fieldKey, '_')) {
+                        continue;
+                    }
                     if (is_array($field) && isset($field['value'])) {
                         $values[$sectionKey][$fieldKey] = $field['value'];
                     }

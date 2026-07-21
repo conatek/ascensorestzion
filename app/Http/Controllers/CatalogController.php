@@ -25,16 +25,16 @@ class CatalogController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        abort_if(!$request->user()->can('manage_catalogs'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('manage_catalogs'), 403, 'No autorizado.');
 
         $data = $request->validate([
-            'scope'     => ['required', 'string', 'max:50'],
-            'category'  => ['required', 'string', 'max:50'],
+            'scope' => ['required', 'string', 'max:50'],
+            'category' => ['required', 'string', 'max:50'],
             'group_key' => ['nullable', 'string', 'max:50'],
-            'key'       => ['required', 'string', 'max:80'],
-            'label'     => ['required', 'string', 'max:255'],
+            'key' => ['required', 'string', 'max:80'],
+            'label' => ['required', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer'],
-            'active'    => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
         ]);
 
         $catalog = Catalog::create($data);
@@ -44,12 +44,12 @@ class CatalogController extends Controller
 
     public function update(Request $request, Catalog $catalog): JsonResponse
     {
-        abort_if(!$request->user()->can('manage_catalogs'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('manage_catalogs'), 403, 'No autorizado.');
 
         $data = $request->validate([
-            'label'     => ['sometimes', 'string', 'max:255'],
+            'label' => ['sometimes', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer'],
-            'active'    => ['nullable', 'boolean'],
+            'active' => ['nullable', 'boolean'],
         ]);
 
         $catalog->update($data);
@@ -59,7 +59,7 @@ class CatalogController extends Controller
 
     public function destroy(Request $request, Catalog $catalog): JsonResponse
     {
-        abort_if(!$request->user()->can('manage_catalogs'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('manage_catalogs'), 403, 'No autorizado.');
 
         $catalog->delete();
 

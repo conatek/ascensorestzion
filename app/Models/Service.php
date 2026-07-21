@@ -20,7 +20,7 @@ class Service extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'order'     => 'integer',
+        'order' => 'integer',
     ];
 
     public function company()

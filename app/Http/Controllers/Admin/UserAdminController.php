@@ -22,7 +22,7 @@ class UserAdminController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -41,27 +41,27 @@ class UserAdminController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'            => 'required|string|max:255',
-            'email'           => 'required|email|unique:users',
-            'password'        => 'required|string|min:8',
-            'role'            => 'required|in:master,super,coordinator,technician,admin',
-            'phone'           => 'nullable|string|max:20',
-            'document_type'   => 'nullable|in:CC,CE,NIT,PP',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:master,super,coordinator,technician,admin',
+            'phone' => 'nullable|string|max:20',
+            'document_type' => 'nullable|in:CC,CE,NIT,PP',
             'document_number' => 'nullable|string|max:30',
-            'company_id'      => 'nullable|exists:companies,id',
-            'client_id'       => 'nullable|exists:clients,id',
+            'company_id' => 'nullable|exists:companies,id',
+            'client_id' => 'nullable|exists:clients,id',
         ]);
 
         $user = User::create([
-            'name'            => $data['name'],
-            'email'           => $data['email'],
-            'password'        => Hash::make($data['password']),
-            'phone'           => $data['phone'] ?? null,
-            'document_type'   => $data['document_type'] ?? null,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'phone' => $data['phone'] ?? null,
+            'document_type' => $data['document_type'] ?? null,
             'document_number' => $data['document_number'] ?? null,
-            'company_id'      => $data['company_id'] ?? null,
-            'client_id'       => $data['client_id'] ?? null,
-            'active'          => true,
+            'company_id' => $data['company_id'] ?? null,
+            'client_id' => $data['client_id'] ?? null,
+            'active' => true,
         ]);
 
         $user->assignRole($data['role']);
@@ -72,15 +72,15 @@ class UserAdminController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'name'            => 'sometimes|string|max:255',
-            'email'           => 'sometimes|email|unique:users,email,' . $user->id,
-            'role'            => 'sometimes|string|in:master,super,coordinator,technician,admin',
-            'phone'           => 'nullable|string|max:20',
-            'document_type'   => 'nullable|in:CC,CE,NIT,PP',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,'.$user->id,
+            'role' => 'sometimes|string|in:master,super,coordinator,technician,admin',
+            'phone' => 'nullable|string|max:20',
+            'document_type' => 'nullable|in:CC,CE,NIT,PP',
             'document_number' => 'nullable|string|max:30',
-            'company_id'      => 'sometimes|nullable|exists:companies,id',
-            'client_id'       => 'sometimes|nullable|exists:clients,id',
-            'active'          => 'sometimes|boolean',
+            'company_id' => 'sometimes|nullable|exists:companies,id',
+            'client_id' => 'sometimes|nullable|exists:clients,id',
+            'active' => 'sometimes|boolean',
         ]);
 
         if (isset($data['role'])) {

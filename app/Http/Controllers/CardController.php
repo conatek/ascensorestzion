@@ -19,7 +19,7 @@ class CardController extends Controller
 
     public function index(Request $request, Company $company): JsonResponse
     {
-        abort_if(!$request->user()->can('view_cards'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('view_cards'), 403, 'No autorizado.');
 
         $cards = $company->cards()->latest()->get();
 
@@ -28,7 +28,7 @@ class CardController extends Controller
 
     public function store(StoreCardRequest $request, Company $company): JsonResponse
     {
-        abort_if(!$request->user()->can('create_card'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('create_card'), 403, 'No autorizado.');
 
         $data = $request->validated();
         $data['company_id'] = $company->id;
@@ -54,7 +54,7 @@ class CardController extends Controller
 
     public function show(Request $request, Company $company, Card $card): JsonResponse
     {
-        abort_if(!$request->user()->can('view_cards'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('view_cards'), 403, 'No autorizado.');
         abort_if($card->company_id !== $company->id, 404);
 
         return response()->json($card);
@@ -62,7 +62,7 @@ class CardController extends Controller
 
     public function update(UpdateCardRequest $request, Company $company, Card $card): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_card'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_card'), 403, 'No autorizado.');
         abort_if($card->company_id !== $company->id, 404);
 
         $data = $request->validated();
@@ -94,7 +94,7 @@ class CardController extends Controller
 
     public function destroy(Request $request, Company $company, Card $card): JsonResponse
     {
-        abort_if(!$request->user()->can('delete_card'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('delete_card'), 403, 'No autorizado.');
         abort_if($card->company_id !== $company->id, 404);
 
         if ($card->photo_path) {

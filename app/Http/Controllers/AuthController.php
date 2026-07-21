@@ -11,7 +11,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
 
@@ -19,13 +19,13 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'Credenciales inválidas'
+                'message' => 'Credenciales inválidas',
             ], 401);
         }
 
         if (! $user->active) {
             return response()->json([
-                'message' => 'Tu cuenta está desactivada. Contacta al administrador.'
+                'message' => 'Tu cuenta está desactivada. Contacta al administrador.',
             ], 401);
         }
 
@@ -33,9 +33,9 @@ class AuthController extends Controller
 
         return response()->json([
             'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => $user->load(['roles:id,name', 'client:id,business_name']),
-            'permissions'  => $user->getAllPermissions()->pluck('name'),
+            'token_type' => 'Bearer',
+            'user' => $user->load(['roles:id,name', 'client:id,business_name']),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
     }
 
@@ -44,7 +44,7 @@ class AuthController extends Controller
         $user = $request->user()->load(['roles:id,name', 'client:id,business_name']);
 
         return response()->json([
-            'user'        => $user,
+            'user' => $user,
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
     }
@@ -54,7 +54,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Sesión cerrada correctamente'
+            'message' => 'Sesión cerrada correctamente',
         ]);
     }
 
@@ -63,7 +63,7 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Todos los tokens revocados'
+            'message' => 'Todos los tokens revocados',
         ]);
     }
 
@@ -88,11 +88,11 @@ class AuthController extends Controller
         $token = $user->createToken('impersonation')->plainTextToken;
 
         return response()->json([
-            'access_token'         => $token,
-            'user'                 => $user->load(['roles:id,name', 'client:id,business_name']),
-            'permissions'          => $user->getAllPermissions()->pluck('name'),
-            'original_token'       => $request->bearerToken(),
-            'original_user'        => $master->load(['roles:id,name', 'client:id,business_name']),
+            'access_token' => $token,
+            'user' => $user->load(['roles:id,name', 'client:id,business_name']),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'original_token' => $request->bearerToken(),
+            'original_user' => $master->load(['roles:id,name', 'client:id,business_name']),
             'original_permissions' => $master->getAllPermissions()->pluck('name'),
         ]);
     }

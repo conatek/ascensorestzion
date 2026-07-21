@@ -30,6 +30,6 @@ trait HasCompanyAccess
 
     protected function enforceCompanyAccess(User $user, Company $company): void
     {
-        abort_if(!$this->canAccessCompany($user, $company), 403, 'No tienes acceso a esta empresa.');
+        abort_if(! $this->canAccessCompany($user, $company), 403, 'No tienes acceso a esta empresa.');
     }
 }

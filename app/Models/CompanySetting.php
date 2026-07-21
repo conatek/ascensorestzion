@@ -39,7 +39,7 @@ class CompanySetting extends Model
         $result = [];
 
         foreach ($schema as $sectionKey => $section) {
-            if (!is_array($section)) {
+            if (! is_array($section)) {
                 continue;
             }
 
@@ -49,6 +49,7 @@ class CompanySetting extends Model
                 // Copiar metadatos como _label
                 if (str_starts_with($fieldKey, '_')) {
                     $result[$sectionKey][$fieldKey] = $fieldConfig;
+
                     continue;
                 }
 
@@ -86,7 +87,7 @@ class CompanySetting extends Model
         $result = [];
 
         foreach ($schema as $sectionKey => $section) {
-            if (!is_array($section)) {
+            if (! is_array($section)) {
                 continue;
             }
 

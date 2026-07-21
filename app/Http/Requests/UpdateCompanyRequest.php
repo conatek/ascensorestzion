@@ -42,7 +42,7 @@ class UpdateCompanyRequest extends FormRequest
     {
         return [
             'slug.alpha_dash' => 'El slug solo puede contener letras, números, guiones (-) y underscores (_).',
-            'slug.unique'     => 'Este slug ya está en uso. Elige otro.',
+            'slug.unique' => 'Este slug ya está en uso. Elige otro.',
         ];
     }
 }

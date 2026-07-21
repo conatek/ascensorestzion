@@ -37,7 +37,7 @@ class TechnicianCheckedInNotification extends Notification implements ShouldQueu
 
         $techName = $checkin->technician?->name ?? 'Técnico';
         $equipCode = $checkin->equipment?->internal_code ?? '';
-        $equipBrand = trim(($checkin->equipment?->brand ?? '') . ' ' . ($checkin->equipment?->model ?? ''));
+        $equipBrand = trim(($checkin->equipment?->brand ?? '').' '.($checkin->equipment?->model ?? ''));
         $clientName = $checkin->equipment?->site?->client?->business_name ?? '—';
         $siteName = $checkin->equipment?->site?->name ?? '—';
 

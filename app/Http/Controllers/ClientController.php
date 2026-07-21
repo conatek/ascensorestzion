@@ -13,7 +13,7 @@ class ClientController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_clients'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_clients'), 403, 'No autorizado.');
 
         $query = Client::withCount(['sites', 'equipment']);
 
@@ -26,8 +26,8 @@ class ClientController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('business_name', 'like', "%{$s}%")
-                  ->orWhere('nit', 'like', "%{$s}%")
-                  ->orWhere('contact_name', 'like', "%{$s}%");
+                    ->orWhere('nit', 'like', "%{$s}%")
+                    ->orWhere('contact_name', 'like', "%{$s}%");
             });
         }
 
@@ -42,7 +42,7 @@ class ClientController extends Controller
 
     public function store(StoreClientRequest $request): JsonResponse
     {
-        abort_if(!$request->user()->can('create_client'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('create_client'), 403, 'No autorizado.');
 
         $client = Client::create($request->validated());
 
@@ -52,7 +52,7 @@ class ClientController extends Controller
     public function show(Request $request, Client $client): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_clients'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_clients'), 403, 'No autorizado.');
 
         if ($user->hasRole('admin') && $user->client_id !== $client->id) {
             abort(403, 'No autorizado.');
@@ -68,7 +68,7 @@ class ClientController extends Controller
 
     public function update(UpdateClientRequest $request, Client $client): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_client'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_client'), 403, 'No autorizado.');
 
         $client->update($request->validated());
 
@@ -77,7 +77,7 @@ class ClientController extends Controller
 
     public function destroy(Request $request, Client $client): JsonResponse
     {
-        abort_if(!$request->user()->can('delete_client'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('delete_client'), 403, 'No autorizado.');
 
         $client->delete();
 

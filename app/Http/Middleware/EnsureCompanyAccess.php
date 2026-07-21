@@ -20,10 +20,10 @@ class EnsureCompanyAccess
         $company = $request->route('company');
 
         if ($company instanceof Company) {
-            $isOwner  = (int) $company->user_id === (int) $user->id;
+            $isOwner = (int) $company->user_id === (int) $user->id;
             $isMember = (int) $user->company_id === (int) $company->id;
 
-            if (!$isOwner && !$isMember) {
+            if (! $isOwner && ! $isMember) {
                 abort(403, 'No tienes acceso a esta empresa.');
             }
         }

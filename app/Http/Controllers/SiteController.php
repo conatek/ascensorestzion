@@ -13,7 +13,7 @@ class SiteController extends Controller
     public function index(Request $request, Client $client): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_sites'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_sites'), 403, 'No autorizado.');
 
         if ($user->hasRole('admin') && $user->client_id !== $client->id) {
             abort(403, 'No autorizado.');
@@ -29,7 +29,7 @@ class SiteController extends Controller
 
     public function store(StoreSiteRequest $request, Client $client): JsonResponse
     {
-        abort_if(!$request->user()->can('create_site'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('create_site'), 403, 'No autorizado.');
 
         $data = $request->validated();
         $site = $client->sites()->create($data);
@@ -40,7 +40,7 @@ class SiteController extends Controller
     public function show(Request $request, Client $client, Site $site): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_sites'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_sites'), 403, 'No autorizado.');
 
         if ($user->hasRole('admin') && $user->client_id !== $client->id) {
             abort(403, 'No autorizado.');
@@ -55,7 +55,7 @@ class SiteController extends Controller
 
     public function update(StoreSiteRequest $request, Client $client, Site $site): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_site'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_site'), 403, 'No autorizado.');
 
         $site->update($request->validated());
 
@@ -64,7 +64,7 @@ class SiteController extends Controller
 
     public function destroy(Request $request, Client $client, Site $site): JsonResponse
     {
-        abort_if(!$request->user()->can('delete_site'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('delete_site'), 403, 'No autorizado.');
 
         $site->delete();
 

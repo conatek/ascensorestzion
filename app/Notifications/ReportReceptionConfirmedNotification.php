@@ -37,7 +37,7 @@ class ReportReceptionConfirmedNotification extends Notification implements Shoul
             ->greeting('Confirmación de recepción')
             ->line("El cliente **{$report->client?->business_name}** ha confirmado la recepción del informe **{$report->report_number}**.")
             ->line("**Confirmado el:** {$report->reception_confirmed_at?->format('d/m/Y h:i A')}")
-            ->line("El informe ha sido cerrado automáticamente.")
+            ->line('El informe ha sido cerrado automáticamente.')
             ->salutation('Equipo de Ascensores Tzion');
     }
 

@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\CompanySetting;
+use App\Services\CloudinaryService;
 use App\Traits\HasCompanyAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Services\CloudinaryService;
 
 class CompanySettingController extends Controller
 {
@@ -32,7 +31,7 @@ class CompanySettingController extends Controller
     {
         $schema = config("templates.schemas.{$templateName}");
 
-        if (!$schema) {
+        if (! $schema) {
             return response()->json([
                 'message' => 'Plantilla no encontrada',
             ], 404);
@@ -50,7 +49,7 @@ class CompanySettingController extends Controller
     public function show(Request $request, Company $company): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_settings'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_settings'), 403, 'No autorizado.');
         $this->enforceCompanyAccess($user, $company);
 
         $settings = $company->getOrCreateSettings();
@@ -69,11 +68,11 @@ class CompanySettingController extends Controller
     public function update(Request $request, Company $company): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('edit_settings'), 403, 'No autorizado.');
+        abort_if(! $user->can('edit_settings'), 403, 'No autorizado.');
         $this->enforceCompanyAccess($user, $company);
 
         $validated = $request->validate([
-            'template_name' => 'sometimes|string|in:' . implode(',', array_keys(config('templates.available', []))),
+            'template_name' => 'sometimes|string|in:'.implode(',', array_keys(config('templates.available', []))),
             'customization' => 'sometimes|array',
         ]);
 
@@ -109,7 +108,7 @@ class CompanySettingController extends Controller
     public function reset(Request $request, Company $company): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('edit_settings'), 403, 'No autorizado.');
+        abort_if(! $user->can('edit_settings'), 403, 'No autorizado.');
         $this->enforceCompanyAccess($user, $company);
 
         $settings = $company->getOrCreateSettings();
@@ -131,7 +130,7 @@ class CompanySettingController extends Controller
     public function uploadImage(Request $request, Company $company, CloudinaryService $cloudinary): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('edit_settings'), 403, 'No autorizado.');
+        abort_if(! $user->can('edit_settings'), 403, 'No autorizado.');
         $this->enforceCompanyAccess($user, $company);
 
         $request->validate([
@@ -155,7 +154,7 @@ class CompanySettingController extends Controller
         $values = [];
 
         foreach ($schema as $sectionKey => $section) {
-            if (!is_array($section)) {
+            if (! is_array($section)) {
                 continue;
             }
 

@@ -27,9 +27,9 @@ class ServiceReportRstcDetail extends Model
     ];
 
     protected $casts = [
-        'call_time'  => 'datetime',
+        'call_time' => 'datetime',
         'entry_time' => 'datetime',
-        'exit_time'  => 'datetime',
+        'exit_time' => 'datetime',
     ];
 
     public function serviceReport()

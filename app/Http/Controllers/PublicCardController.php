@@ -15,9 +15,9 @@ class PublicCardController extends Controller
     {
         $company = Company::where('slug', $companySlug)
             ->with([
-                'cards'    => fn($q) => $q->where('is_active', true)->orderBy('last_name'),
-                'services' => fn($q) => $q->where('is_active', true),
-                'products' => fn($q) => $q->where('is_active', true),
+                'cards' => fn ($q) => $q->where('is_active', true)->orderBy('last_name'),
+                'services' => fn ($q) => $q->where('is_active', true),
+                'products' => fn ($q) => $q->where('is_active', true),
                 'settings',
             ])
             ->firstOrFail();
@@ -42,8 +42,8 @@ class PublicCardController extends Controller
     {
         $company = Company::where('slug', $companySlug)
             ->with([
-                'services' => fn($q) => $q->where('is_active', true),
-                'products' => fn($q) => $q->where('is_active', true),
+                'services' => fn ($q) => $q->where('is_active', true),
+                'products' => fn ($q) => $q->where('is_active', true),
                 'settings',
             ])
             ->firstOrFail();
@@ -56,7 +56,7 @@ class PublicCardController extends Controller
         $settings = $company->getOrCreateSettings();
 
         return response()->json([
-            'card'    => $card,
+            'card' => $card,
             'company' => $company,
             'template' => [
                 'name' => $settings->template_name,
@@ -72,8 +72,8 @@ class PublicCardController extends Controller
     public function cardBySlug(string $cardSlug): JsonResponse
     {
         $company = Company::with([
-            'services' => fn($q) => $q->where('is_active', true),
-            'products' => fn($q) => $q->where('is_active', true),
+            'services' => fn ($q) => $q->where('is_active', true),
+            'products' => fn ($q) => $q->where('is_active', true),
             'settings',
         ])->firstOrFail();
 
@@ -85,7 +85,7 @@ class PublicCardController extends Controller
         $settings = $company->getOrCreateSettings();
 
         return response()->json([
-            'card'    => $card,
+            'card' => $card,
             'company' => $company,
             'template' => [
                 'name' => $settings->template_name,

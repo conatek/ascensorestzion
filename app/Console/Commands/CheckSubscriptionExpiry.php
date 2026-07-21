@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class CheckSubscriptionExpiry extends Command
 {
     protected $signature = 'subscriptions:check-expiry';
+
     protected $description = 'Verificar vencimientos de suscripciones y actualizar estados';
 
     public function handle(): int
