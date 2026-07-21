@@ -11,13 +11,13 @@ use App\Models\ServiceReportAuditLog;
 use App\Models\User;
 use App\Notifications\ReportCompletedNotification;
 use App\Services\ServiceReportNumberingService;
+use App\Services\ServiceReportPdfService;
 use App\Services\ServiceReportSigningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Spatie\Browsershot\Browsershot;
 
 class ServiceReportController extends Controller
 {
@@ -25,6 +25,7 @@ class ServiceReportController extends Controller
         private ServiceReportNumberingService $numbering,
         private ServiceReportSigningService $signing,
         private \App\Services\CloudinaryService $cloudinary,
+        private ServiceReportPdfService $pdfService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -105,6 +106,7 @@ class ServiceReportController extends Controller
         $report = ServiceReport::create([
             'report_number' => $this->numbering->generate($data['report_type']),
             'client_uuid' => $data['client_uuid'] ?? null,
+            'visit_uuid' => $data['visit_uuid'] ?? null,
             'report_type' => $data['report_type'],
             'equipment_id' => $equipment->id,
             'client_id' => $equipment->site->client_id,
@@ -208,7 +210,13 @@ class ServiceReportController extends Controller
             $relations[] = 'faultCodes';
         }
 
-        return response()->json($serviceReport->load($relations));
+        $serviceReport->load($relations);
+
+        // El formulario del tecnico usa este conteo para ofrecer la firma diferida
+        // (solo tiene sentido si la sede tiene mas de un equipo).
+        $serviceReport->equipment?->site?->loadCount('equipment');
+
+        return response()->json($serviceReport);
     }
 
     public function update(StoreServiceReportRequest $request, ServiceReport $serviceReport): JsonResponse
@@ -317,7 +325,14 @@ class ServiceReportController extends Controller
 
         $request->validate([
             'signature' => ['required', 'string'],
+            'visit_uuid' => ['nullable', 'uuid'],
         ]);
+
+        // Firma diferida: el reporte queda agrupado en una visita a la espera
+        // de la firma del cliente en lote.
+        if ($request->filled('visit_uuid') && ! $serviceReport->visit_uuid) {
+            $serviceReport->update(['visit_uuid' => $request->visit_uuid]);
+        }
 
         $this->signing->signAsTechnician($serviceReport, $request->signature, $user);
 
@@ -492,24 +507,7 @@ class ServiceReportController extends Controller
 
     private function generatePdf(string $html): string
     {
-        $browsershot = Browsershot::html($html)
-            ->format('Letter')
-            ->margins(8, 8, 8, 8)
-            ->showBackground()
-            ->waitUntilNetworkIdle() // esperar imágenes remotas (anexo Cloudinary)
-            ->noSandbox();
-
-        $chromePath = env('BROWSERSHOT_CHROME_PATH');
-        $nodePath = env('BROWSERSHOT_NODE_PATH');
-
-        if ($chromePath) {
-            $browsershot->setChromePath($chromePath);
-        }
-        if ($nodePath) {
-            $browsershot->setNodeBinary($nodePath);
-        }
-
-        return $browsershot->pdf();
+        return $this->pdfService->fromHtml($html);
     }
 
     public function uploadAttachment(Request $request, ServiceReport $serviceReport): JsonResponse

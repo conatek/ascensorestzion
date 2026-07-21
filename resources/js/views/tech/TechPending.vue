@@ -78,7 +78,7 @@ export default {
 
     data() {
         return {
-            raw: { checkins: [], reports: [], attachments: [] },
+            raw: { checkins: [], reports: [], attachments: [], signatures: [] },
         };
     },
 
@@ -132,6 +132,22 @@ export default {
                 lastError: a.lastError,
                 queuedAt: a.queuedAt,
                 _item: a,
+            }));
+
+            (this.raw.signatures || []).forEach(s => list.push({
+                uid: `signature-${s.localId}`,
+                type: 'signature',
+                localId: s.localId,
+                icon: 'fa-file-signature',
+                title: 'Firma de visita',
+                subtitle: s.site_name
+                    ? `${s.site_name} — firmó ${s.signer_name || '—'}`
+                    : 'Firma del cliente en lote',
+                status: s.status || 'pending',
+                attempts: s.attempts || 0,
+                lastError: s.lastError,
+                queuedAt: s.queuedAt,
+                _item: s,
             }));
 
             // Errores primero, luego por antigüedad

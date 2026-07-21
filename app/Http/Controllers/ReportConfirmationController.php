@@ -6,6 +6,7 @@ use App\Models\ServiceReport;
 use App\Models\ServiceReportAuditLog;
 use App\Models\User;
 use App\Notifications\ReportReceptionConfirmedNotification;
+use App\Services\ServiceReportPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -85,6 +86,22 @@ class ReportConfirmationController extends Controller
         ]);
     }
 
+    /**
+     * Descarga publica del PDF. El reception_token (64 caracteres aleatorios) es la
+     * credencial: es el mismo enlace que recibe el cliente por correo.
+     */
+    public function pdf(string $token, ServiceReportPdfService $pdfService)
+    {
+        $report = ServiceReport::where('reception_token', $token)->firstOrFail();
+
+        $filename = "{$report->report_number}.pdf";
+
+        return response($pdfService->render($report), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$filename}\"",
+        ]);
+    }
+
     private function reportSummary(ServiceReport $report): array
     {
         $typeLabels = ['RSTP' => 'Preventivo', 'RSTC' => 'Correctivo', 'RSTE' => 'Especial'];
@@ -96,7 +113,7 @@ class ReportConfirmationController extends Controller
             'service_date' => $report->service_date?->format('d/m/Y'),
             'equipment_code' => $report->equipment?->internal_code,
             'equipment_type' => $report->equipment?->equipment_type,
-            'equipment_brand' => $report->equipment?->brand . ' ' . $report->equipment?->model,
+            'equipment_brand' => $report->equipment?->brand.' '.$report->equipment?->model,
             'client_name' => $report->client?->business_name,
             'site_name' => $report->site?->name,
             'site_address' => $report->site?->address,

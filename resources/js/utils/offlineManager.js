@@ -2,7 +2,8 @@ import { openDB } from 'idb';
 import { reactive, readonly } from 'vue';
 
 const DB_NAME = 'tzion-offline';
-const DB_VERSION = 1;
+// v2: cola de firmas de visita en lote (firma diferida)
+const DB_VERSION = 2;
 
 const STORES = {
     CATALOGS: 'catalogs',
@@ -11,6 +12,7 @@ const STORES = {
     REPORTS_DRAFT: 'reports-draft',
     REPORTS_PENDING_SYNC: 'reports-pending-sync',
     ATTACHMENTS_PENDING: 'attachments-pending',
+    VISIT_SIGNATURES_PENDING: 'visit-signatures-pending',
 };
 
 let dbInstance = null;
@@ -64,6 +66,15 @@ async function getDb() {
                     keyPath: 'localId',
                     autoIncrement: true,
                 });
+            }
+
+            // Firmas de cliente en lote pendientes de upload (firma diferida)
+            if (!db.objectStoreNames.contains(STORES.VISIT_SIGNATURES_PENDING)) {
+                const store = db.createObjectStore(STORES.VISIT_SIGNATURES_PENDING, {
+                    keyPath: 'localId',
+                    autoIncrement: true,
+                });
+                store.createIndex('by-visit', 'visit_uuid', { unique: true });
             }
         },
     });
@@ -120,13 +131,16 @@ async function refreshPendingCount() {
         const checkins = await db.getAll(STORES.CHECKINS_PENDING);
         const reports = await db.getAll(STORES.REPORTS_PENDING_SYNC);
         const attachments = await db.getAll(STORES.ATTACHMENTS_PENDING);
+        const signatures = await db.getAll(STORES.VISIT_SIGNATURES_PENDING);
         const pendingCheckins = checkins.filter(c => c.status !== 'error').length;
         const pendingReports = reports.filter(r => r.status !== 'error').length;
         const pendingAttachments = attachments.filter(a => a.status !== 'error').length;
+        const pendingSignatures = signatures.filter(s => s.status !== 'error').length;
         state.errorCount = (checkins.length - pendingCheckins)
             + (reports.length - pendingReports)
-            + (attachments.length - pendingAttachments);
-        state.pendingCount = pendingCheckins + pendingReports + pendingAttachments;
+            + (attachments.length - pendingAttachments)
+            + (signatures.length - pendingSignatures);
+        state.pendingCount = pendingCheckins + pendingReports + pendingAttachments + pendingSignatures;
     } catch {
         state.pendingCount = 0;
         state.errorCount = 0;
@@ -311,22 +325,62 @@ async function updatePendingAttachment(item) {
     await refreshPendingCount();
 }
 
+// --- Firmas de visita pendientes (firma diferida) ---
+
+/**
+ * Encola la firma única del cliente para una visita. La firma se aplica en el
+ * servidor a todos los reportes que compartan visit_uuid, así que no necesita
+ * conocer los ids de los reportes (pueden no existir todavía).
+ */
+async function queueVisitSignature(signatureData) {
+    const db = await getDb();
+    // Una sola firma por visita: si ya había una encolada, se reemplaza.
+    const existing = await db.getFromIndex(STORES.VISIT_SIGNATURES_PENDING, 'by-visit', signatureData.visit_uuid);
+    await db.put(STORES.VISIT_SIGNATURES_PENDING, {
+        ...(existing ? { localId: existing.localId } : {}),
+        ...signatureData,
+        status: 'pending',
+        attempts: 0,
+        lastError: null,
+        nextAttemptAt: 0,
+        queuedAt: Date.now(),
+    });
+    await refreshPendingCount();
+}
+
+async function getPendingVisitSignatures() {
+    return getAll(STORES.VISIT_SIGNATURES_PENDING);
+}
+
+async function removePendingVisitSignature(localId) {
+    await remove(STORES.VISIT_SIGNATURES_PENDING, localId);
+}
+
+/** Actualiza una firma pendiente (estado/intentos) sin tocar el resto. */
+async function updatePendingVisitSignature(item) {
+    const db = await getDb();
+    await db.put(STORES.VISIT_SIGNATURES_PENDING, item);
+    await refreshPendingCount();
+}
+
 // --- Vista de pendientes (Fase 5) ---
 
 const TYPE_STORE = {
     checkin: STORES.CHECKINS_PENDING,
     report: STORES.REPORTS_PENDING_SYNC,
     attachment: STORES.ATTACHMENTS_PENDING,
+    signature: STORES.VISIT_SIGNATURES_PENDING,
 };
 
 /** Devuelve todos los items en cola agrupados por tipo (para la UI del técnico). */
 async function getAllPendingItems() {
-    const [checkins, reports, attachments] = await Promise.all([
+    const [checkins, reports, attachments, signatures] = await Promise.all([
         getAll(STORES.CHECKINS_PENDING),
         getAll(STORES.REPORTS_PENDING_SYNC),
         getAll(STORES.ATTACHMENTS_PENDING),
+        getAll(STORES.VISIT_SIGNATURES_PENDING),
     ]);
-    return { checkins, reports, attachments };
+    return { checkins, reports, attachments, signatures };
 }
 
 /** Descarta un item de su cola (acción manual del técnico). */
@@ -357,12 +411,13 @@ async function retryItem(type, item) {
  */
 async function countAllItems() {
     const db = await getDb();
-    const [c, r, a] = await Promise.all([
+    const [c, r, a, s] = await Promise.all([
         db.count(STORES.CHECKINS_PENDING),
         db.count(STORES.REPORTS_PENDING_SYNC),
         db.count(STORES.ATTACHMENTS_PENDING),
+        db.count(STORES.VISIT_SIGNATURES_PENDING),
     ]);
-    return c + r + a;
+    return c + r + a + s;
 }
 
 async function syncPending(force = false) {
@@ -444,6 +499,12 @@ export default {
     getPendingAttachments,
     removePendingAttachment,
     updatePendingAttachment,
+
+    // Firmas de visita (firma diferida)
+    queueVisitSignature,
+    getPendingVisitSignatures,
+    removePendingVisitSignature,
+    updatePendingVisitSignature,
 
     // Sync
     syncPending,

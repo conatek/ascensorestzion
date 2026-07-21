@@ -33,6 +33,17 @@
                 <span>Inicio</span>
             </router-link>
             <router-link
+                to="/tech/firmas-pendientes"
+                class="tech-bottom-nav__item"
+                :class="{ 'is-active': $route.path.startsWith('/tech/firmas-pendientes') }"
+            >
+                <span class="nav-icon-wrap">
+                    <i class="fa fa-file-signature"></i>
+                    <span v-if="pendingSignatures > 0" class="nav-badge">{{ pendingSignatures }}</span>
+                </span>
+                <span>Firmas</span>
+            </router-link>
+            <router-link
                 to="/tech/checkin"
                 class="tech-bottom-nav__item tech-bottom-nav__item--checkin"
                 :class="{ 'is-active': $route.path === '/tech/checkin' }"
@@ -41,6 +52,17 @@
                     <i class="fa fa-qrcode"></i>
                 </div>
                 <span>Check-in</span>
+            </router-link>
+            <router-link
+                to="/tech/pendientes"
+                class="tech-bottom-nav__item"
+                :class="{ 'is-active': $route.path.startsWith('/tech/pendientes') }"
+            >
+                <span class="nav-icon-wrap">
+                    <i class="fa fa-sync"></i>
+                    <span v-if="offlineState.pendingCount > 0" class="nav-badge nav-badge--sync">{{ offlineState.pendingCount }}</span>
+                </span>
+                <span>Sync</span>
             </router-link>
             <router-link
                 to="/tech/perfil"
@@ -58,17 +80,50 @@
 import { useAuth } from '@/stores/auth';
 import ConnectionStatus from '@/components/shared/ConnectionStatus.vue';
 import NotificationBell from '@/components/shared/NotificationBell.vue';
+import offlineManager from '@/utils/offlineManager.js';
+import { loadPendingVisits } from '@/services/visitService.js';
 
 export default {
     name: 'TechLayout',
     components: { ConnectionStatus, NotificationBell },
+    data() {
+        return {
+            pendingSignatures: 0,
+        };
+    },
     computed: {
         userName() {
             const auth = useAuth();
             return auth.state.user?.name || 'Técnico';
         },
+        offlineState() {
+            return offlineManager.state;
+        },
+    },
+    watch: {
+        // Al navegar (p. ej. al terminar un reporte diferido) refrescar el contador
+        $route: 'loadPendingSignatures',
+        // Un ciclo de sync puede vaciar la cola de firmas
+        'offlineState.lastSyncAt': 'loadPendingSignatures',
+    },
+    mounted() {
+        this.loadPendingSignatures();
+        window.addEventListener('tzion-visits-changed', this.onVisitsChanged);
+    },
+    beforeUnmount() {
+        window.removeEventListener('tzion-visits-changed', this.onVisitsChanged);
     },
     methods: {
+        onVisitsChanged(e) {
+            this.pendingSignatures = e.detail?.count ?? this.pendingSignatures;
+        },
+        async loadPendingSignatures() {
+            try {
+                // Cuenta servidor + cola local (offline las visitas viven en IndexedDB)
+                const { visits } = await loadPendingVisits();
+                this.pendingSignatures = visits.length;
+            } catch {}
+        },
         async handleLogout() {
             await useAuth().logout();
             this.$router.push('/login');
@@ -180,10 +235,10 @@ export default {
     color: #94a3b8;
     font-size: 0.7rem;
     font-weight: 500;
-    padding: 6px 16px;
+    padding: 6px 8px;
     border-radius: 12px;
     transition: all 0.2s;
-    min-width: 64px;
+    min-width: 56px;
 }
 
 .tech-bottom-nav__item i {
@@ -196,6 +251,32 @@ export default {
 
 .tech-bottom-nav__item--checkin {
     position: relative;
+}
+
+/* Badges de la barra inferior */
+.nav-icon-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -10px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ba2831;
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+.nav-badge--sync {
+    background: #f59e0b;
 }
 
 .checkin-btn-circle {

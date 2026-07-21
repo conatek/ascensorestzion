@@ -295,6 +295,15 @@
                     </div>
                 </div>
 
+                <!-- Firma diferida: la sede tiene mas de un equipo -->
+                <div v-if="canDeferSignature" class="defer-note">
+                    <i class="fa fa-info-circle"></i>
+                    <span>
+                        Esta sede tiene {{ siteEquipmentCount }} equipos. Puede dejar la firma del cliente
+                        para el final de la visita y firmar todos los informes de una sola vez.
+                    </span>
+                </div>
+
                 <!-- Datos firmante cliente -->
                 <div class="sign-section">
                     <label class="field-label">Nombre del firmante (cliente)</label>
@@ -313,6 +322,17 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Accion alterna: dejar la firma del cliente para el final de la visita -->
+                <button
+                    v-if="canDeferSignature"
+                    type="button"
+                    class="defer-btn"
+                    :disabled="saving"
+                    @click="finalizeAndSign(true)"
+                >
+                    <i class="fa fa-clock"></i> Guardar y firmar al final de la visita
+                </button>
             </div>
         </template>
 
@@ -326,7 +346,7 @@
             <button v-if="currentStep < steps.length - 1" type="button" class="nav-btn nav-btn--next" :disabled="!canAdvance" @click="nextStep">
                 Siguiente <i class="fa fa-arrow-right"></i>
             </button>
-            <button v-else type="button" class="nav-btn nav-btn--finalize" :disabled="saving" @click="finalizeAndSign">
+            <button v-else type="button" class="nav-btn nav-btn--finalize" :disabled="saving" @click="finalizeAndSign(false)">
                 <i v-if="saving" class="fa fa-spinner fa-spin"></i>
                 <template v-else><i class="fa fa-check-circle"></i> Finalizar y Firmar</template>
             </button>
@@ -344,6 +364,7 @@ import ConditionItem from '@/components/tech/ConditionItem.vue';
 import ActivityItem from '@/components/tech/ActivityItem.vue';
 import VideoCapture from '@/components/tech/VideoCapture.vue';
 import reportService from '@/services/reportService.js';
+import { currentVisitUuid } from '@/services/visitService.js';
 import offlineManager from '@/utils/offlineManager.js';
 
 const GROUP_LABELS = {
@@ -372,6 +393,12 @@ export default {
             equipmentId: null,
             serviceDate: null,
             timeIn: '',
+
+            // Firma diferida (solo si la sede tiene mas de un equipo)
+            siteId: null,
+            siteEquipmentCount: 0,
+            siteName: null,
+            clientName: null,
 
             // Paso 1
             conditions: [],
@@ -468,6 +495,10 @@ export default {
             const labels = { RSTP: 'Preventivo', RSTC: 'Correctivo', RSTE: 'Especial' };
             return labels[this.reportType] || '';
         },
+        // La firma diferida solo tiene sentido si la sede tiene varios equipos.
+        canDeferSignature() {
+            return this.siteEquipmentCount > 1 && !!this.siteId;
+        },
         canAdvance() {
             if (this.currentStep === 0) {
                 return this.conditionsAnswered === this.conditions.length;
@@ -493,6 +524,11 @@ export default {
             || String(this.reportId || '').startsWith('local-');
         if (this.isOffline) {
             this.equipmentId = this.$route.query.equipment_id || this.equipmentId;
+            // Sin conexión los datos de la sede salen de la caché del equipo
+            try {
+                const eq = await offlineManager.getCachedEquipment(parseInt(this.equipmentId, 10));
+                if (eq) this.setSiteInfo(eq.site, eq.site_id);
+            } catch {}
         }
         await this.loadCatalogs();
 
@@ -595,6 +631,8 @@ export default {
                         this.equipmentId = data.equipment_id;
                         this.serviceDate = data.service_date;
                         if (data.time_in) this.timeIn = data.time_in;
+                        // Para habilitar la firma diferida
+                        this.setSiteInfo(data.equipment?.site, data.site_id ?? data.equipment?.site_id);
                     } catch {}
                 }
             } catch (err) {
@@ -742,6 +780,24 @@ export default {
             }
         },
 
+        /** Datos de la sede necesarios para ofrecer y describir la firma diferida. */
+        setSiteInfo(site, siteId = null) {
+            if (!site && !siteId) return;
+            this.siteId = siteId ?? site?.id ?? null;
+            this.siteEquipmentCount = site?.equipment_count ?? 0;
+            this.siteName = site?.name ?? null;
+            this.clientName = site?.client?.business_name ?? null;
+        },
+
+        /**
+         * Identificador de la visita en curso: mismo técnico, misma sede, mismo día.
+         * Todos los reportes diferidos de esa visita lo comparten para firmarse en lote.
+         */
+        visitUuid() {
+            const date = String(this.serviceDate || new Date().toISOString()).split('T')[0];
+            return currentVisitUuid(this.siteId, date);
+        },
+
         async autosave() {
             if (!this.reportId || this.saving) return;
             try {
@@ -755,36 +811,55 @@ export default {
             } catch {}
         },
 
-        async finalizeAndSign() {
+        /**
+         * @param {boolean} defer  Firma diferida: cierra el reporte solo con la firma
+         *                         del técnico y lo agrupa en la visita, para que el
+         *                         cliente firme todos los informes al final.
+         */
+        async finalizeAndSign(defer = false) {
             // Validar firmas
             if (!this.hasSignature('tech')) {
                 this.$swal.fire({ icon: 'warning', title: 'Firma requerida', text: 'Debe firmar como técnico.', confirmButtonText: 'Entendido' });
                 return;
             }
-            if (!this.customerSigner.name.trim()) {
-                this.$swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Ingrese el nombre del firmante.', confirmButtonText: 'Entendido' });
-                return;
-            }
-            if (!this.hasSignature('customer')) {
-                this.$swal.fire({ icon: 'warning', title: 'Firma requerida', text: 'El cliente debe firmar.', confirmButtonText: 'Entendido' });
-                return;
+            if (!defer) {
+                if (!this.customerSigner.name.trim()) {
+                    this.$swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Ingrese el nombre del firmante.', confirmButtonText: 'Entendido' });
+                    return;
+                }
+                if (!this.hasSignature('customer')) {
+                    this.$swal.fire({ icon: 'warning', title: 'Firma requerida', text: 'El cliente debe firmar.', confirmButtonText: 'Entendido' });
+                    return;
+                }
             }
 
             this.saving = true;
             try {
                 const techSig = this.$refs.techSignature.toDataURL('image/png');
-                const custSig = this.$refs.customerSignature.toDataURL('image/png');
+                const custSig = defer ? null : this.$refs.customerSignature.toDataURL('image/png');
+                const visitUuid = defer ? this.visitUuid() : null;
                 const attachments = this.collectAttachments();
 
                 // OFFLINE: encolar el reporte completo (datos + firmas) para subir al
                 // reconectar. El syncEngine hace create → firmar técnico → firmar cliente.
                 if (this.isOffline) {
                     const reportClientUuid = await offlineManager.queueReportForSync({
-                        payload: this.buildPayload(),
+                        payload: { ...this.buildPayload(), visit_uuid: visitUuid },
                         techSignature: techSig,
                         custSignature: custSig,
                         custName: this.customerSigner.name,
                         custDoc: this.customerSigner.document,
+                        // Con firma diferida: datos para listar la visita sin conexión,
+                        // cuando el reporte todavía no existe en el servidor.
+                        visitMeta: visitUuid ? {
+                            visit_uuid: visitUuid,
+                            site_id: this.siteId,
+                            site_name: this.siteName,
+                            client_name: this.clientName,
+                            service_date: String(this.serviceDate || new Date().toISOString()).split('T')[0],
+                            report_type: this.reportType,
+                            equipment_id: this.equipmentId,
+                        } : null,
                     });
                     // Encolar las fotos enlazadas al reporte; el syncEngine las sube
                     // una vez que el reporte se crea y obtiene su id real.
@@ -806,7 +881,9 @@ export default {
                     this.$swal.fire({
                         icon: 'success',
                         title: 'Reporte guardado sin conexión',
-                        text: 'Se enviará automáticamente cuando vuelva la conexión.',
+                        text: defer
+                            ? 'Se enviará al reconectar y quedará pendiente de la firma del cliente.'
+                            : 'Se enviará automáticamente cuando vuelva la conexión.',
                         confirmButtonText: 'Aceptar',
                     });
                     return;
@@ -819,27 +896,34 @@ export default {
                 //    re-firmar y sin re-subir las ya cargadas).
                 await this.uploadAttachmentsOnline(this.reportId, attachments);
 
-                // 3. Firmar como tecnico
-                await reportService.signTechnician(this.reportId, { signature: techSig });
-
-                // 4. Firmar como cliente
-                await reportService.signCustomer(this.reportId, {
-                    signature: custSig,
-                    signer_name: this.customerSigner.name,
-                    signer_document: this.customerSigner.document,
+                // 3. Firmar como tecnico (con visit_uuid si la firma es diferida)
+                await reportService.signTechnician(this.reportId, {
+                    signature: techSig,
+                    ...(visitUuid ? { visit_uuid: visitUuid } : {}),
                 });
+
+                // 4. Firmar como cliente (salvo firma diferida: se hará en lote)
+                if (!defer) {
+                    await reportService.signCustomer(this.reportId, {
+                        signature: custSig,
+                        signer_name: this.customerSigner.name,
+                        signer_document: this.customerSigner.document,
+                    });
+                }
 
                 // Limpiar session
                 sessionStorage.removeItem('current_checkin');
 
                 // Navegar a confirmacion
-                this.$router.push({ name: 'tech.dashboard' });
+                this.$router.push({ name: defer ? 'tech.signatures' : 'tech.dashboard' });
 
                 // Notificar exito
                 this.$swal.fire({
                     icon: 'success',
-                    title: 'Reporte finalizado',
-                    text: 'El informe ha sido firmado y enviado correctamente.',
+                    title: defer ? 'Informe listo para firmar' : 'Reporte finalizado',
+                    text: defer
+                        ? 'Queda pendiente la firma del cliente. Al terminar la visita fírmelo junto con los demás informes de esta sede.'
+                        : 'El informe ha sido firmado y enviado correctamente.',
                     confirmButtonText: 'Aceptar',
                 });
             } catch (err) {
@@ -1374,6 +1458,47 @@ export default {
     font-size: 0.75rem;
     color: #64748b;
     cursor: pointer;
+}
+
+/* Firma diferida */
+.defer-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: #92400e;
+    line-height: 1.35;
+}
+
+.defer-note i {
+    margin-top: 2px;
+}
+
+.defer-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.8rem;
+    border: 1px solid #fbbf24;
+    border-radius: 10px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.defer-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Navigation bottom */

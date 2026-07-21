@@ -13,6 +13,7 @@ class ServiceReport extends Model
     protected $fillable = [
         'report_number',
         'client_uuid',
+        'visit_uuid',
         'report_type',
         'equipment_id',
         'client_id',
@@ -44,13 +45,13 @@ class ServiceReport extends Model
     ];
 
     protected $casts = [
-        'service_date'             => 'date',
-        'equipment_functional'     => 'boolean',
-        'generates_quotation'      => 'boolean',
-        'requires_parts_change'    => 'boolean',
-        'technician_signed_at'     => 'datetime',
-        'customer_signed_at'       => 'datetime',
-        'reception_confirmed_at'   => 'datetime',
+        'service_date' => 'date',
+        'equipment_functional' => 'boolean',
+        'generates_quotation' => 'boolean',
+        'requires_parts_change' => 'boolean',
+        'technician_signed_at' => 'datetime',
+        'customer_signed_at' => 'datetime',
+        'reception_confirmed_at' => 'datetime',
     ];
 
     public function equipment()

@@ -23,6 +23,7 @@ use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TechnicianCheckinController;
+use App\Http\Controllers\VisitSignatureController;
 use Illuminate\Support\Facades\Route;
 
 // Autenticación pública
@@ -49,6 +50,9 @@ Route::get('/templates/{templateName}/schema', [CompanySettingController::class,
 // Confirmacion de recepcion de reportes (publico, sin auth)
 Route::get('/report-confirmation/{token}', [ReportConfirmationController::class, 'show']);
 Route::post('/report-confirmation/{token}', [ReportConfirmationController::class, 'confirm']);
+// Descarga del PDF con el mismo token (genera con Browsershot: throttle bajo)
+Route::get('/report-confirmation/{token}/pdf', [ReportConfirmationController::class, 'pdf'])
+    ->middleware('throttle:10,1');
 
 // Rutas protegidas con Sanctum
 Route::middleware('auth:sanctum')->group(function () {
@@ -102,6 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('checkin', [TechnicianCheckinController::class, 'store']);
         Route::get('checkins', [TechnicianCheckinController::class, 'index']);
         Route::get('checkins/{checkin}', [TechnicianCheckinController::class, 'show']);
+
+        // Firma diferida en lote
+        Route::get('visits/pending-signature', [VisitSignatureController::class, 'pending']);
+        Route::post('visits/sign-customer', [VisitSignatureController::class, 'signBatch'])->middleware('throttle:10,1');
     });
 
     // Notificaciones

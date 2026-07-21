@@ -130,6 +130,9 @@ class TechnicianCheckinController extends Controller
 
         $equipment = $checkin->equipment;
 
+        // Para la firma diferida: cuántos equipos tiene la sede (se cachea offline).
+        $equipment?->site?->loadCount('equipment');
+
         $proximity = null;
         if ($checkin->distance_meters !== null) {
             $proximity = [

@@ -49,7 +49,7 @@ class ReportCompletedNotification extends Notification implements ShouldQueue
 
         $mail = (new MailMessage)
             ->subject("Informe {$report->report_number} — Ascensores Tzion")
-            ->greeting("Informe de servicio completado")
+            ->greeting('Informe de servicio completado')
             ->line("**Número:** {$report->report_number}")
             ->line("**Tipo:** {$typeLabel}")
             ->line("**Equipo:** {$equipCode}")
@@ -59,10 +59,12 @@ class ReportCompletedNotification extends Notification implements ShouldQueue
             ->line("**Fecha:** {$serviceDate}")
             ->salutation('Equipo de Ascensores Tzion');
 
-        // Para el cliente: agregar boton de confirmacion de recepcion
+        // Para el cliente: descarga del informe + confirmacion de recepcion
         if ($this->recipientRole === 'client' && $report->reception_token) {
+            $pdfUrl = url("/api/report-confirmation/{$report->reception_token}/pdf");
             $confirmUrl = url("/confirmacion-reporte/{$report->reception_token}");
-            $mail->action('Confirmar Recepción del Reporte', $confirmUrl)
+            $mail->line("[Descargar el informe en PDF]({$pdfUrl})")
+                ->action('Confirmar Recepción del Reporte', $confirmUrl)
                 ->line('Haga clic en el botón para confirmar que recibió este informe.');
         }
 

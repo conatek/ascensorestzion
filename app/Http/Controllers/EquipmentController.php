@@ -20,7 +20,7 @@ class EquipmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_equipment'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_equipment'), 403, 'No autorizado.');
 
         $query = Equipment::with(['site:id,name,client_id', 'site.client:id,business_name']);
 
@@ -32,7 +32,7 @@ class EquipmentController extends Controller
         }
 
         if ($request->filled('client_id')) {
-            $query->whereHas('site', fn($q) => $q->where('client_id', $request->client_id));
+            $query->whereHas('site', fn ($q) => $q->where('client_id', $request->client_id));
         }
 
         if ($request->filled('site_id')) {
@@ -51,9 +51,9 @@ class EquipmentController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('internal_code', 'like', "%{$s}%")
-                  ->orWhere('brand', 'like', "%{$s}%")
-                  ->orWhere('model', 'like', "%{$s}%")
-                  ->orWhere('serial_number', 'like', "%{$s}%");
+                    ->orWhere('brand', 'like', "%{$s}%")
+                    ->orWhere('model', 'like', "%{$s}%")
+                    ->orWhere('serial_number', 'like', "%{$s}%");
             });
         }
 
@@ -64,7 +64,7 @@ class EquipmentController extends Controller
 
     public function store(StoreEquipmentRequest $request): JsonResponse
     {
-        abort_if(!$request->user()->can('create_equipment'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('create_equipment'), 403, 'No autorizado.');
 
         $data = $request->validated();
 
@@ -83,9 +83,13 @@ class EquipmentController extends Controller
     public function show(Request $request, Equipment $equipment): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_equipment'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_equipment'), 403, 'No autorizado.');
 
         $equipment->load(['site.client', 'attachments.uploader:id,name']);
+
+        // El formulario del técnico lo usa (incluso offline, desde la caché) para
+        // saber si la sede tiene varios equipos y ofrecer la firma diferida.
+        $equipment->site?->loadCount('equipment');
 
         if ($user->hasRole('admin') && $user->client_id) {
             if ((int) $equipment->site?->client_id !== (int) $user->client_id) {
@@ -98,7 +102,7 @@ class EquipmentController extends Controller
 
     public function update(StoreEquipmentRequest $request, Equipment $equipment): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_equipment'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_equipment'), 403, 'No autorizado.');
 
         $data = $request->validated();
 
@@ -116,7 +120,7 @@ class EquipmentController extends Controller
 
     public function destroy(Request $request, Equipment $equipment): JsonResponse
     {
-        abort_if(!$request->user()->can('delete_equipment'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('delete_equipment'), 403, 'No autorizado.');
 
         $equipment->delete();
 
@@ -126,7 +130,7 @@ class EquipmentController extends Controller
     public function history(Request $request, Equipment $equipment): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('view_equipment'), 403, 'No autorizado.');
+        abort_if(! $user->can('view_equipment'), 403, 'No autorizado.');
 
         $equipment->loadMissing('site');
 
@@ -156,7 +160,7 @@ class EquipmentController extends Controller
     public function uploadAttachment(Request $request, Equipment $equipment): JsonResponse
     {
         $user = $request->user();
-        abort_if(!$user->can('edit_equipment'), 403, 'No autorizado.');
+        abort_if(! $user->can('edit_equipment'), 403, 'No autorizado.');
 
         $request->validate([
             'file' => ['required', 'file', 'max:10240'],
@@ -164,13 +168,13 @@ class EquipmentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('equipment-attachments/' . $equipment->id, 'local');
+        $path = $file->store('equipment-attachments/'.$equipment->id, 'local');
 
         $attachment = $equipment->attachments()->create([
-            'type'          => $request->type,
-            'file_path'     => $path,
+            'type' => $request->type,
+            'file_path' => $path,
             'original_name' => $file->getClientOriginalName(),
-            'uploaded_by'   => $user->id,
+            'uploaded_by' => $user->id,
         ]);
 
         return response()->json($attachment->load('uploader:id,name'), 201);
@@ -196,10 +200,10 @@ class EquipmentController extends Controller
                 fn ($a, $b) => strcasecmp($a->internal_code ?? '', $b->internal_code ?? ''),
             ])
             ->map(fn ($e) => [
-                'code'   => $e->internal_code,
+                'code' => $e->internal_code,
                 'client' => $e->site?->client?->business_name ?? '—',
-                'site'   => $e->site?->name ?? '',
-                'qr'     => $this->qrService->getBase64($e),
+                'site' => $e->site?->name ?? '',
+                'qr' => $this->qrService->getBase64($e),
             ])
             ->values();
 
@@ -207,8 +211,8 @@ class EquipmentController extends Controller
         $pdf = $this->generatePdf($html);
 
         return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="codigos-qr-equipos-' . now()->format('Y-m-d') . '.pdf"',
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="codigos-qr-equipos-'.now()->format('Y-m-d').'.pdf"',
         ]);
     }
 
@@ -250,7 +254,7 @@ class EquipmentController extends Controller
 
     public function deleteAttachment(Request $request, Equipment $equipment, \App\Models\EquipmentAttachment $attachment): JsonResponse
     {
-        abort_if(!$request->user()->can('edit_equipment'), 403, 'No autorizado.');
+        abort_if(! $request->user()->can('edit_equipment'), 403, 'No autorizado.');
 
         if ((int) $attachment->equipment_id !== (int) $equipment->id) {
             abort(404);

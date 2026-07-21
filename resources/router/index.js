@@ -382,6 +382,12 @@ const routes = [
         meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
     },
     {
+        path: '/tech/firmas-pendientes',
+        name: 'tech.signatures',
+        component: () => import('../js/views/tech/TechPendingSignatures.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
         path: '/tech/perfil',
         name: 'tech.profile',
         component: () => import('../js/views/Profile.vue'),

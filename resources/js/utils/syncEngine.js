@@ -17,6 +17,7 @@
 import offlineManager from './offlineManager.js';
 import checkinService from '@/services/checkinService.js';
 import reportService from '@/services/reportService.js';
+import visitService from '@/services/visitService.js';
 
 // Backoff por número de intento: 5s, 30s, 2m, 10m (tope)
 const BACKOFF_MS = [5000, 30000, 120000, 600000];
@@ -197,14 +198,74 @@ async function syncAttachments({ force }) {
 }
 
 /**
+ * Firma diferida: aplica la firma única del cliente a todos los reportes de la
+ * visita. Va al final del ciclo porque necesita que los reportes ya existan en el
+ * servidor (los crea syncReports) y que sus adjuntos estén arriba: al firmar se
+ * dispara el aviso al cliente con el PDF completo.
+ */
+async function syncVisitSignatures({ force }) {
+    const items = await offlineManager.getPendingVisitSignatures();
+    const now = Date.now();
+
+    // Visitas que aún tienen reportes en cola: si se firmara ahora, el backend
+    // firmaría solo los ya subidos y la firma se perdería para los que faltan.
+    const queuedReports = await offlineManager.getPendingReports();
+    const incompleteVisits = new Set(
+        queuedReports
+            .map(r => r.visitMeta?.visit_uuid)
+            .filter(Boolean)
+    );
+
+    for (const item of items) {
+        if (incompleteVisits.has(item.visit_uuid)) continue;
+
+        if (!force) {
+            if (item.status === 'error') continue;
+            if (item.nextAttemptAt && item.nextAttemptAt > now) continue;
+        }
+
+        try {
+            // Idempotente por visit_uuid: si ya se firmó, el backend responde signed=0.
+            await visitService.signCustomer({
+                visit_uuid: item.visit_uuid,
+                signature: item.signature,
+                signer_name: item.signer_name || '',
+                signer_document: item.signer_document || '',
+            });
+            await offlineManager.removePendingVisitSignature(item.localId);
+        } catch (err) {
+            const statusCode = err?.response?.status;
+            if (statusCode === 401) {
+                throw err;
+            }
+            item.attempts = (item.attempts || 0) + 1;
+            item.lastError = err?.response?.data?.message || err.message || 'Error de red';
+            // Un 404 aquí significa que los reportes de la visita todavía no han
+            // subido (siguen en cola o fallaron): es transitorio, no permanente.
+            // Tras varios ciclos se marca en rojo para que el técnico lo vea.
+            const stuck404 = statusCode === 404 && item.attempts >= 10;
+            if ((isPermanent(statusCode) && statusCode !== 404) || stuck404) {
+                item.status = 'error';
+            } else {
+                item.status = 'pending';
+                item.nextAttemptAt = Date.now() + backoffMs(item.attempts);
+            }
+            await offlineManager.updatePendingVisitSignature(item);
+        }
+    }
+}
+
+/**
  * Procesa todas las colas en orden. Lo invoca offlineManager.syncPending().
- * Orden: checkins → reportes (estampan report_id en sus adjuntos) → adjuntos.
+ * Orden: checkins → reportes (estampan report_id en sus adjuntos) → adjuntos →
+ * firmas de visita (requieren reportes y adjuntos ya subidos).
  * @param {{force?: boolean}} opts
  */
 export async function syncQueues({ force = false } = {}) {
     await syncCheckins({ force });
     await syncReports({ force });
     await syncAttachments({ force });
+    await syncVisitSignatures({ force });
 }
 
 export default { syncQueues };

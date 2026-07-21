@@ -31,6 +31,9 @@
                 <p v-if="confirmedAt" class="confirmed-date">
                     Confirmado el {{ formatDate(confirmedAt) }}
                 </p>
+                <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
+                    <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
+                </a>
             </div>
 
             <!-- Pendiente de confirmar -->
@@ -72,6 +75,10 @@
                     </div>
                 </div>
 
+                <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
+                    <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
+                </a>
+
                 <button
                     class="confirm-btn"
                     :disabled="confirming"
@@ -92,6 +99,9 @@
                 <h2>Recepción confirmada</h2>
                 <p>Gracias por confirmar la recepción del informe.</p>
                 <p class="success-detail">El informe ha sido cerrado exitosamente.</p>
+                <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
+                    <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
+                </a>
             </div>
         </div>
 
@@ -117,6 +127,13 @@ export default {
             error: null,
             confirming: false,
         };
+    },
+
+    computed: {
+        // El mismo token del enlace del correo autoriza la descarga
+        pdfUrl() {
+            return `/api/report-confirmation/${this.$route.params.token}/pdf`;
+        },
     },
 
     created() {
@@ -320,6 +337,29 @@ export default {
 .confirm-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.download-btn {
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 0.75rem;
+    background: #ffffff;
+    color: #ba2831;
+    border: 1px solid #ba2831;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.2s;
+}
+
+.download-btn:hover {
+    background: #fef2f2;
 }
 
 /* Success */

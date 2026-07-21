@@ -16,17 +16,17 @@ class ServiceReportSigningService
 
         $report->update([
             'technician_signature_path' => $path,
-            'technician_signed_at'      => now(),
-            'status'                    => 'firmado_tecnico',
+            'technician_signed_at' => now(),
+            'status' => 'firmado_tecnico',
         ]);
 
         ServiceReportAuditLog::create([
             'service_report_id' => $report->id,
-            'user_id'           => $user->id,
-            'action'            => 'signed_tech',
-            'ip'                => request()->ip(),
-            'user_agent'        => request()->userAgent(),
-            'created_at'        => now(),
+            'user_id' => $user->id,
+            'action' => 'signed_tech',
+            'ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'created_at' => now(),
         ]);
     }
 
@@ -40,22 +40,40 @@ class ServiceReportSigningService
         $path = $this->saveSignature($signatureBase64, $report->report_number, 'customer');
 
         $report->update([
-            'customer_signer_name'     => $name,
+            'customer_signer_name' => $name,
             'customer_signer_document' => $document,
-            'customer_signature_path'  => $path,
-            'customer_signed_at'       => now(),
-            'status'                   => 'firmado_cliente',
+            'customer_signature_path' => $path,
+            'customer_signed_at' => now(),
+            'status' => 'firmado_cliente',
         ]);
 
         ServiceReportAuditLog::create([
             'service_report_id' => $report->id,
-            'user_id'           => $request->user()->id,
-            'action'            => 'signed_customer',
-            'changes_json'      => ['signer_name' => $name, 'signer_document' => $document],
-            'ip'                => $request->ip(),
-            'user_agent'        => $request->userAgent(),
-            'created_at'        => now(),
+            'user_id' => $request->user()->id,
+            'action' => 'signed_customer',
+            'changes_json' => ['signer_name' => $name, 'signer_document' => $document],
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
+    }
+
+    /**
+     * Firma diferida: aplica una unica firma de cliente a todos los reportes
+     * pendientes de una visita.
+     *
+     * @param  \Illuminate\Support\Collection<int, ServiceReport>  $reports
+     */
+    public function signAsCustomerBatch(
+        $reports,
+        string $signatureBase64,
+        string $name,
+        string $document,
+        Request $request
+    ): void {
+        foreach ($reports as $report) {
+            $this->signAsCustomer($report, $signatureBase64, $name, $document, $request);
+        }
     }
 
     private function saveSignature(string $base64, string $reportNumber, string $type): string
