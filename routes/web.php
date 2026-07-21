@@ -26,8 +26,8 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
         if ($card) {
             $image = $card->thumbnail_path ?? $card->photo_path;
 
-            // Transformar la URL de Cloudinary: contenido de 210x210 centrado en un
-            // lienzo blanco de 300x300 (margen del 15% por lado).
+            // Transformar la URL de Cloudinary: contenido de 140x140 centrado en un
+            // lienzo blanco de 200x200 (margen del 15% por lado).
             //
             // Dos cosas que decide esta transformacion:
             //
@@ -35,6 +35,9 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
             //    imagen grande (1200x630) muestra la tarjeta alta: foto arriba y
             //    textos debajo. Con una imagen pequeña y cuadrada usa el formato
             //    horizontal (miniatura a la izquierda), que es el que queremos.
+            //    Con 300x300 el resultado era inconsistente (una tarjeta salia
+            //    horizontal y otra alta, con imagenes equivalentes): ese tamaño
+            //    esta justo en el umbral. 200x200 queda claramente por debajo.
             //
             // 2. El MARGEN evita que recorte contenido. Aunque la miniatura es
             //    cuadrada como la imagen, WhatsApp la muestra con un zoom que se
@@ -43,12 +46,12 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
             //    Con el 15% de blanco alrededor el recorte muerde margen.
             //
             // Si hiciera falta afinar: subir w/h del primer paso agranda la foto y
-            // reduce el margen; bajarlos hacen lo contrario. El lienzo (300x300) no
-            // conviene tocarlo, porque es lo que mantiene el formato horizontal.
+            // reduce el margen; bajarlos hacen lo contrario. Subir el lienzo se
+            // acerca al umbral y arriesga que vuelva la tarjeta alta.
             if ($image) {
                 $image = str_replace(
                     '/image/upload/',
-                    '/image/upload/w_210,h_210,c_fit/w_300,h_300,c_pad,b_white/',
+                    '/image/upload/w_140,h_140,c_fit/w_200,h_200,c_pad,b_white/',
                     $image
                 );
             }
