@@ -45,13 +45,20 @@ Route::get('/{cardSlug}', function (string $cardSlug) {
             //    la parte superior de la cabeza y la franja inferior del logo.
             //    Con el 15% de blanco alrededor el recorte muerde margen.
             //
+            // OJO con el modo del segundo paso: tiene que ser c_lpad y NO c_pad.
+            // c_pad escala la imagen para LLENAR el lienzo y despues rellena, asi
+            // que volvia a ampliar los 140x140 hasta 200x200 y el margen del primer
+            // paso desaparecia (el resultado era identico a un simple w_200,h_200).
+            // c_lpad ("limit pad") solo reduce, nunca amplia: deja los 140x140 tal
+            // cual y rellena de blanco los 30px de cada lado.
+            //
             // Si hiciera falta afinar: subir w/h del primer paso agranda la foto y
             // reduce el margen; bajarlos hacen lo contrario. Subir el lienzo se
             // acerca al umbral y arriesga que vuelva la tarjeta alta.
             if ($image) {
                 $image = str_replace(
                     '/image/upload/',
-                    '/image/upload/w_140,h_140,c_fit/w_200,h_200,c_pad,b_white/',
+                    '/image/upload/w_140,h_140,c_fit/w_200,h_200,c_lpad,b_white/',
                     $image
                 );
             }
