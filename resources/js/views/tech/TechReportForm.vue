@@ -827,6 +827,14 @@ export default {
                     this.$swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Ingrese el nombre del firmante.', confirmButtonText: 'Entendido' });
                     return;
                 }
+                // El backend exige el documento. Sin esta validación, offline el
+                // reporte se encola y la firma del cliente falla con 422 al
+                // sincronizar: como es un error permanente, el item queda en rojo
+                // y el reporte se queda sin la firma, sin arreglo desde el móvil.
+                if (!this.customerSigner.document.trim()) {
+                    this.$swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Ingrese el documento del firmante.', confirmButtonText: 'Entendido' });
+                    return;
+                }
                 if (!this.hasSignature('customer')) {
                     this.$swal.fire({ icon: 'warning', title: 'Firma requerida', text: 'El cliente debe firmar.', confirmButtonText: 'Entendido' });
                     return;

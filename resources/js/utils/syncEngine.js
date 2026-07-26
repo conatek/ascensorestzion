@@ -113,7 +113,7 @@ async function syncReports({ force }) {
             // Enlazar adjuntos pendientes de este reporte con su id real, antes de
             // quitar el reporte de la cola (así los adjuntos quedan autosuficientes
             // aunque su subida falle y se reintente en ciclos posteriores).
-            await stampReportIdOnAttachments(item.client_uuid, reportId);
+            await stampReportIdOnAttachments(item.client_uuid, reportId, item.visitMeta?.visit_uuid);
 
             await offlineManager.removePendingReport(item.localId);
         } catch (err) {
@@ -138,13 +138,18 @@ async function syncReports({ force }) {
  * Estampa el report_id real sobre los adjuntos pendientes enlazados a un reporte
  * (por report_client_uuid). A partir de aquí el adjunto puede subirse aunque su
  * reporte ya no esté en la cola.
+ *
+ * De paso copia el visit_uuid del reporte: una vez que el reporte sale de la cola
+ * es el único rastro que queda de a qué visita pertenece el adjunto, y
+ * syncVisitSignatures lo necesita para no firmar antes de que suban las fotos.
  */
-async function stampReportIdOnAttachments(reportClientUuid, reportId) {
+async function stampReportIdOnAttachments(reportClientUuid, reportId, visitUuid = null) {
     if (!reportClientUuid) return;
     const attachments = await offlineManager.getPendingAttachments();
     for (const att of attachments) {
         if (att.report_client_uuid === reportClientUuid && !att.report_id) {
             att.report_id = reportId;
+            if (visitUuid) att.visit_uuid = visitUuid;
             await offlineManager.updatePendingAttachment(att);
         }
     }
@@ -215,6 +220,21 @@ async function syncVisitSignatures({ force }) {
             .map(r => r.visitMeta?.visit_uuid)
             .filter(Boolean)
     );
+
+    // Y visitas con fotos todavía sin subir: firmar dispara el correo al cliente
+    // con el enlace al PDF, y saldría sin el anexo. Basta con que un adjunto haya
+    // entrado en backoff (fallo de red) para que su reporte ya esté arriba y el
+    // gate de arriba no lo detecte.
+    //
+    // Los adjuntos en 'error' NO bloquean: son fallos permanentes que no se van a
+    // reintentar solos, y dejarlos mandando dejaría la visita sin firmar para
+    // siempre. Se prefiere el correo sin una foto a la visita atascada.
+    const queuedAttachments = await offlineManager.getPendingAttachments();
+    for (const att of queuedAttachments) {
+        if (att.visit_uuid && att.status !== 'error') {
+            incompleteVisits.add(att.visit_uuid);
+        }
+    }
 
     for (const item of items) {
         if (incompleteVisits.has(item.visit_uuid)) continue;
