@@ -92,6 +92,13 @@ class PermissionSeeder extends Seeder
 
             // Impersonation
             'impersonate_user',
+
+            // Cronograma de visitas
+            'view_schedule',                 // todo el cronograma (coordinacion)
+            'manage_schedule',               // crear/editar/cancelar/mover visitas
+            'manage_technician_schedules',   // jornada propia de cada tecnico
+            'view_own_schedule',             // agenda del propio tecnico
+            'view_client_schedule',          // cronograma del cliente en el portal
         ];
 
         foreach ($permissions as $permission) {

@@ -18,11 +18,13 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCardController;
 use App\Http\Controllers\ReportConfirmationController;
+use App\Http\Controllers\ScheduledVisitController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TechnicianCheckinController;
+use App\Http\Controllers\TechnicianScheduleController;
 use App\Http\Controllers\VisitSignatureController;
 use Illuminate\Support\Facades\Route;
 
@@ -110,6 +112,22 @@ Route::middleware('auth:sanctum')->group(function () {
         // Firma diferida en lote
         Route::get('visits/pending-signature', [VisitSignatureController::class, 'pending']);
         Route::post('visits/sign-customer', [VisitSignatureController::class, 'signBatch'])->middleware('throttle:10,1');
+    });
+
+    // Cronograma de visitas (coordinación)
+    Route::middleware('role:master|super|coordinator')->prefix('schedule')->group(function () {
+        Route::get('visits', [ScheduledVisitController::class, 'index']);
+        Route::post('visits', [ScheduledVisitController::class, 'store']);
+        Route::get('visits/{scheduledVisit}', [ScheduledVisitController::class, 'show']);
+        Route::put('visits/{scheduledVisit}', [ScheduledVisitController::class, 'update']);
+        Route::post('visits/{scheduledVisit}/cancel', [ScheduledVisitController::class, 'cancel']);
+
+        Route::get('technicians', [ScheduledVisitController::class, 'technicians']);
+        Route::get('technicians/{user}/schedule', [TechnicianScheduleController::class, 'show']);
+        Route::put('technicians/{user}/schedule', [TechnicianScheduleController::class, 'update']);
+        Route::delete('technicians/{user}/schedule', [TechnicianScheduleController::class, 'destroy']);
+
+        Route::get('equipment/{equipment}/duration', [ScheduledVisitController::class, 'equipmentDuration']);
     });
 
     // Notificaciones

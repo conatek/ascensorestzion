@@ -30,6 +30,7 @@ class Equipment extends Model
         'contract_start',
         'contract_end',
         'maintenance_frequency_days',
+        'default_visit_duration_minutes',
         'photo_path',
         'qr_code_path',
         'status',
@@ -46,6 +47,7 @@ class Equipment extends Model
         'contract_start' => 'date',
         'contract_end' => 'date',
         'maintenance_frequency_days' => 'integer',
+        'default_visit_duration_minutes' => 'integer',
     ];
 
     public function site()
@@ -61,6 +63,11 @@ class Equipment extends Model
     public function serviceReports()
     {
         return $this->hasMany(ServiceReport::class);
+    }
+
+    public function scheduledVisits()
+    {
+        return $this->hasMany(ScheduledVisit::class);
     }
 
     public function getClientAttribute()

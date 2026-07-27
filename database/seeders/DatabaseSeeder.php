@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CardSeeder::class,
             UserSeeder::class,
             ServiceReportSeeder::class,
+            ScheduleSettingSeeder::class,
         ]);
     }
 }
