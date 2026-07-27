@@ -1,0 +1,709 @@
+<template>
+    <div>
+        <!-- Cabecera -->
+        <div class="app-page-title">
+            <div class="page-title-wrapper">
+                <div class="page-title-heading">
+                    <div class="page-title-icon">
+                        <i class="fa fa-calendar-week icon-gradient bg-mean-fruit"></i>
+                    </div>
+                    <div>
+                        Cronograma
+                        <div class="page-title-subheading text-muted">
+                            Programa y reorganiza las visitas de mantenimiento
+                        </div>
+                    </div>
+                </div>
+                <div class="page-title-actions">
+                    <button class="btn-create" @click="openCreate()">
+                        <i class="fa fa-plus me-2"></i> Programar visita
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="filter-bar">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="filter-label">Agrupar por</label>
+                    <div class="group-toggle">
+                        <button :class="{ active: groupBy === 'technician' }" @click="setGroupBy('technician')">
+                            <i class="fa fa-user-cog me-1"></i> Técnico
+                        </button>
+                        <button :class="{ active: groupBy === 'equipment' }" @click="setGroupBy('equipment')">
+                            <i class="fa fa-arrows-alt-v me-1"></i> Equipo
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Cliente</label>
+                    <select v-model="filters.client_id" class="filter-select" @change="onClientFilter">
+                        <option value="">Todos</option>
+                        <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.business_name }}</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Sede</label>
+                    <select v-model="filters.site_id" class="filter-select" :disabled="!filters.client_id" @change="load">
+                        <option value="">Todas</option>
+                        <option v-for="s in filteredSites" :key="s.id" :value="s.id">{{ s.name }}</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Técnico</label>
+                    <select v-model="filters.technician_id" class="filter-select" @change="load">
+                        <option value="">Todos</option>
+                        <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Estado</label>
+                    <select v-model="filters.status" class="filter-select" @change="load">
+                        <option value="">Todos</option>
+                        <option v-for="(label, key) in statusLabels" :key="key" :value="key">{{ label }}</option>
+                    </select>
+                </div>
+                <div v-if="hasFilters" class="filter-group filter-clear">
+                    <button class="btn-clear" @click="clearFilters">
+                        <i class="fa fa-times me-1"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendario -->
+        <div class="schedule-card">
+            <div v-if="loading" class="schedule-loading">
+                <i class="fa fa-spinner fa-spin me-2"></i> Cargando cronograma…
+            </div>
+
+            <vue-cal
+                v-show="!loading"
+                ref="cal"
+                class="tz-schedule"
+                locale="es"
+                :time-from="timeFrom"
+                :time-to="timeTo"
+                :time-step="30"
+                :disable-views="['years', 'year']"
+                :active-view="view"
+                :split-days="splits"
+                :sticky-split-labels="useSplits"
+                :min-split-width="150"
+                :special-hours="specialHours"
+                :events="events"
+                :editable-events="editableEvents"
+                :snap-to-time="15"
+                :on-event-click="openDrawer"
+                events-on-month-view="short"
+                @view-change="onViewChange"
+                @ready="onViewChange"
+                @cell-click="onCellClick"
+                @event-drop="onEventDrop"
+                @event-duration-change="onEventDrop"
+            >
+                <template #event="{ event }">
+                    <div class="tz-event">
+                        <strong class="tz-event-code">{{ event.equipmentCode }}</strong>
+                        <span class="tz-event-time">{{ event.timeLabel }}</span>
+                        <span class="tz-event-meta">{{ event.siteName }}</span>
+                    </div>
+                </template>
+            </vue-cal>
+        </div>
+
+        <!-- Modal crear / editar -->
+        <VisitFormModal
+            v-if="showForm"
+            :visit="editingVisit"
+            :prefill="prefill"
+            :clients="clients"
+            :sites="sites"
+            :equipment="equipment"
+            :technicians="technicians"
+            :defaults="defaults"
+            @close="closeForm"
+            @saved="onSaved"
+        />
+
+        <!-- Drawer de detalle -->
+        <VisitDrawer
+            v-if="selectedVisit"
+            :visit="selectedVisit"
+            @close="selectedVisit = null"
+            @edit="openEdit"
+            @cancel="confirmCancel"
+        />
+    </div>
+</template>
+
+<script>
+import VueCal from 'vue-cal';
+import 'vue-cal/dist/vuecal.css';
+// El locale no se importa: vue-cal lo carga por su cuenta con la prop locale="es".
+import dayjs from '@/utils/dayjs.js';
+
+import scheduleService from '@/services/scheduleService.js';
+import clientService from '@/services/clientService.js';
+import equipmentService from '@/services/equipmentService.js';
+import VisitFormModal from './VisitFormModal.vue';
+import VisitDrawer from './VisitDrawer.vue';
+
+const STATUS_LABELS = {
+    programada: 'Programada',
+    reprogramacion_solicitada: 'Reprogramación solicitada',
+    en_curso: 'En curso',
+    completada: 'Completada',
+    no_realizada: 'No realizada',
+    cancelada: 'Cancelada',
+};
+
+/** Estados que no se pueden arrastrar: la visita ya está cerrada. */
+const LOCKED_STATUSES = ['completada', 'cancelada'];
+
+export default {
+    name: 'ScheduleBoard',
+    components: { VueCal, VisitFormModal, VisitDrawer },
+    data() {
+        return {
+            loading: true,
+            view: 'week',
+            groupBy: 'technician',
+            visits: [],
+            technicians: [],
+            defaults: {},
+            clients: [],
+            sites: [],
+            equipment: [],
+            // Rango visible; lo fija vue-cal en cada cambio de vista y es lo que
+            // se le pide al backend (que exige from/to).
+            range: { start: null, end: null },
+            filters: {
+                client_id: '',
+                site_id: '',
+                technician_id: '',
+                status: '',
+            },
+            statusLabels: STATUS_LABELS,
+            showForm: false,
+            editingVisit: null,
+            prefill: null,
+            selectedVisit: null,
+        };
+    },
+    computed: {
+        /** Los splits por técnico solo tienen sentido en día y semana. */
+        useSplits() {
+            return this.groupBy === 'technician' && ['day', 'week'].includes(this.view);
+        },
+        splits() {
+            if (!this.useSplits) return [];
+            return this.visibleTechnicians.map(t => ({
+                id: t.id,
+                label: t.name,
+                class: `tz-split-${t.id}`,
+            }));
+        },
+        visibleTechnicians() {
+            if (!this.filters.technician_id) return this.technicians;
+            return this.technicians.filter(t => String(t.id) === String(this.filters.technician_id));
+        },
+        /**
+         * vue-cal usa un único time-from/time-to para todo el grid, así que se toma
+         * el mínimo y el máximo de las jornadas visibles; las franjas fuera de la
+         * jornada de cada técnico se marcan como muertas vía special-hours.
+         */
+        timeFrom() {
+            const mins = this.visibleTechnicians
+                .map(t => this.toMinutes(t.working_window?.start))
+                .filter(m => m !== null);
+            if (!mins.length) return this.toMinutes(this.defaults.working_hours?.start) ?? 8 * 60;
+            return Math.min(...mins);
+        },
+        timeTo() {
+            const mins = this.visibleTechnicians
+                .map(t => this.toMinutes(t.working_window?.end))
+                .filter(m => m !== null);
+            if (!mins.length) return this.toMinutes(this.defaults.working_hours?.end) ?? 18 * 60;
+            return Math.max(...mins);
+        },
+        /**
+         * Franjas no agendables: el descanso y, cuando se ve un solo técnico, las
+         * horas fuera de su jornada. Con varios técnicos a la vez se pinta solo el
+         * descanso global, que es lo común a todos.
+         */
+        specialHours() {
+            const window = this.visibleTechnicians.length === 1
+                ? this.visibleTechnicians[0].working_window
+                : {
+                    days: this.defaults.working_days || [1, 2, 3, 4, 5],
+                    break_start: this.defaults.working_break?.start,
+                    break_end: this.defaults.working_break?.end,
+                };
+
+            const hours = {};
+            for (let day = 1; day <= 7; day++) {
+                if (!window?.days?.includes(day)) {
+                    // Día no laborable: todo el día muerto.
+                    hours[day] = { from: this.timeFrom, to: this.timeTo, class: 'tz-closed' };
+                } else if (window.break_start && window.break_end) {
+                    hours[day] = {
+                        from: this.toMinutes(window.break_start),
+                        to: this.toMinutes(window.break_end),
+                        class: 'tz-break',
+                    };
+                }
+            }
+            return hours;
+        },
+        events() {
+            return this.visits.map(v => {
+                const start = dayjs(v.scheduled_start);
+                const end = dayjs(v.scheduled_end);
+                return {
+                    id: v.id,
+                    start: start.format('YYYY-MM-DD HH:mm'),
+                    end: end.format('YYYY-MM-DD HH:mm'),
+                    title: v.equipment?.internal_code || 'Visita',
+                    class: `tz-ev tz-ev-${v.visit_type} tz-ev-status-${v.status}`,
+                    split: this.useSplits ? v.technician_id : undefined,
+                    draggable: !LOCKED_STATUSES.includes(v.status),
+                    resizable: !LOCKED_STATUSES.includes(v.status),
+                    // Datos propios para el slot del evento y el drawer
+                    equipmentCode: v.equipment?.internal_code || '—',
+                    siteName: v.site?.name || '',
+                    timeLabel: `${start.format('HH:mm')}–${end.format('HH:mm')}`,
+                    raw: v,
+                };
+            });
+        },
+        editableEvents() {
+            return { title: false, drag: true, resize: true, delete: false, create: false };
+        },
+        filteredSites() {
+            if (!this.filters.client_id) return [];
+            return this.sites.filter(s => String(s.client_id) === String(this.filters.client_id));
+        },
+        hasFilters() {
+            return Object.values(this.filters).some(Boolean);
+        },
+    },
+    async created() {
+        await this.loadCatalogs();
+    },
+    methods: {
+        toMinutes(hhmm) {
+            if (!hhmm) return null;
+            const [h, m] = hhmm.split(':');
+            return Number(h) * 60 + Number(m || 0);
+        },
+
+        async loadCatalogs() {
+            try {
+                const [techRes, clientRes, equipRes] = await Promise.all([
+                    scheduleService.technicians(),
+                    clientService.all(),
+                    equipmentService.all(),
+                ]);
+                this.technicians = techRes.data.technicians || [];
+                this.defaults = techRes.data.defaults || {};
+                this.clients = this.unwrap(clientRes.data);
+                this.equipment = this.unwrap(equipRes.data);
+                this.sites = this.deriveSites(this.equipment);
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo cargar el cronograma',
+                    text: err.response?.data?.message || err.message,
+                    confirmButtonText: 'Aceptar',
+                });
+            }
+        },
+
+        /** Los índices del proyecto responden a veces {data: []} y a veces []. */
+        unwrap(payload) {
+            if (Array.isArray(payload)) return payload;
+            return payload?.data ?? [];
+        },
+
+        /**
+         * Las sedes salen del listado de equipos (que ya trae site con client_id) y
+         * no de un endpoint propio: /sites está anidado bajo cliente y habría que
+         * pedirlo cliente por cliente. Además este es justo el conjunto útil, porque
+         * solo se puede agendar sobre un equipo.
+         */
+        deriveSites(equipment) {
+            const byId = new Map();
+            equipment.forEach(e => {
+                if (e.site && !byId.has(e.site.id)) {
+                    byId.set(e.site.id, {
+                        id: e.site.id,
+                        name: e.site.name,
+                        client_id: e.site.client_id,
+                    });
+                }
+            });
+            return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+        },
+
+        /** vue-cal informa el rango visible al cambiar de vista o de fecha. */
+        onViewChange(event) {
+            if (!event?.startDate) return;
+            this.range = {
+                start: dayjs(event.startDate).format('YYYY-MM-DD 00:00'),
+                end: dayjs(event.endDate).format('YYYY-MM-DD 23:59'),
+            };
+            this.view = event.view || this.view;
+            this.load();
+        },
+
+        async load() {
+            if (!this.range.start) return;
+            this.loading = true;
+            try {
+                const { data } = await scheduleService.visits({
+                    from: this.range.start,
+                    to: this.range.end,
+                    ...this.cleanFilters(),
+                });
+                this.visits = data;
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'Error al cargar visitas',
+                    text: err.response?.data?.message || err.message,
+                    confirmButtonText: 'Aceptar',
+                });
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        cleanFilters() {
+            return Object.fromEntries(
+                Object.entries(this.filters).filter(([, v]) => v !== '' && v !== null),
+            );
+        },
+
+        setGroupBy(mode) {
+            this.groupBy = mode;
+        },
+
+        onClientFilter() {
+            this.filters.site_id = '';
+            this.load();
+        },
+
+        clearFilters() {
+            this.filters = { client_id: '', site_id: '', technician_id: '', status: '' };
+            this.load();
+        },
+
+        // ── Crear / editar ──
+
+        /**
+         * Clic en un hueco libre: precarga fecha, hora y, si se está viendo por
+         * técnico, la columna donde se hizo clic.
+         */
+        onCellClick(payload) {
+            const date = payload?.date || payload;
+            if (!date) return;
+            // En vista mes el clic navega al día en vez de crear: crear a las 00:00
+            // no tendría sentido.
+            if (this.view === 'month') return;
+
+            this.prefill = {
+                start: dayjs(date).format('YYYY-MM-DD HH:mm'),
+                technician_id: this.useSplits ? payload?.split : null,
+            };
+            this.editingVisit = null;
+            this.showForm = true;
+        },
+
+        openCreate() {
+            this.prefill = null;
+            this.editingVisit = null;
+            this.showForm = true;
+        },
+
+        openEdit(visit) {
+            this.selectedVisit = null;
+            this.prefill = null;
+            this.editingVisit = visit;
+            this.showForm = true;
+        },
+
+        closeForm() {
+            this.showForm = false;
+            this.editingVisit = null;
+            this.prefill = null;
+        },
+
+        onSaved() {
+            this.closeForm();
+            this.load();
+        },
+
+        openDrawer(event, e) {
+            e?.stopPropagation();
+            this.selectedVisit = event.raw;
+        },
+
+        // ── Drag & drop / resize ──
+
+        /**
+         * Mover o redimensionar. El backend revalida jornada, descanso y solapes,
+         * así que un rechazo se resuelve recargando: el evento vuelve a su sitio.
+         */
+        async onEventDrop({ event }) {
+            const visit = event.raw;
+            const start = dayjs(event.start).format('YYYY-MM-DD HH:mm');
+            const end = dayjs(event.end).format('YYYY-MM-DD HH:mm');
+            const technicianId = event.split || visit.technician_id;
+
+            const confirmed = await this.$swal.fire({
+                icon: 'question',
+                title: '¿Reprogramar la visita?',
+                html: `<b>${visit.equipment?.internal_code || 'Visita'}</b><br>`
+                    + `${dayjs(event.start).format('dddd D [de] MMMM, HH:mm')} – ${dayjs(event.end).format('HH:mm')}`,
+                showCancelButton: true,
+                confirmButtonText: 'Reprogramar',
+                cancelButtonText: 'Deshacer',
+                confirmButtonColor: '#30ab0a',
+            });
+
+            if (!confirmed.isConfirmed) {
+                this.load();
+                return;
+            }
+
+            try {
+                await scheduleService.update(visit.id, {
+                    scheduled_start: start,
+                    scheduled_end: end,
+                    technician_id: technicianId,
+                });
+                this.$swal.fire({
+                    icon: 'success',
+                    title: 'Visita reprogramada',
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            } catch (err) {
+                const bag = err.response?.data?.errors;
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo mover',
+                    html: bag
+                        ? Object.values(bag).flat().join('<br>')
+                        : (err.response?.data?.message || err.message),
+                    confirmButtonText: 'Aceptar',
+                });
+            } finally {
+                this.load();
+            }
+        },
+
+        async confirmCancel(visit) {
+            const { isConfirmed, value } = await this.$swal.fire({
+                icon: 'warning',
+                title: '¿Cancelar esta visita?',
+                input: 'text',
+                inputLabel: 'Motivo (opcional)',
+                inputPlaceholder: 'Por ejemplo: el cliente pidió aplazarla',
+                showCancelButton: true,
+                confirmButtonText: 'Cancelar visita',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#ba2831',
+            });
+
+            if (!isConfirmed) return;
+
+            try {
+                await scheduleService.cancel(visit.id, value || null);
+                this.selectedVisit = null;
+                this.load();
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo cancelar',
+                    text: err.response?.data?.message || err.message,
+                    confirmButtonText: 'Aceptar',
+                });
+            }
+        },
+    },
+};
+</script>
+
+<style scoped>
+.schedule-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+    padding: 1rem;
+    min-height: 640px;
+}
+
+.schedule-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 600px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.group-toggle {
+    display: inline-flex;
+    background: #eef2f6;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.group-toggle button {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.group-toggle button.active {
+    background: #fff;
+    color: #227a0c;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.btn-clear {
+    border: 0;
+    background: #fef2f2;
+    color: #ba2831;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.tz-event {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    overflow: hidden;
+    padding: 2px 4px;
+}
+
+.tz-event-code {
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.tz-event-time,
+.tz-event-meta {
+    font-size: 0.68rem;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+<style>
+/* Sin scope: vue-cal renderiza su propio árbol y los estilos scoped no lo alcanzan.
+   Todo va prefijado con .tz-schedule para no filtrarse a otras vistas. */
+.tz-schedule {
+    height: 620px;
+    font-family: inherit;
+}
+
+.tz-schedule .vuecal__title-bar {
+    background: #f8fafc;
+    border-radius: 10px 10px 0 0;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.tz-schedule .vuecal__menu {
+    background: #fff;
+    border-bottom: 1px solid #e9edf2;
+}
+
+.tz-schedule .vuecal__menu li {
+    color: #64748b;
+    border-bottom-color: transparent;
+}
+
+.tz-schedule .vuecal__menu li.vuecal__menu-item--active {
+    color: #227a0c;
+    border-bottom-color: #30ab0a;
+}
+
+.tz-schedule .vuecal__cell--today,
+.tz-schedule .vuecal__cell--current {
+    background: rgba(48, 171, 10, 0.05);
+}
+
+/* Franjas no agendables */
+.tz-schedule .vuecal__cell-split .tz-break,
+.tz-schedule .tz-break {
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(148, 163, 184, 0.14),
+        rgba(148, 163, 184, 0.14) 6px,
+        rgba(148, 163, 184, 0.05) 6px,
+        rgba(148, 163, 184, 0.05) 12px
+    );
+}
+
+.tz-schedule .tz-closed {
+    background: rgba(148, 163, 184, 0.16);
+}
+
+/* Eventos: color por tipo de visita, atenuados si ya están cerrados */
+.tz-schedule .vuecal__event.tz-ev {
+    border-radius: 7px;
+    border-left: 3px solid;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.tz-schedule .vuecal__event.tz-ev-preventivo {
+    background: #30ab0a;
+    border-left-color: #227a0c;
+}
+
+.tz-schedule .vuecal__event.tz-ev-correctivo {
+    background: #ba2831;
+    border-left-color: #8c1d24;
+}
+
+.tz-schedule .vuecal__event.tz-ev-especial {
+    background: #2563eb;
+    border-left-color: #1d4ed8;
+}
+
+.tz-schedule .vuecal__event.tz-ev-status-completada,
+.tz-schedule .vuecal__event.tz-ev-status-cancelada,
+.tz-schedule .vuecal__event.tz-ev-status-no_realizada {
+    background: #94a3b8;
+    border-left-color: #64748b;
+    opacity: 0.75;
+}
+
+.tz-schedule .vuecal__event.tz-ev-status-en_curso {
+    box-shadow: 0 0 0 2px #0ea5e9;
+}
+
+.tz-schedule .vuecal__split-days-headers .day-split-header {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    padding: 0.35rem 0;
+}
+</style>

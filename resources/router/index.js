@@ -25,6 +25,11 @@ import EquipmentEdit   from '../js/views/equipment/EquipmentEdit.vue';
 import EquipmentDetail from '../js/views/equipment/EquipmentDetail.vue';
 
 // Reportes de servicio
+// Lazy: arrastra vue-cal (~120 KB) y solo lo abre coordinación. Cargarlo en el
+// bundle principal engordaba el precache de la PWA, que es lo que instalan los
+// técnicos para trabajar sin conexión.
+const ScheduleBoard = () => import('../js/views/schedule/ScheduleBoard.vue');
+
 import ServiceReportIndex  from '../js/views/report/ServiceReportIndex.vue';
 import ServiceReportForm   from '../js/views/report/ServiceReportForm.vue';
 import ServiceReportDetail from '../js/views/report/ServiceReportDetail.vue';
@@ -217,6 +222,14 @@ const routes = [
         path: '/equipos/:id/editar',
         name: 'equipment.edit',
         component: EquipmentEdit,
+        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
+    },
+
+    // --- Cronograma de visitas ---
+    {
+        path: '/cronograma',
+        name: 'schedule.index',
+        component: ScheduleBoard,
         meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
     },
 

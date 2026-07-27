@@ -32,6 +32,12 @@
                             <span class="nav-text">{{ isAdmin ? 'Mis Equipos' : 'Equipos' }}</span>
                         </router-link>
                     </li>
+                    <li v-if="canSchedule" class="nav-item" :class="{ 'active': $route.path.startsWith('/cronograma') }">
+                        <router-link to="/cronograma" class="nav-link" title="Cronograma">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="17" x2="10" y2="17"/></svg></span>
+                            <span class="nav-text">Cronograma</span>
+                        </router-link>
+                    </li>
                     <li class="nav-item" :class="{ 'active': $route.path.startsWith('/reportes') }">
                         <router-link to="/reportes" class="nav-link" title="Reportes">
                             <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></span>
@@ -73,6 +79,9 @@ export default {
         isCoordinator() { return useAuth().isCoordinator(); },
         isInternal() { return useAuth().isInternal(); },
         isAdmin() { return useAuth().isAdmin(); },
+        // El cronograma es de coordinación; técnico y admin lo verán desde su
+        // propia vista en la fase 2.
+        canSchedule() { return useAuth().isMasterOrSuper() || useAuth().isCoordinator(); },
     },
     methods: {
         hoverSidebar(status) { this.$emit("updateSidebar", status); },

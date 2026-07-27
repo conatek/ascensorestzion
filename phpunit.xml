@@ -19,10 +19,15 @@
     </coverage>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Clave de usar y tirar solo para tests. No es la de ningún entorno real:
+             sin ella el framework revienta al cifrar y toda la suite falla. -->
+        <env name="APP_KEY" value="base64:kZ8yTQnQPqLxG3vJ2mNbW5cR7dA1sF4hK9uY6eX0iV8="/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- sqlite en memoria: RefreshDatabase sobre la conexión por defecto
+             borraría la base de desarrollo. -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
