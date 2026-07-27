@@ -1,5 +1,9 @@
 <template>
-    <div class="modal-overlay" @click.self="close">
+    <!-- Teleport a body por lo mismo que el drawer: el contenedor de contenido
+         del layout atrapaba el position:fixed. La clase es visit-overlay y no
+         modal-overlay para no rozar con las clases .modal-* de Bootstrap. -->
+    <Teleport to="body">
+    <div class="visit-overlay" @click.self="close">
         <div class="visit-modal">
             <div class="visit-modal-head">
                 <h4 class="visit-modal-title">
@@ -108,6 +112,7 @@
             </div>
         </div>
     </div>
+    </Teleport>
 </template>
 
 <script>
@@ -316,7 +321,7 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
+.visit-overlay {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.6);

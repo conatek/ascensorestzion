@@ -78,39 +78,59 @@
                 <i class="fa fa-spinner fa-spin me-2"></i> Cargando cronograma…
             </div>
 
-            <vue-cal
-                v-show="!loading"
-                ref="cal"
-                class="tz-schedule"
-                locale="es"
-                :time-from="timeFrom"
-                :time-to="timeTo"
-                :time-step="30"
-                :disable-views="['years', 'year']"
-                :active-view="view"
-                :split-days="splits"
-                :sticky-split-labels="useSplits"
-                :min-split-width="150"
-                :special-hours="specialHours"
-                :events="events"
-                :editable-events="editableEvents"
-                :snap-to-time="15"
-                :on-event-click="openDrawer"
-                events-on-month-view="short"
-                @view-change="onViewChange"
-                @ready="onViewChange"
-                @cell-click="onCellClick"
-                @event-drop="onEventDrop"
-                @event-duration-change="onEventDrop"
-            >
-                <template #event="{ event }">
-                    <div class="tz-event">
-                        <strong class="tz-event-code">{{ event.equipmentCode }}</strong>
-                        <span class="tz-event-time">{{ event.timeLabel }}</span>
-                        <span class="tz-event-meta">{{ event.siteName }}</span>
-                    </div>
-                </template>
-            </vue-cal>
+            <!-- Leyenda: el color dice el tipo de visita, no quién la atiende. -->
+            <div v-show="!loading" class="schedule-legend">
+                <span class="legend-item"><i class="legend-dot dot-preventivo"></i> Preventivo</span>
+                <span class="legend-item"><i class="legend-dot dot-correctivo"></i> Correctivo</span>
+                <span class="legend-item"><i class="legend-dot dot-especial"></i> Especial</span>
+                <span class="legend-item"><i class="legend-dot dot-cerrada"></i> Completada o cancelada</span>
+                <span class="legend-item"><i class="legend-dot dot-break"></i> No agendable (descanso o día no laborable)</span>
+            </div>
+
+            <div v-show="!loading">
+                <vue-cal
+                    ref="cal"
+                    class="tz-schedule"
+                    locale="es"
+                    :time-from="timeFrom"
+                    :time-to="timeTo"
+                    :time-step="30"
+                    :time-cell-height="30"
+                    :disable-views="['years', 'year']"
+                    :active-view="view"
+                    :split-days="splits"
+                    :sticky-split-labels="useSplits"
+                    :min-split-width="minSplitWidth"
+                    :special-hours="specialHours"
+                    :events="events"
+                    :editable-events="editableEvents"
+                    :snap-to-time="15"
+                    :on-event-click="openDrawer"
+                    events-on-month-view="short"
+                    @view-change="onViewChange"
+                    @ready="onViewChange"
+                    @cell-click="onCellClick"
+                    @event-drop="onEventDrop"
+                    @event-duration-change="onEventDrop"
+                >
+                    <template #event="{ event, view: evView }">
+                        <!-- En el mes cada celda es un día entero: el bloque de
+                             varias líneas desbordaba la casilla y deformaba la
+                             rejilla, así que ahí va en una sola línea. -->
+                        <div v-if="evView === 'month'" class="tz-event tz-event-compact">
+                            {{ event.startTimeLabel }} · {{ event.equipmentCode }}
+                        </div>
+                        <div v-else class="tz-event">
+                            <strong class="tz-event-code">{{ event.equipmentCode }}</strong>
+                            <span class="tz-event-time">{{ event.timeLabel }}</span>
+                            <!-- Con columnas por técnico el nombre ya está en la
+                                 cabecera; sin ellas hay que decir de quién es. -->
+                            <span v-if="!useSplits" class="tz-event-meta">{{ event.technicianName }}</span>
+                            <span class="tz-event-meta">{{ event.siteName }}</span>
+                        </div>
+                    </template>
+                </vue-cal>
+            </div>
         </div>
 
         <!-- Modal crear / editar -->
@@ -168,7 +188,9 @@ export default {
     data() {
         return {
             loading: true,
-            view: 'week',
+            // En un teléfono la semana con columnas por técnico obliga a barrer
+            // de lado para ver cualquier cosa; el día entra completo.
+            view: window.innerWidth < 768 ? 'day' : 'week',
             groupBy: 'technician',
             visits: [],
             technicians: [],
@@ -273,13 +295,24 @@ export default {
                     // Datos propios para el slot del evento y el drawer
                     equipmentCode: v.equipment?.internal_code || '—',
                     siteName: v.site?.name || '',
+                    technicianName: v.technician?.name || '',
                     timeLabel: `${start.format('HH:mm')}–${end.format('HH:mm')}`,
+                    startTimeLabel: start.format('HH:mm'),
                     raw: v,
                 };
             });
         },
         editableEvents() {
             return { title: false, drag: true, resize: true, delete: false, create: false };
+        },
+        /**
+         * Ancho mínimo de cada columna de técnico. En la semana son 7 días × N
+         * técnicos: se deja estrecho y el contenedor hace scroll horizontal, que
+         * es preferible a espachurrar las columnas hasta que no se lea nada.
+         */
+        minSplitWidth() {
+            if (!this.useSplits) return 0;
+            return this.view === 'day' ? 0 : 130;
         },
         filteredSites() {
             if (!this.filters.client_id) return [];
@@ -538,21 +571,146 @@ export default {
 </script>
 
 <style scoped>
+/* Cabecera y filtros: estas clases NO son globales, cada vista las define en su
+   propio bloque scoped. Se replican aquí las del resto del panel para que el
+   cronograma no desentone. */
+.btn-create {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    background: #279208;
+    color: white;
+    font-weight: 600;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(39, 146, 8, 0.25);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-create:hover {
+    background: #1f7506;
+    box-shadow: 0 4px 12px rgba(39, 146, 8, 0.35);
+    color: white;
+}
+
+.filter-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 0.375rem;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s;
+    color: #1e293b;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #279208;
+    box-shadow: 0 0 0 3px rgba(39, 146, 8, 0.1);
+}
+
+.filter-select:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+}
+
+@media (max-width: 1200px) {
+    .filter-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .filter-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .schedule-card {
     background: #fff;
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
     padding: 1rem;
-    min-height: 640px;
 }
 
 .schedule-loading {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 600px;
+    height: 520px;
     color: #64748b;
     font-size: 0.95rem;
+}
+
+.schedule-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.1rem;
+    padding: 0 0.25rem 0.85rem;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.dot-preventivo { background: #30ab0a; }
+.dot-correctivo { background: #ba2831; }
+.dot-especial   { background: #2563eb; }
+.dot-cerrada    { background: #94a3b8; }
+
+.dot-break {
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(148, 163, 184, 0.5),
+        rgba(148, 163, 184, 0.5) 3px,
+        rgba(148, 163, 184, 0.15) 3px,
+        rgba(148, 163, 184, 0.15) 6px
+    );
 }
 
 .group-toggle {
@@ -612,14 +770,34 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.tz-event-compact {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 </style>
 
 <style>
 /* Sin scope: vue-cal renderiza su propio árbol y los estilos scoped no lo alcanzan.
    Todo va prefijado con .tz-schedule para no filtrarse a otras vistas. */
 .tz-schedule {
-    height: 620px;
+    /* Una jornada de 08:00 a 18:00 en pasos de 30 min son 20 filas. Con celdas de
+       30px son 600px de rejilla, así que con esta altura el día entra entero y no
+       hay que hacer scroll dentro del calendario para ver la tarde (antes se
+       cortaba a mediodía). Quien scrollea es la página, que es lo esperable. */
+    height: 730px;
     font-family: inherit;
+}
+
+@media (max-width: 768px) {
+    .tz-schedule {
+        height: 660px;
+    }
 }
 
 .tz-schedule .vuecal__title-bar {
@@ -629,17 +807,26 @@ export default {
     color: #1e293b;
 }
 
+/* Las pestañas Mes/Semana/Día son .vuecal__view-btn, no un <li> de un menú. */
 .tz-schedule .vuecal__menu {
     background: #fff;
     border-bottom: 1px solid #e9edf2;
 }
 
-.tz-schedule .vuecal__menu li {
+.tz-schedule .vuecal__view-btn {
     color: #64748b;
-    border-bottom-color: transparent;
+    font-size: 0.86rem;
+    font-weight: 600;
+    padding: 0.5rem 1.1rem;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
 }
 
-.tz-schedule .vuecal__menu li.vuecal__menu-item--active {
+.tz-schedule .vuecal__view-btn:hover {
+    color: #227a0c;
+}
+
+.tz-schedule .vuecal__view-btn--active {
     color: #227a0c;
     border-bottom-color: #30ab0a;
 }
@@ -647,6 +834,23 @@ export default {
 .tz-schedule .vuecal__cell--today,
 .tz-schedule .vuecal__cell--current {
     background: rgba(48, 171, 10, 0.05);
+}
+
+/* Vista mes: la casilla de un día es de altura fija, así que un día con cuatro
+   visitas se desbordaba sobre la fila de abajo. Cada día scrollea lo suyo. */
+.tz-schedule.vuecal--month-view .vuecal__cell-content {
+    justify-content: flex-start;
+    height: 100%;
+}
+
+.tz-schedule.vuecal--month-view .vuecal__cell-events {
+    overflow-y: auto;
+    width: 100%;
+    max-height: calc(100% - 1.6em);
+}
+
+.tz-schedule.vuecal--month-view .vuecal__event {
+    margin-bottom: 2px;
 }
 
 /* Franjas no agendables */
@@ -661,8 +865,16 @@ export default {
     );
 }
 
+/* Mismo rayado que el descanso: en la leyenda es una sola entrada, y para quien
+   agenda ambas cosas significan lo mismo (aquí no se puede poner una visita). */
 .tz-schedule .tz-closed {
-    background: rgba(148, 163, 184, 0.16);
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(148, 163, 184, 0.2),
+        rgba(148, 163, 184, 0.2) 6px,
+        rgba(148, 163, 184, 0.08) 6px,
+        rgba(148, 163, 184, 0.08) 12px
+    );
 }
 
 /* Eventos: color por tipo de visita, atenuados si ya están cerrados */
@@ -700,10 +912,31 @@ export default {
     box-shadow: 0 0 0 2px #0ea5e9;
 }
 
-.tz-schedule .vuecal__split-days-headers .day-split-header {
-    font-size: 0.78rem;
+/* Los nombres largos ("Andrés Felipe Cardona") se salían de su columna y pisaban
+   la de al lado. Sin el contenedor .vuecal__split-days-headers delante, porque ese
+   solo existe en la vista de día con etiquetas fijas: en la semana las cabeceras
+   de técnico cuelgan de la cabecera del día. */
+.tz-schedule .day-split-header {
+    font-size: 0.74rem;
     font-weight: 600;
     color: #475569;
+    padding: 0.35rem 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+}
+
+/* Cabecera de día. Sin tocarle la altura: con columnas por técnico vue-cal mete
+   los nombres dentro y fijársela los recortaba por abajo. */
+.tz-schedule .vuecal__heading {
+    font-size: 0.82rem;
+}
+
+/* Barra de vistas (Mes/Semana/Día) y título: separados del grid. */
+.tz-schedule .vuecal__title-bar {
     padding: 0.35rem 0;
+    font-size: 0.95rem;
 }
 </style>

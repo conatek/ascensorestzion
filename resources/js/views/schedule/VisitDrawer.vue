@@ -1,4 +1,8 @@
 <template>
+    <!-- Teleport a body: dentro del contenedor de contenido del layout, el
+         position:fixed se resolvía contra ese contenedor y no contra la ventana,
+         así que la cabecera del panel quedaba tapada por el header de la app. -->
+    <Teleport to="body">
     <div class="drawer-backdrop" @click.self="$emit('close')">
         <aside class="drawer">
             <header class="drawer-head">
@@ -67,6 +71,7 @@
             </footer>
         </aside>
     </div>
+    </Teleport>
 </template>
 
 <script>

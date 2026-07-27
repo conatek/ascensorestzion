@@ -43,11 +43,15 @@ class ScheduledVisitController extends Controller
         ]);
 
         $visits = ScheduledVisit::query()
+            // El drawer del calendario se pinta con estos mismos datos, sin volver
+            // a pedir la visita: por eso van tambien la direccion de la sede y
+            // quien la programo.
             ->with([
                 'equipment:id,internal_code,equipment_type',
-                'site:id,name',
+                'site:id,name,address',
                 'client:id,business_name',
                 'technician:id,name',
+                'creator:id,name',
             ])
             ->between(
                 CarbonImmutable::parse($validated['from']),
