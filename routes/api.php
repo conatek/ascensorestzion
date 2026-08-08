@@ -17,6 +17,7 @@ use App\Http\Controllers\PortalController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCardController;
+use App\Http\Controllers\ReminderSettingsController;
 use App\Http\Controllers\ReportConfirmationController;
 use App\Http\Controllers\ScheduledVisitController;
 use App\Http\Controllers\ServiceController;
@@ -134,6 +135,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('equipment/{equipment}/duration', [ScheduledVisitController::class, 'equipmentDuration']);
     });
+
+    // Recordatorios de visita: cada quien configura los suyos
+    Route::get('reminder-settings', [ReminderSettingsController::class, 'show']);
+    Route::put('reminder-settings', [ReminderSettingsController::class, 'update']);
+    Route::delete('reminder-settings', [ReminderSettingsController::class, 'destroy']);
 
     // Notificaciones
     Route::prefix('notifications')->group(function () {

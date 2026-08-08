@@ -50,6 +50,20 @@
                     </dl>
                 </section>
 
+                <section v-if="reminders.length" class="drawer-block">
+                    <h5 class="drawer-block-title">Recordatorios</h5>
+                    <ul class="drawer-reminders">
+                        <li v-for="r in reminders" :key="r.id" :class="`is-${r.status}`">
+                            <i :class="reminderIcon(r.status)"></i>
+                            <span class="drawer-reminder-when">{{ reminderWhen(r) }}</span>
+                            <span class="drawer-reminder-who">{{ r.user?.name || '—' }}</span>
+                        </li>
+                    </ul>
+                    <p v-if="failedReminders" class="drawer-reminder-warn">
+                        {{ failedReminders }} no se pudo enviar.
+                    </p>
+                </section>
+
                 <section v-if="visit.notes" class="drawer-block">
                     <h5 class="drawer-block-title">Notas</h5>
                     <p class="drawer-notes">{{ visit.notes }}</p>
@@ -107,10 +121,28 @@ export default {
         canEdit() {
             return !['completada', 'cancelada'].includes(this.visit.status);
         },
+        /** Los obsoletos no se enseñan: son de una fecha que ya no existe. */
+        reminders() {
+            return (this.visit.reminders || []).filter(r => r.status !== 'obsoleto');
+        },
+        failedReminders() {
+            return this.reminders.filter(r => r.status === 'fallido').length;
+        },
     },
     methods: {
         capitalize(s) {
             return s.charAt(0).toUpperCase() + s.slice(1);
+        },
+        reminderIcon(status) {
+            return {
+                enviado: 'fa fa-check-circle',
+                pendiente: 'fa fa-clock',
+                fallido: 'fa fa-exclamation-circle',
+            }[status] || 'fa fa-circle';
+        },
+        reminderWhen(reminder) {
+            const when = dayjs(reminder.sent_at || reminder.send_at);
+            return `${when.format('D MMM')} · ${when.format('HH:mm')}`;
         },
     },
 };
@@ -265,6 +297,53 @@ export default {
     font-size: 0.88rem;
     color: #475569;
     white-space: pre-wrap;
+}
+
+.drawer-reminders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.drawer-reminders li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.drawer-reminders li i {
+    width: 14px;
+    font-size: 0.78rem;
+}
+
+.drawer-reminders li.is-enviado i { color: #30ab0a; }
+.drawer-reminders li.is-pendiente i { color: #94a3b8; }
+.drawer-reminders li.is-fallido i { color: #ba2831; }
+
+.drawer-reminder-when {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.drawer-reminder-who {
+    margin-left: auto;
+    font-size: 0.76rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 45%;
+}
+
+.drawer-reminder-warn {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem;
+    color: #ba2831;
 }
 
 .drawer-foot {

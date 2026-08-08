@@ -470,9 +470,21 @@ export default {
             this.load();
         },
 
-        openDrawer(event, e) {
+        async openDrawer(event, e) {
             e?.stopPropagation();
+
+            // Se pinta ya con lo que trae el calendario y se completa después: el
+            // listado del mes no carga los recordatorios (serían cientos de filas
+            // para enseñar unas pocas), así que el detalle los pide al abrirse.
             this.selectedVisit = event.raw;
+
+            try {
+                const { data } = await scheduleService.visit(event.raw.id);
+                // Si mientras tanto se cerró o se abrió otra, no pisar nada.
+                if (this.selectedVisit?.id === data.id) {
+                    this.selectedVisit = data;
+                }
+            } catch {}
         },
 
         // ── Drag & drop / resize ──

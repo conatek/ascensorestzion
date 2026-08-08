@@ -202,6 +202,9 @@ class ScheduledVisitController extends Controller
             'client:id,business_name',
             'technician:id,name,email',
             'creator:id,name',
+            // El drawer muestra que avisos salieron y cuales quedan: es la unica
+            // forma de responder "¿al cliente se le avisó?" sin entrar a la base.
+            'reminders' => fn ($q) => $q->with('user:id,name')->orderBy('send_at'),
         ]);
     }
 }

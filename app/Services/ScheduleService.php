@@ -8,8 +8,16 @@ use App\Models\ScheduleSetting;
 use App\Models\ServiceReport;
 use App\Models\TechnicianSchedule;
 use App\Models\User;
+use App\Models\VisitReminder;
+use App\Models\VisitReminderSetting;
+use App\Notifications\VisitCancelledNotification;
+use App\Notifications\VisitRescheduledNotification;
+use App\Notifications\VisitScheduledNotification;
 use Carbon\CarbonImmutable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -94,17 +102,33 @@ class ScheduleService
 
         $this->assertSlotIsFree($technician, $start, $end);
 
-        return ScheduledVisit::create([
-            'equipment_id' => $equipment->id,
-            'site_id' => $equipment->site_id,
-            'client_id' => $equipment->site->client_id,
-            'technician_id' => $technician->id,
-            'scheduled_start' => $start,
-            'scheduled_end' => $end,
-            'visit_type' => $data['visit_type'] ?? 'preventivo',
-            'notes' => $data['notes'] ?? null,
-            'created_by' => $actor->id,
-        ]);
+        $visit = DB::transaction(function () use ($equipment, $technician, $start, $end, $data, $actor) {
+            $visit = ScheduledVisit::create([
+                'equipment_id' => $equipment->id,
+                'site_id' => $equipment->site_id,
+                'client_id' => $equipment->site->client_id,
+                'technician_id' => $technician->id,
+                'scheduled_start' => $start,
+                'scheduled_end' => $end,
+                'visit_type' => $data['visit_type'] ?? 'preventivo',
+                // Explicito y no por el default de la tabla: recien creado el
+                // modelo no lleva en memoria lo que puso la base, y
+                // generateReminders mira el estado para decidir si avisa.
+                'status' => 'programada',
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $actor->id,
+            ]);
+
+            // Dentro de la transaccion: una visita sin recordatorios es una visita
+            // de la que nadie se entera.
+            $this->generateReminders($visit);
+
+            return $visit;
+        });
+
+        $this->notifyParties($visit, new VisitScheduledNotification($visit));
+
+        return $visit;
     }
 
     /**
@@ -123,24 +147,259 @@ class ScheduleService
 
         $this->assertSlotIsFree($technician, $start, $end, $visit->id);
 
-        $visit->update([
-            'technician_id' => $technician->id,
-            'scheduled_start' => $start,
-            'scheduled_end' => $end,
-        ]);
+        $previousStart = CarbonImmutable::parse($visit->scheduled_start);
+        $previousTechnicianId = (int) $visit->technician_id;
 
-        return $visit->refresh();
+        DB::transaction(function () use ($visit, $technician, $start, $end) {
+            $visit->update([
+                'technician_id' => $technician->id,
+                'scheduled_start' => $start,
+                'scheduled_end' => $end,
+            ]);
+
+            $this->regenerateReminders($visit->refresh());
+        });
+
+        $visit->refresh();
+
+        // El tecnico anterior tambien se entera: tenia la visita en su agenda.
+        $extra = $previousTechnicianId !== (int) $visit->technician_id
+            ? User::find($previousTechnicianId)
+            : null;
+
+        $this->notifyParties(
+            $visit,
+            new VisitRescheduledNotification($visit, $previousStart),
+            $extra ? [$extra] : [],
+        );
+
+        return $visit;
     }
 
     public function cancel(ScheduledVisit $visit, ?string $reason = null): ScheduledVisit
     {
-        $visit->update([
-            'status' => 'cancelada',
-            'cancelled_at' => now(),
-            'cancel_reason' => $reason,
-        ]);
+        DB::transaction(function () use ($visit, $reason) {
+            $visit->update([
+                'status' => 'cancelada',
+                'cancelled_at' => now(),
+                'cancel_reason' => $reason,
+            ]);
 
-        return $visit->refresh();
+            $this->obsoleteReminders($visit);
+        });
+
+        $visit->refresh();
+
+        $this->notifyParties($visit, new VisitCancelledNotification($visit));
+
+        return $visit;
+    }
+
+    /**
+     * Avisa a las partes de un cambio en la visita: el cliente y el tecnico.
+     *
+     * Coordinacion queda fuera a proposito — son quienes hacen el cambio y ya lo
+     * ven en el tablero; llenarles la campana de sus propias acciones solo hace
+     * que dejen de mirarla.
+     *
+     * @param  array<int, User>  $extraRecipients
+     */
+    private function notifyParties(ScheduledVisit $visit, Notification $notification, array $extraRecipients = []): void
+    {
+        $users = collect($this->reminderRecipients($visit))
+            ->map(fn (array $pair) => $pair[0])
+            ->concat($extraRecipients)
+            ->filter()
+            ->unique('id');
+
+        if ($users->isNotEmpty()) {
+            NotificationFacade::send($users, $notification);
+        }
+    }
+
+    // ── Recordatorios ──
+
+    /**
+     * Materializa los recordatorios de una visita: una fila por destinatario y
+     * momento, con la hora exacta ya calculada.
+     *
+     * Se hace aqui y no al vuelo cada cinco minutos para que el comando del
+     * scheduler sea una consulta por indice, y para que quede rastro de a quien se
+     * le avisó y cuándo.
+     *
+     * @return int filas creadas
+     */
+    public function generateReminders(ScheduledVisit $visit): int
+    {
+        // Una visita que ya no va a ocurrir no avisa a nadie.
+        if (! in_array($visit->status, ScheduledVisit::BLOCKING_STATUSES, true)) {
+            return 0;
+        }
+
+        $start = CarbonImmutable::parse($visit->scheduled_start);
+        $created = 0;
+
+        foreach ($this->reminderRecipients($visit) as [$user, $role]) {
+            foreach ($this->offsetsFor($user, $role) as $offset) {
+                $sendAt = $this->reminderSendAt($start, $offset);
+
+                // Un aviso con fecha pasada no se crea: nadie quiere recibir el
+                // "faltan 7 dias" de una visita que es pasado mañana.
+                if (! $sendAt || $sendAt->isPast()) {
+                    continue;
+                }
+
+                // Puede existir ya de una generacion anterior (reprogramar dentro
+                // del mismo dia repite algun momento). Si ya se envio, no se
+                // vuelve a mandar.
+                $exists = VisitReminder::query()
+                    ->where('scheduled_visit_id', $visit->id)
+                    ->where('user_id', $user->id)
+                    ->where('send_at', $sendAt)
+                    ->whereIn('status', ['pendiente', 'enviado'])
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                VisitReminder::create([
+                    'scheduled_visit_id' => $visit->id,
+                    'user_id' => $user->id,
+                    'send_at' => $sendAt,
+                    'channels' => $this->reminderChannels($user),
+                ]);
+
+                $created++;
+            }
+        }
+
+        return $created;
+    }
+
+    /**
+     * Invalida lo pendiente y vuelve a materializar. Se llama al mover la visita:
+     * los avisos viejos apuntan a una fecha que ya no existe.
+     */
+    public function regenerateReminders(ScheduledVisit $visit): int
+    {
+        $this->obsoleteReminders($visit);
+
+        return $this->generateReminders($visit);
+    }
+
+    /**
+     * Rehace los avisos de un usuario para sus visitas futuras. Se llama al
+     * cambiar sus preferencias: sin esto lo ya materializado seguiria con los
+     * momentos viejos y el cambio no se notaria hasta la visita siguiente.
+     *
+     * @return int visitas afectadas
+     */
+    public function regenerateUpcomingRemindersFor(User $user): int
+    {
+        $visits = ScheduledVisit::query()
+            ->blocking()
+            ->where('scheduled_start', '>', now())
+            ->where(function ($q) use ($user) {
+                $q->where('technician_id', $user->id);
+
+                if ($user->client_id) {
+                    $q->orWhere('client_id', $user->client_id);
+                }
+            })
+            ->get();
+
+        foreach ($visits as $visit) {
+            VisitReminder::query()
+                ->where('scheduled_visit_id', $visit->id)
+                ->where('user_id', $user->id)
+                ->pending()
+                ->update(['status' => 'obsoleto']);
+
+            // generateReminders salta lo que ya existe para los demas
+            // destinatarios, asi que rehace solo lo de este usuario.
+            $this->generateReminders($visit);
+        }
+
+        return $visits->count();
+    }
+
+    /** Cancelar o completar una visita deja sus avisos sin sentido. */
+    public function obsoleteReminders(ScheduledVisit $visit): void
+    {
+        VisitReminder::query()
+            ->where('scheduled_visit_id', $visit->id)
+            ->pending()
+            ->update(['status' => 'obsoleto']);
+    }
+
+    /**
+     * Quien recibe avisos de una visita: los usuarios del cliente y el tecnico.
+     * Coordinacion no: ellos viven en el tablero.
+     *
+     * @return array<int, array{0: User, 1: string}> pares [usuario, rol]
+     */
+    private function reminderRecipients(ScheduledVisit $visit): array
+    {
+        $recipients = [];
+
+        foreach (User::query()->where('client_id', $visit->client_id)->where('active', true)->get() as $admin) {
+            $recipients[] = [$admin, 'admin'];
+        }
+
+        if ($visit->technician_id && $technician = User::find($visit->technician_id)) {
+            $recipients[] = [$technician, 'technician'];
+        }
+
+        return $recipients;
+    }
+
+    /**
+     * Los momentos de un usuario: los suyos si los configuro, si no los globales
+     * de su rol. Una preferencia desactivada significa "no me avises".
+     *
+     * @return array<int, array{days_before: int, time: string}>
+     */
+    public function offsetsFor(User $user, string $role): array
+    {
+        $own = VisitReminderSetting::query()->where('user_id', $user->id)->first();
+
+        if ($own) {
+            return $own->enabled ? ($own->offsets ?: []) : [];
+        }
+
+        return ScheduleSetting::get(
+            $role === 'technician' ? 'default_technician_offsets' : 'default_admin_offsets'
+        ) ?: [];
+    }
+
+    /**
+     * days_before dias antes del dia de la visita, a la hora indicada.
+     * days_before = 0 es el mismo dia (el aviso matinal del tecnico).
+     */
+    private function reminderSendAt(CarbonImmutable $visitStart, array $offset): ?CarbonImmutable
+    {
+        $days = $offset['days_before'] ?? null;
+        $time = $offset['time'] ?? null;
+
+        if ($days === null || ! $time) {
+            return null;
+        }
+
+        [$h, $m] = array_pad(explode(':', $time), 2, '0');
+
+        return $visitStart->startOfDay()->subDays((int) $days)->setTime((int) $h, (int) $m);
+    }
+
+    /**
+     * WhatsApp entra en la fase 5, cuando Meta apruebe las plantillas: mandarlo
+     * antes es un envio que falla y una fila marcada como fallida.
+     *
+     * @return string[]
+     */
+    private function reminderChannels(User $user): array
+    {
+        return ['database', 'mail'];
     }
 
     // ── Ciclo de vida: la ejecucion mueve el estado de lo programado ──

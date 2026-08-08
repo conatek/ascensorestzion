@@ -119,6 +119,9 @@
                 </div>
             </form>
         </section>
+
+        <!-- Solo a quien le llegan visitas: el cliente y el técnico. -->
+        <ReminderSettingsCard v-if="receivesVisitReminders" />
     </div>
 </template>
 
@@ -127,6 +130,7 @@ import { useAuth } from '@/stores/auth';
 import profileService from '@/services/profileService.js';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
+import ReminderSettingsCard from '@/components/schedule/ReminderSettingsCard.vue';
 
 const ROLE_LABELS = {
     master: 'Master', super: 'Super', coordinator: 'Coordinador',
@@ -136,7 +140,7 @@ const ROLE_LABELS = {
 export default {
     name: 'Profile',
 
-    components: { Cropper },
+    components: { Cropper, ReminderSettingsCard },
 
     data() {
         return {
@@ -172,6 +176,10 @@ export default {
         initials() {
             const name = this.form.name || this.auth.state.user?.name || '';
             return name.trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('') || '?';
+        },
+        /** Coordinación no recibe recordatorios: vive en el tablero. */
+        receivesVisitReminders() {
+            return this.auth.isTechnician() || this.auth.isAdmin();
         },
     },
 

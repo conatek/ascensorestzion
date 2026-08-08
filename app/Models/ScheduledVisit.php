@@ -80,6 +80,11 @@ class ScheduledVisit extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function reminders()
+    {
+        return $this->hasMany(VisitReminder::class);
+    }
+
     /**
      * Reportes de la visita ejecutada. No es una FK: los une el visit_uuid que
      * comparten, y solo existe una vez que el tecnico hizo check-in.

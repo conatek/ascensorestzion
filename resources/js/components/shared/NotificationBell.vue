@@ -52,6 +52,9 @@
 import notificationService from '@/services/notificationService.js';
 import { useAuth } from '@/stores/auth';
 
+/** Notificaciones del cronograma: todas llevan a la misma pantalla por rol. */
+const VISIT_TYPES = ['visit_scheduled', 'visit_reminder', 'visit_rescheduled', 'visit_cancelled'];
+
 export default {
     name: 'NotificationBell',
 
@@ -131,6 +134,16 @@ export default {
                 if (reportId) {
                     this.$router.push({ name: 'reports.show', params: { id: reportId } });
                 }
+                return;
+            }
+
+            // Las del cronograma llevan a la pantalla del rol de quien mira: el
+            // cliente al portal, el técnico a su agenda, coordinación al tablero.
+            if (VISIT_TYPES.includes(type)) {
+                const auth = useAuth();
+                if (auth.isAdmin() && !auth.isMasterOrSuper()) this.$router.push('/portal/cronograma');
+                else if (auth.isTechnician()) this.$router.push('/tech/agenda');
+                else this.$router.push('/cronograma');
             }
         },
 
@@ -173,6 +186,8 @@ export default {
             }
             if (type === 'report_completed') return 'icon--report';
             if (type === 'report_reception_confirmed') return 'icon--confirmed';
+            if (type === 'visit_cancelled') return 'icon--emergency';
+            if (VISIT_TYPES.includes(type)) return 'icon--visit';
             return 'icon--default';
         },
 
@@ -181,6 +196,10 @@ export default {
             if (type === 'technician_checked_in') return 'fa fa-map-marker-alt';
             if (type === 'report_completed') return 'fa fa-clipboard-check';
             if (type === 'report_reception_confirmed') return 'fa fa-check-double';
+            if (type === 'visit_reminder') return 'fa fa-bell';
+            if (type === 'visit_cancelled') return 'fa fa-calendar-times';
+            if (type === 'visit_rescheduled') return 'fa fa-calendar-alt';
+            if (type === 'visit_scheduled') return 'fa fa-calendar-plus';
             return 'fa fa-bell';
         },
 
@@ -351,6 +370,7 @@ export default {
 .icon--emergency { background: #fef2f2; color: #ba2831; }
 .icon--report { background: #dbeafe; color: #2563eb; }
 .icon--confirmed { background: #e8f5e4; color: #279208; }
+.icon--visit { background: #eefbe9; color: #227a0c; }
 .icon--default { background: #f1f5f9; color: #64748b; }
 
 .notif-item__content {

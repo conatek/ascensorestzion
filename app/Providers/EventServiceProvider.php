@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Listeners\MarkVisitReminderFailed;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
@@ -17,6 +19,11 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        // El comando marca "enviado" al despachar, pero la entrega ocurre en el
+        // worker: esto corrige la fila si acaba fallando.
+        NotificationFailed::class => [
+            MarkVisitReminderFailed::class,
         ],
     ];
 
