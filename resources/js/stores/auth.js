@@ -99,7 +99,15 @@ export function useAuth() {
             localStorage.setItem('auth_user', JSON.stringify(data.user));
             localStorage.setItem('auth_permissions', JSON.stringify(data.permissions || []));
             return data;
-        } catch {
+        } catch (error) {
+            // Solo el servidor puede cerrar una sesión. Si no hubo respuesta es que
+            // no hay red, y ahí el técnico se quedaba sin sesión por estar en un
+            // sótano: la app lo mandaba al landing y, al volver la cobertura, no
+            // tenía token con el que sincronizar lo que había hecho.
+            if (! error.response) {
+                return null;
+            }
+
             state.token = null;
             state.user = null;
             state.permissions = [];

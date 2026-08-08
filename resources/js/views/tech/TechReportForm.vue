@@ -96,6 +96,19 @@
         </div>
 
         <template v-else>
+            <!-- Sin catálogos no hay nada que marcar: antes el formulario salía
+                 vacío sin explicar por qué. -->
+            <div v-if="catalogsMissing" class="catalogs-missing">
+                <i class="fa fa-exclamation-triangle"></i>
+                <div>
+                    <strong>No se pudieron cargar las listas de revisión.</strong>
+                    <p>
+                        Conéctate un momento a internet y vuelve a abrir el reporte:
+                        quedarán guardadas para trabajar sin señal.
+                    </p>
+                </div>
+            </div>
+
             <!-- ===== PASO 1: CONDICION INICIAL ===== -->
             <div v-show="currentStep === 0" class="step-content">
                 <div class="items-list">
@@ -366,6 +379,7 @@ import VideoCapture from '@/components/tech/VideoCapture.vue';
 import reportService from '@/services/reportService.js';
 import { currentVisitUuid } from '@/services/visitService.js';
 import offlineManager from '@/utils/offlineManager.js';
+import { loadCatalog } from '@/utils/catalogCache.js';
 
 const GROUP_LABELS = {
     cuarto_maquinas: 'Cuarto de Máquinas',
@@ -388,6 +402,7 @@ export default {
             steps: ['Condición Inicial', 'Actividades', 'Conclusión', 'Firma'],
             reportId: null,
             isOffline: false,
+            catalogsMissing: false,
             reportNumber: null,
             reportType: this.$route.query.type || 'RSTP',
             equipmentId: null,
@@ -579,16 +594,16 @@ export default {
             try {
                 // Cargar condiciones iniciales
                 const condScope = this.reportType === 'RSTP' ? 'RSTP' : 'RSTC';
-                const condRes = await reportService.getCatalogs(condScope, 'initial_condition');
-                this.conditions = (condRes.data || []).map(c => ({
+                const conditions = await loadCatalog(condScope, 'initial_condition');
+                this.conditions = conditions.map(c => ({
                     ...c, value: null, observation: '', photo: null,
                 }));
 
                 // Cargar actividades/trabajos segun tipo
                 if (this.reportType === 'RSTP') {
-                    const actRes = await reportService.getCatalogs('RSTP', 'rstp_activity');
+                    const activities = await loadCatalog('RSTP', 'rstp_activity');
                     const grouped = {};
-                    (actRes.data || []).forEach(a => {
+                    activities.forEach(a => {
                         if (!grouped[a.group_key]) {
                             grouped[a.group_key] = {
                                 key: a.group_key,
@@ -603,9 +618,9 @@ export default {
                     });
                     this.activityGroups = Object.values(grouped);
                 } else if (this.reportType === 'RSTE') {
-                    const workRes = await reportService.getCatalogs('RSTE', 'rste_work');
+                    const works = await loadCatalog('RSTE', 'rste_work');
                     const grouped = {};
-                    (workRes.data || []).forEach(w => {
+                    works.forEach(w => {
                         if (!grouped[w.group_key]) {
                             grouped[w.group_key] = {
                                 key: w.group_key,
@@ -640,6 +655,10 @@ export default {
             } finally {
                 this.loading = false;
             }
+
+            // Sin catálogos el formulario no tiene nada que marcar. Antes esto
+            // pasaba en silencio y parecía que la app estaba rota.
+            this.catalogsMissing = ! this.conditions.length;
         },
 
         groupAnswered(group) {
@@ -1064,6 +1083,30 @@ export default {
         max-width: 640px;
         margin: 0 auto;
     }
+}
+
+.catalogs-missing {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0.85rem 1rem;
+    padding: 0.85rem 1rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    color: #92400e;
+    font-size: 0.85rem;
+}
+
+.catalogs-missing i {
+    font-size: 1.1rem;
+    color: #d97706;
+    margin-top: 2px;
+}
+
+.catalogs-missing p {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
 }
 
 .step-sticky-info {

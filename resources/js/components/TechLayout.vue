@@ -82,6 +82,7 @@ import ConnectionStatus from '@/components/shared/ConnectionStatus.vue';
 import NotificationBell from '@/components/shared/NotificationBell.vue';
 import offlineManager from '@/utils/offlineManager.js';
 import { loadPendingVisits } from '@/services/visitService.js';
+import { warmCatalogs } from '@/utils/catalogCache.js';
 
 export default {
     name: 'TechLayout',
@@ -109,6 +110,11 @@ export default {
     mounted() {
         this.loadPendingSignatures();
         window.addEventListener('tzion-visits-changed', this.onVisitsChanged);
+
+        // Guardar las listas de revisión mientras hay cobertura: para cuando el
+        // técnico llegue al sótano ya están, aunque nunca haya abierto un reporte
+        // de ese tipo.
+        warmCatalogs();
     },
     beforeUnmount() {
         window.removeEventListener('tzion-visits-changed', this.onVisitsChanged);
@@ -167,13 +173,20 @@ export default {
 
 .tech-header__center {
     flex: 1;
+    /* min-width: 0 para que el nombre pueda encogerse: sin conexión la píldora de
+       estado ocupa más y el nombre se partía en tres líneas. */
+    min-width: 0;
     text-align: center;
 }
 
 .tech-header__name {
+    display: block;
     font-size: 0.9rem;
     font-weight: 600;
     color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .tech-header__right {
