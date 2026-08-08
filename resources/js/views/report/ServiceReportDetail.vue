@@ -915,7 +915,8 @@ export default {
 
         formatDate(dateStr) {
             if (!dateStr) return '-';
-            const date = new Date(dateStr + 'T00:00:00');
+            // service_date llega como ISO completo desde la API (cast date de Eloquent)
+            const date = new Date(String(dateStr).split('T')[0] + 'T00:00:00');
             return date.toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'long',

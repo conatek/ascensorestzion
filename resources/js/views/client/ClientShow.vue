@@ -151,7 +151,7 @@
                                 <tr v-for="site in client.sites" :key="site.id">
                                     <td class="td-name" data-label="Nombre">{{ site.name }}</td>
                                     <td data-label="Direccion">{{ site.address || '—' }}</td>
-                                    <td data-label="Contacto">{{ site.contact_name || '—' }}</td>
+                                    <td data-label="Contacto">{{ site.contact_name_onsite || '—' }}</td>
                                     <td class="text-center" data-label="Equipos">
                                         <span class="count-badge">{{ site.equipment_count ?? 0 }}</span>
                                     </td>
