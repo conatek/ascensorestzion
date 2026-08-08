@@ -140,7 +140,6 @@ return [
                 ],
             ],
 
-
             // FOTO DE PERFIL
             'photo' => [
                 '_label' => 'Foto de Perfil',

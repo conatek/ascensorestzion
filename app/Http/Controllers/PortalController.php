@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Equipment;
+use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
 use App\Models\ServiceReport;
 use App\Models\Site;
@@ -205,6 +206,8 @@ class PortalController extends Controller
                 'technician:id,name',
                 // Para enlazar el PDF firmado desde el historial sin una segunda vuelta.
                 'serviceReports:id,visit_uuid,report_number,report_type,status',
+                // Para saber si el boton "Reprogramar" va o si ya hay una en curso.
+                'pendingRescheduleRequest',
             ])
             ->forClient($clientId)
             // El cliente no ve las canceladas: para el son visitas que no existen.
@@ -212,13 +215,15 @@ class PortalController extends Controller
 
         if (! empty($validated['from']) && ! empty($validated['to'])) {
             return response()->json(
-                $base()
-                    ->between(
-                        CarbonImmutable::parse($validated['from']),
-                        CarbonImmutable::parse($validated['to']),
-                    )
-                    ->orderBy('scheduled_start')
-                    ->get()
+                $this->markReschedulable(
+                    $base()
+                        ->between(
+                            CarbonImmutable::parse($validated['from']),
+                            CarbonImmutable::parse($validated['to']),
+                        )
+                        ->orderBy('scheduled_start')
+                        ->get()
+                )
             );
         }
 
@@ -238,9 +243,28 @@ class PortalController extends Controller
             ->get();
 
         return response()->json([
-            'upcoming' => $upcoming,
+            'upcoming' => $this->markReschedulable($upcoming),
+            // El historial no lleva el flag: son visitas pasadas y calcularlo
+            // costaria una lectura de settings por fila para responder que no.
             'history' => $history,
         ]);
+    }
+
+    /**
+     * Marca cada visita con si el cliente puede pedir moverla.
+     *
+     * Va como atributo suelto y no como accessor del modelo para no cambiar el
+     * envoltorio de la respuesta —el portal ya consume dos formas distintas— ni
+     * arrastrar el calculo al indice del tablero de coordinacion.
+     *
+     * @param  \Illuminate\Support\Collection<int, ScheduledVisit>  $visits
+     */
+    private function markReschedulable(\Illuminate\Support\Collection $visits): \Illuminate\Support\Collection
+    {
+        return $visits->each(fn (ScheduledVisit $visit) => $visit->setAttribute(
+            'can_request_reschedule',
+            $visit->canBeRescheduledByClient() && ! $visit->pendingRescheduleRequest,
+        ));
     }
 
     public function scheduleShow(Request $request, ScheduledVisit $scheduledVisit): JsonResponse
@@ -253,7 +277,14 @@ class PortalController extends Controller
             'equipment:id,internal_code,equipment_type,brand,model,site_id',
             'site:id,name,address,city,contact_name_onsite,contact_phone_onsite',
             'technician:id,name',
+            'rescheduleRequests' => fn ($q) => $q->with('requester:id,name')->latest('id'),
         ]);
+
+        $scheduledVisit->setAttribute(
+            'can_request_reschedule',
+            $scheduledVisit->canBeRescheduledByClient()
+                && ! $scheduledVisit->rescheduleRequests->firstWhere('status', RescheduleRequest::PENDIENTE),
+        );
 
         // Los reportes de la visita ya ejecutada, para enlazar el PDF firmado.
         $reports = $scheduledVisit->visit_uuid

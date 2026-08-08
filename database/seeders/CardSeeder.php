@@ -12,34 +12,36 @@ class CardSeeder extends Seeder
     {
         $tzion = Company::where('slug', 'ascensorestzion')->first();
 
-        if (!$tzion) return;
+        if (! $tzion) {
+            return;
+        }
 
         Card::create([
-            'company_id'      => $tzion->id,
-            'first_name'      => 'Antonio',
-            'last_name'       => 'Contreras',
-            'slug'            => 'antoniocontreras',
-            'job_title'       => 'Gerente General',
-            'mobile_phone'    => '+57 302 311 9169',
-            'whatsapp'        => '+573023119169',
-            'email'           => 'operaciones@ascensorestzion.com',
+            'company_id' => $tzion->id,
+            'first_name' => 'Antonio',
+            'last_name' => 'Contreras',
+            'slug' => 'antoniocontreras',
+            'job_title' => 'Gerente General',
+            'mobile_phone' => '+57 302 311 9169',
+            'whatsapp' => '+573023119169',
+            'email' => 'operaciones@ascensorestzion.com',
             'whatsapp_message' => 'Hola, me gustaría obtener información sobre sus servicios de mantenimiento.',
-            'description'     => 'Especialista en mantenimiento y modernización de equipos de transporte vertical.',
-            'is_active'       => true,
+            'description' => 'Especialista en mantenimiento y modernización de equipos de transporte vertical.',
+            'is_active' => true,
         ]);
 
         Card::create([
-            'company_id'      => $tzion->id,
-            'first_name'      => 'Sandra',
-            'last_name'       => 'Mejía',
-            'slug'            => 'sandramejia',
-            'job_title'       => 'Coordinadora de Servicio',
-            'mobile_phone'    => '+57 300 401 9483',
-            'whatsapp'        => '+573004019483',
-            'email'           => 'coordinacion@ascensorestzion.com',
+            'company_id' => $tzion->id,
+            'first_name' => 'Sandra',
+            'last_name' => 'Mejía',
+            'slug' => 'sandramejia',
+            'job_title' => 'Coordinadora de Servicio',
+            'mobile_phone' => '+57 300 401 9483',
+            'whatsapp' => '+573004019483',
+            'email' => 'coordinacion@ascensorestzion.com',
             'whatsapp_message' => 'Hola, necesito coordinar un servicio técnico.',
-            'description'     => 'Coordinación y seguimiento de servicios técnicos preventivos y correctivos.',
-            'is_active'       => true,
+            'description' => 'Coordinación y seguimiento de servicios técnicos preventivos y correctivos.',
+            'is_active' => true,
         ]);
     }
 }

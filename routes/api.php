@@ -19,6 +19,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicCardController;
 use App\Http\Controllers\ReminderSettingsController;
 use App\Http\Controllers\ReportConfirmationController;
+use App\Http\Controllers\RescheduleRequestController;
+use App\Http\Controllers\ScheduleAvailabilityController;
 use App\Http\Controllers\ScheduledVisitController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceReportController;
@@ -185,6 +187,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('reports/{service_report}', [PortalController::class, 'reportShow']);
         Route::get('schedule', [PortalController::class, 'schedule']);
         Route::get('schedule/{scheduledVisit}', [PortalController::class, 'scheduleShow']);
+
+        // Reprogramacion: el cliente propone, coordinacion decide. Ambas llevan un
+        // segmento extra, asi que no las captura schedule/{scheduledVisit}; una
+        // literal sin parametro (schedule/algo) si tendria que ir antes que ella.
+        Route::get('schedule/{scheduledVisit}/availability', [ScheduleAvailabilityController::class, 'forReschedule']);
+        Route::post('schedule/{scheduledVisit}/reschedule-request', [RescheduleRequestController::class, 'store'])
+            ->middleware('throttle:20,1');
     });
 
     // Tarjetas de presentación Ascensores Tzion (company.access)

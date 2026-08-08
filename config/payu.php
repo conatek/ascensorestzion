@@ -8,9 +8,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'merchant_id' => env('PAYU_MERCHANT_ID'),
-    'account_id'  => env('PAYU_ACCOUNT_ID'),
-    'api_key'     => env('PAYU_API_KEY'),
-    'api_login'   => env('PAYU_API_LOGIN'),
+    'account_id' => env('PAYU_ACCOUNT_ID'),
+    'api_key' => env('PAYU_API_KEY'),
+    'api_login' => env('PAYU_API_LOGIN'),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,7 +25,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'currency' => env('PAYU_CURRENCY', 'COP'),
-    'country'  => env('PAYU_COUNTRY', 'CO'),
+    'country' => env('PAYU_COUNTRY', 'CO'),
 
     /*
     |--------------------------------------------------------------------------
@@ -46,6 +46,6 @@ return [
     |--------------------------------------------------------------------------
     */
     'confirmation_url' => env('PAYU_CONFIRMATION_URL'),
-    'response_url'     => env('PAYU_RESPONSE_URL'),
+    'response_url' => env('PAYU_RESPONSE_URL'),
 
 ];
