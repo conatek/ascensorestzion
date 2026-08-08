@@ -179,6 +179,8 @@
             @close="selectedVisit = null"
             @edit="openEdit"
             @cancel="confirmCancel"
+            @approve-reschedule="approveFromDrawer"
+            @reject-reschedule="rejectFromDrawer"
         />
     </div>
 </template>
@@ -624,7 +626,9 @@ export default {
         },
 
         async approveRequest(request, force = false) {
-            const clash = !request.availability?.technician_free;
+            // Sin dato de disponibilidad (por ejemplo desde el drawer) no se asume
+            // conflicto: se confirma normal y, si lo hay, lo dice el 422 de abajo.
+            const clash = request.availability ? !request.availability.technician_free : false;
 
             const { isConfirmed } = clash
                 ? await this.$swal.fire({
@@ -730,6 +734,23 @@ export default {
             } finally {
                 await Promise.all([this.loadRequests(), this.load()]);
             }
+        },
+
+        /**
+         * Desde el drawer se resuelve con los mismos métodos de la bandeja, pero
+         * usando la versión enriquecida de la solicitud si ya está cargada: la del
+         * detalle de la visita no trae el chequeo de disponibilidad.
+         */
+        approveFromDrawer(request) {
+            return this.approveRequest(this.enrich(request));
+        },
+
+        rejectFromDrawer(request) {
+            return this.rejectRequest(this.enrich(request));
+        },
+
+        enrich(request) {
+            return this.pendingRequests.find(r => r.id === request.id) || request;
         },
 
         /** Salta al día propuesto para ver el hueco en contexto. */

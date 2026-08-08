@@ -50,6 +50,20 @@
                     </dl>
                 </section>
 
+                <section v-if="rescheduleRequests.length" class="drawer-block">
+                    <h5 class="drawer-block-title">Reprogramación</h5>
+                    <ol class="drawer-timeline">
+                        <li v-for="r in rescheduleRequests" :key="r.id" :class="`is-${r.status}`">
+                            <span class="drawer-timeline-when">{{ requestMove(r) }}</span>
+                            <span class="drawer-timeline-who">
+                                Solicitó {{ r.requester?.name || 'el cliente' }}
+                            </span>
+                            <p v-if="r.reason" class="drawer-timeline-note">"{{ r.reason }}"</p>
+                            <span class="drawer-timeline-state">{{ resolutionLabel(r) }}</span>
+                        </li>
+                    </ol>
+                </section>
+
                 <section v-if="reminders.length" class="drawer-block">
                     <h5 class="drawer-block-title">Recordatorios</h5>
                     <ul class="drawer-reminders">
@@ -75,7 +89,18 @@
                 </section>
             </div>
 
-            <footer v-if="canEdit" class="drawer-foot">
+            <!-- Con una solicitud viva, decidirla es lo que toca: los botones de
+                 editar y cancelar dejan sitio a aprobar y rechazar. -->
+            <footer v-if="pendingRequest" class="drawer-foot">
+                <button class="drawer-btn drawer-btn-ghost" @click="$emit('reject-reschedule', pendingRequest)">
+                    <i class="fa fa-times me-2"></i> Rechazar
+                </button>
+                <button class="drawer-btn drawer-btn-approve" @click="$emit('approve-reschedule', pendingRequest)">
+                    <i class="fa fa-check me-2"></i> Aprobar cambio
+                </button>
+            </footer>
+
+            <footer v-else-if="canEdit" class="drawer-foot">
                 <button class="drawer-btn drawer-btn-ghost" @click="$emit('edit', visit)">
                     <i class="fa fa-pen me-2"></i> Editar
                 </button>
@@ -97,7 +122,7 @@ export default {
     props: {
         visit: { type: Object, required: true },
     },
-    emits: ['close', 'edit', 'cancel'],
+    emits: ['close', 'edit', 'cancel', 'approve-reschedule', 'reject-reschedule'],
     computed: {
         statusLabel() {
             return STATUS_LABELS[this.visit.status] || this.visit.status;
@@ -128,10 +153,34 @@ export default {
         failedReminders() {
             return this.reminders.filter(r => r.status === 'fallido').length;
         },
+        /** Historial completo, de la más reciente a la más antigua. */
+        rescheduleRequests() {
+            return this.visit.reschedule_requests || [];
+        },
+        pendingRequest() {
+            return this.rescheduleRequests.find(r => r.status === 'pendiente') || null;
+        },
     },
     methods: {
         capitalize(s) {
             return s.charAt(0).toUpperCase() + s.slice(1);
+        },
+        requestMove(request) {
+            const from = dayjs(request.original_start);
+            const to = dayjs(request.proposed_start);
+            return `${from.format('D MMM, HH:mm')} → ${to.format('D MMM, HH:mm')}`;
+        },
+        resolutionLabel(request) {
+            if (request.status === 'pendiente') return 'Pendiente de aprobación';
+
+            const who = request.resolver?.name;
+            const when = request.resolved_at ? dayjs(request.resolved_at).format('D MMM') : '';
+            const verb = request.status === 'aprobada' ? 'Aprobada' : 'Rechazada';
+            const head = who ? `${verb} por ${who}` : verb;
+
+            return request.resolution_notes
+                ? `${head}: ${request.resolution_notes}`
+                : `${head}${when ? ` el ${when}` : ''}`;
         },
         reminderIcon(status) {
             return {
@@ -377,4 +426,72 @@ export default {
 .drawer-btn-danger:hover {
     background: #fee2e2;
 }
+
+.drawer-btn-approve {
+    background: linear-gradient(135deg, #30ab0a, #37c20c);
+    color: #fff;
+}
+
+/* Línea de tiempo de reprogramaciones */
+.drawer-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.drawer-timeline li {
+    position: relative;
+    padding-left: 0.9rem;
+    border-left: 2px solid #e2e8f0;
+}
+
+.drawer-timeline li::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.drawer-timeline li.is-pendiente::before { background: #f59e0b; }
+.drawer-timeline li.is-aprobada::before { background: #30ab0a; }
+.drawer-timeline li.is-rechazada::before { background: #ba2831; }
+
+.drawer-timeline-when {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.drawer-timeline-who {
+    display: block;
+    font-size: 0.76rem;
+    color: #94a3b8;
+}
+
+.drawer-timeline-note {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #475569;
+}
+
+.drawer-timeline-state {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.drawer-timeline li.is-pendiente .drawer-timeline-state { color: #b45309; }
+.drawer-timeline li.is-aprobada .drawer-timeline-state { color: #227a0c; }
+.drawer-timeline li.is-rechazada .drawer-timeline-state { color: #ba2831; }
 </style>
