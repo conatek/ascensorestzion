@@ -107,14 +107,21 @@ async function portalFlow(browser, viewport, suffix) {
         console.log('⚠ no hay solicitudes pendientes: manda una desde el portal primero');
     }
 
-    // Drawer de una visita en ámbar: línea de tiempo y botones de decisión.
-    const ambar = p.locator('.vuecal__event.tz-ev-status-reprogramacion_solicitada').first();
+    // Drawer de una visita en ámbar: línea de tiempo y botones de decisión. La
+    // solicitud suele ser de la semana que viene (24 h de antelación mínima), así
+    // que hay que avanzar el calendario para encontrarla.
+    const ambar = p.locator('.vuecal__event.tz-ev-status-reprogramacion_solicitada');
+    for (let semana = 0; semana < 4 && !(await ambar.count()); semana++) {
+        await p.locator('.vuecal__arrow--next').first().click();
+        await p.waitForTimeout(2500);
+    }
+
     if (await ambar.count()) {
-        await ambar.click();
+        await ambar.first().click();
         await p.waitForTimeout(1800);
         await shot(p, 'coord-drawer-linea-de-tiempo');
     } else {
-        console.log('⚠ ninguna visita ámbar visible en el rango del calendario');
+        console.log('⚠ ninguna visita ámbar en las próximas cuatro semanas');
     }
     await ctx.close();
 
