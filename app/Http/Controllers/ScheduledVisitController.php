@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreScheduledVisitRequest;
 use App\Http\Requests\UpdateScheduledVisitRequest;
 use App\Models\Equipment;
+use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
 use App\Models\ScheduleSetting;
 use App\Models\User;
+use App\Services\RescheduleRequestService;
 use App\Services\ScheduleService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +24,7 @@ class ScheduledVisitController extends Controller
 {
     public function __construct(
         private ScheduleService $schedule,
+        private RescheduleRequestService $reschedules,
     ) {}
 
     /**
@@ -102,6 +105,8 @@ class ScheduledVisitController extends Controller
 
         // Las fechas van juntas (lo fuerza required_with): o se mueve, o solo se
         // editan los campos sueltos sin tocar el horario.
+        $moved = isset($data['scheduled_start'], $data['scheduled_end']) || isset($data['technician_id']);
+
         if (isset($data['scheduled_start'], $data['scheduled_end'])) {
             $this->schedule->reschedule(
                 $scheduledVisit,
@@ -118,6 +123,23 @@ class ScheduledVisitController extends Controller
                 CarbonImmutable::parse($scheduledVisit->scheduled_end),
                 $technician,
             );
+        }
+
+        if ($moved) {
+            // Coordinacion movio la visita por su cuenta: cualquier solicitud del
+            // cliente queda resuelta por el camino. Sin esto la solicitud se queda
+            // viva en la bandeja y la visita ambar para siempre, porque
+            // reschedule() no toca el estado.
+            $this->reschedules->closePending(
+                $scheduledVisit,
+                RescheduleRequest::RECHAZADA,
+                $request->user(),
+                'Resuelta por una reprogramacion directa de coordinacion.',
+            );
+
+            if ($scheduledVisit->refresh()->status === 'reprogramacion_solicitada') {
+                $scheduledVisit->update(['status' => 'programada']);
+            }
         }
 
         $scheduledVisit->update(array_intersect_key($data, array_flip(['visit_type', 'notes'])));

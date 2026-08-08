@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Equipment;
+use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
 use App\Models\ScheduleSetting;
 use App\Models\ServiceReport;
@@ -194,6 +195,7 @@ class ScheduleService
             ]);
 
             $this->obsoleteReminders($visit);
+            $this->closeRescheduleRequests($visit, 'La visita se cancelo.');
         });
 
         $visit->refresh();
@@ -432,9 +434,32 @@ class ScheduleService
             ->orderBy('scheduled_start')
             ->first();
 
-        $visit?->update(['status' => 'en_curso']);
+        if ($visit) {
+            $visit->update(['status' => 'en_curso']);
+            // El tecnico ya esta en sitio: mover la fecha perdio sentido.
+            $this->closeRescheduleRequests($visit, 'La visita se ejecuto en la fecha original.');
+        }
 
         return $visit;
+    }
+
+    /**
+     * Cierra las solicitudes de reprogramacion pendientes de una visita que dejo de
+     * poder moverse (cancelada o ya arrancada).
+     *
+     * Es un update directo y no una llamada a RescheduleRequestService: ese servicio
+     * ya depende de este, e inyectarlo aqui cerraria el circulo.
+     */
+    private function closeRescheduleRequests(ScheduledVisit $visit, string $notes): void
+    {
+        RescheduleRequest::query()
+            ->where('scheduled_visit_id', $visit->id)
+            ->pending()
+            ->update([
+                'status' => RescheduleRequest::RECHAZADA,
+                'resolved_at' => now(),
+                'resolution_notes' => $notes,
+            ]);
     }
 
     /**

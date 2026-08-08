@@ -661,6 +661,115 @@ class ScheduleRescheduleTest extends TestCase
         $this->assertStringContainsString('No pudimos mover tu visita', $mail);
     }
 
+    // ── La visita cambia por otra via: la solicitud no puede quedarse viva ──
+
+    public function test_la_reprogramacion_directa_cierra_la_solicitud_pendiente(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        // Coordinacion arrastra la visita en el calendario, a otro dia distinto del
+        // que pidio el cliente.
+        $this->putJson("/api/schedule/visits/{$visit->id}", [
+            'scheduled_start' => '2026-08-12 15:00',
+            'scheduled_end' => '2026-08-12 16:30',
+        ])->assertOk();
+
+        $request->refresh();
+
+        $this->assertSame('rechazada', $request->status);
+        $this->assertStringContainsString('reprogramacion directa', $request->resolution_notes);
+        $this->assertSame($this->coordinator->id, $request->resolved_by);
+    }
+
+    /** reschedule() no toca el estado: sin el arreglo, la visita se queda ambar. */
+    public function test_la_reprogramacion_directa_devuelve_la_visita_a_programada(): void
+    {
+        [$visit] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->putJson("/api/schedule/visits/{$visit->id}", [
+            'scheduled_start' => '2026-08-12 15:00',
+            'scheduled_end' => '2026-08-12 16:30',
+        ])->assertOk()->assertJsonPath('status', 'programada');
+
+        $this->assertSame('programada', $visit->refresh()->status);
+    }
+
+    public function test_cambiar_de_tecnico_tambien_cierra_la_solicitud(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        $other = User::factory()->create(['name' => 'Técnico Dos']);
+        $other->assignRole('technician');
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->putJson("/api/schedule/visits/{$visit->id}", ['technician_id' => $other->id])->assertOk();
+
+        $this->assertSame('rechazada', $request->refresh()->status);
+        $this->assertSame('programada', $visit->refresh()->status);
+    }
+
+    public function test_editar_solo_las_notas_no_cierra_la_solicitud(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->putJson("/api/schedule/visits/{$visit->id}", ['notes' => 'Llevar repuesto'])->assertOk();
+
+        $this->assertTrue($request->refresh()->isPending());
+        $this->assertSame('reprogramacion_solicitada', $visit->refresh()->status);
+    }
+
+    public function test_cancelar_la_visita_cierra_la_solicitud_pendiente(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/visits/{$visit->id}/cancel", [
+            'cancel_reason' => 'El cliente ya no lo necesita',
+        ])->assertOk();
+
+        $this->assertSame('rechazada', $request->refresh()->status);
+        $this->assertSame('cancelada', $visit->refresh()->status);
+    }
+
+    public function test_el_check_in_cierra_la_solicitud_pendiente(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        // El tecnico se presenta el dia original: la propuesta ya no aplica.
+        app(\App\Services\ScheduleService::class)->startVisitFor(
+            $this->equipment->id,
+            $this->technician->id,
+            CarbonImmutable::parse(self::VISIT_DAY.' 09:10'),
+        );
+
+        $this->assertSame('en_curso', $visit->refresh()->status);
+        $this->assertSame('rechazada', $request->refresh()->status);
+        $this->assertStringContainsString('fecha original', $request->resolution_notes);
+    }
+
+    public function test_mark_overdue_cierra_las_solicitudes_de_visitas_vencidas(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        // Un mes despues nadie resolvio nada.
+        CarbonImmutable::setTestNow('2026-09-10 23:30:00');
+        $this->travelTo('2026-09-10 23:30:00');
+
+        $this->artisan('visits:mark-overdue')->assertSuccessful();
+
+        $this->assertSame('no_realizada', $visit->refresh()->status);
+        $this->assertSame('rechazada', $request->refresh()->status);
+        $this->assertStringContainsString('vencio', $request->resolution_notes);
+    }
+
     public function test_el_detalle_de_la_visita_trae_la_linea_de_tiempo(): void
     {
         [$visit, $request] = $this->pending();

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
 use Illuminate\Console\Command;
 
@@ -21,12 +22,33 @@ class MarkOverdueVisits extends Command
     {
         // en_curso queda fuera a proposito: alguien estuvo en sitio y solo falto
         // cerrar los reportes. Eso es un pendiente de firma, no un incumplimiento.
-        $marked = ScheduledVisit::query()
+        // Los ids se capturan antes del update para poder cerrar despues las
+        // solicitudes de esas mismas visitas; si no, quedarian pendientes en la
+        // bandeja apuntando a una visita que ya vencio.
+        $ids = ScheduledVisit::query()
             ->whereIn('status', ['programada', 'reprogramacion_solicitada'])
             ->where('scheduled_end', '<', now())
-            ->update(['status' => 'no_realizada']);
+            ->pluck('id');
+
+        if ($ids->isEmpty()) {
+            $this->info('Visitas marcadas como no realizadas: 0');
+
+            return self::SUCCESS;
+        }
+
+        $marked = ScheduledVisit::query()->whereIn('id', $ids)->update(['status' => 'no_realizada']);
+
+        $closed = RescheduleRequest::query()
+            ->whereIn('scheduled_visit_id', $ids)
+            ->pending()
+            ->update([
+                'status' => RescheduleRequest::RECHAZADA,
+                'resolved_at' => now(),
+                'resolution_notes' => 'La visita vencio sin que se resolviera la solicitud.',
+            ]);
 
         $this->info("Visitas marcadas como no realizadas: {$marked}");
+        $this->info("Solicitudes de reprogramacion cerradas: {$closed}");
 
         return self::SUCCESS;
     }
