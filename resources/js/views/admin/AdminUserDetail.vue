@@ -89,6 +89,9 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Solo para técnicos: su jornada y los días que se salen de ella -->
+                <TechnicianScheduleCard v-if="currentRole === 'technician'" :user-id="user.id" />
             </div>
         </template>
     </div>
@@ -96,9 +99,12 @@
 
 <script>
 import adminService from '@/services/adminService.js';
+import TechnicianScheduleCard from '@/components/schedule/TechnicianScheduleCard.vue';
 
 export default {
     name: 'AdminUserDetail',
+
+    components: { TechnicianScheduleCard },
 
     data() {
         return {

@@ -40,6 +40,19 @@ export default {
     },
 
     /** Duración sugerida al elegir equipo en el modal. */
+    // ── Excepciones de jornada: festivos, vacaciones, sabados sueltos ──
+
+    /** Sin user_id devuelve todas; con user_id, las suyas mas las generales. */
+    scheduleExceptions(params = {}) {
+        return api.get(`${resource}/exceptions`, { params });
+    },
+    saveScheduleException(payload) {
+        return api.post(`${resource}/exceptions`, payload);
+    },
+    deleteScheduleException(id) {
+        return api.delete(`${resource}/exceptions/${id}`);
+    },
+
     // ── Reprogramaciones ──
 
     /** Bandeja de solicitudes. Por defecto solo las pendientes. */

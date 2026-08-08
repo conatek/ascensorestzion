@@ -15,6 +15,9 @@
                     </div>
                 </div>
                 <div class="page-title-actions">
+                    <button class="btn-holidays" @click="showHolidays = true">
+                        <i class="fa fa-calendar-xmark me-2"></i> Días no laborables
+                    </button>
                     <button class="btn-create" @click="openCreate()">
                         <i class="fa fa-plus me-2"></i> Programar visita
                     </button>
@@ -182,6 +185,12 @@
             @approve-reschedule="approveFromDrawer"
             @reject-reschedule="rejectFromDrawer"
         />
+
+        <HolidaysModal
+            v-if="showHolidays"
+            @close="showHolidays = false"
+            @changed="load"
+        />
     </div>
 </template>
 
@@ -197,6 +206,7 @@ import equipmentService from '@/services/equipmentService.js';
 import VisitFormModal from './VisitFormModal.vue';
 import VisitDrawer from './VisitDrawer.vue';
 import RescheduleInbox from '@/components/schedule/RescheduleInbox.vue';
+import HolidaysModal from '@/components/schedule/HolidaysModal.vue';
 import { STATUS_LABELS } from '@/utils/visitLabels.js';
 
 /** Estados que no se pueden arrastrar: la visita ya está cerrada. */
@@ -204,7 +214,7 @@ const LOCKED_STATUSES = ['completada', 'cancelada'];
 
 export default {
     name: 'ScheduleBoard',
-    components: { VueCal, VisitFormModal, VisitDrawer, RescheduleInbox },
+    components: { VueCal, VisitFormModal, VisitDrawer, RescheduleInbox, HolidaysModal },
     data() {
         return {
             loading: true,
@@ -239,6 +249,7 @@ export default {
             showRequests: false,
             // Fecha a la que salta el calendario al pulsar "Ver en calendario".
             selectedDate: null,
+            showHolidays: false,
         };
     },
     computed: {
@@ -767,6 +778,21 @@ export default {
 /* Cabecera y filtros: estas clases NO son globales, cada vista las define en su
    propio bloque scoped. Se replican aquí las del resto del panel para que el
    cronograma no desentone. */
+.btn-holidays {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.1rem;
+    margin-right: 0.5rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn-holidays:hover { background: #fef3c7; }
+
 .btn-create {
     display: inline-flex;
     align-items: center;

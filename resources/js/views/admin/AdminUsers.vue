@@ -83,6 +83,16 @@
                                 <button @click="openDetail(props.row)" class="action-btn" title="Ver detalle">
                                     <i class="fa fa-eye"></i>
                                 </button>
+                                <!-- La ficha completa: rol y, para los tecnicos, su
+                                     jornada y las excepciones. Hasta la fase 4b la
+                                     ruta existia pero no habia forma de llegar. -->
+                                <router-link
+                                    :to="{ name: 'admin.users.show', params: { id: props.row.id } }"
+                                    class="action-btn"
+                                    title="Abrir ficha"
+                                >
+                                    <i class="fa fa-id-card"></i>
+                                </router-link>
                                 <button @click="openEdit(props.row)" class="action-btn" title="Editar">
                                     <i class="fa fa-edit"></i>
                                 </button>

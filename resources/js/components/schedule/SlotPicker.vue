@@ -93,6 +93,13 @@ export default {
         },
 
         emptyText() {
+            // Un festivo se explica por su nombre; el resto, con un texto fijo.
+            if (this.activeDay?.reason === 'excepcion') {
+                return this.activeDay.exception_note
+                    ? `Ese día no se trabaja (${this.activeDay.exception_note}).`
+                    : 'Ese día no se trabaja.';
+            }
+
             const reasons = {
                 no_laborable: 'Tu técnico no trabaja ese día.',
                 agenda_llena: 'Tu técnico ya tiene la agenda llena ese día.',
