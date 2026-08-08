@@ -18,4 +18,11 @@ export default {
     reportShow(id) {
         return api.get(`${prefix}/reports/${id}`);
     },
+    /** Sin rango devuelve { upcoming, history }; con from/to, la lista del mes. */
+    schedule(params = {}) {
+        return api.get(`${prefix}/schedule`, { params });
+    },
+    scheduleShow(id) {
+        return api.get(`${prefix}/schedule/${id}`);
+    },
 };

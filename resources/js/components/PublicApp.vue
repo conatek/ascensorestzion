@@ -65,6 +65,10 @@
                             <span class="portal-sb-icon"><i class="fa fa-file-alt"></i></span>
                             <span class="portal-sb-text">Mis Reportes</span>
                         </router-link>
+                        <router-link to="/portal/cronograma" class="portal-sb-link" :class="{ active: $route.path.startsWith('/portal/cronograma') }" @click="portalMobileOpen = false">
+                            <span class="portal-sb-icon"><i class="fa fa-calendar-alt"></i></span>
+                            <span class="portal-sb-text">Cronograma</span>
+                        </router-link>
                     </nav>
 
                     <!-- Decorative -->

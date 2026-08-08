@@ -77,6 +77,7 @@ const ROLES = {
             ['portal', '/portal'],
             ['portal-equipos', '/portal/equipos'],
             ['portal-reportes', '/portal/reportes'],
+            ['portal-cronograma', '/portal/cronograma'],
         ],
     },
     technician: {
@@ -84,6 +85,7 @@ const ROLES = {
         routes: [
             ['tech-inicio', '/tech'],
             ['tech-checkin', '/tech/checkin'],
+            ['tech-agenda', '/tech/agenda'],
         ],
     },
 };

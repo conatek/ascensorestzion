@@ -25,6 +25,7 @@ use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TechnicianCheckinController;
 use App\Http\Controllers\TechnicianScheduleController;
+use App\Http\Controllers\TechScheduleController;
 use App\Http\Controllers\VisitSignatureController;
 use Illuminate\Support\Facades\Route;
 
@@ -112,6 +113,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Firma diferida en lote
         Route::get('visits/pending-signature', [VisitSignatureController::class, 'pending']);
         Route::post('visits/sign-customer', [VisitSignatureController::class, 'signBatch'])->middleware('throttle:10,1');
+
+        // Agenda propia (scoping por Auth::id() dentro del controller)
+        Route::get('schedule', [TechScheduleController::class, 'index']);
+        Route::get('schedule/{scheduledVisit}', [TechScheduleController::class, 'show']);
     });
 
     // Cronograma de visitas (coordinación)
@@ -172,6 +177,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('equipment/{equipment}', [PortalController::class, 'equipmentShow']);
         Route::get('reports', [PortalController::class, 'reports']);
         Route::get('reports/{service_report}', [PortalController::class, 'reportShow']);
+        Route::get('schedule', [PortalController::class, 'schedule']);
+        Route::get('schedule/{scheduledVisit}', [PortalController::class, 'scheduleShow']);
     });
 
     // Tarjetas de presentación Ascensores Tzion (company.access)

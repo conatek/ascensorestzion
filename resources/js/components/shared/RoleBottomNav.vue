@@ -78,6 +78,7 @@ export default {
                     { to: '/portal', icon: 'fa fa-home', label: 'Inicio', active: () => path === '/portal' },
                     { to: '/portal/equipos', icon: 'fa fa-building', label: 'Equipos', active: () => path.startsWith('/portal/equipos') },
                     { to: '/portal/reportes', icon: 'fa fa-file-alt', label: 'Reportes', active: () => path.startsWith('/portal/reportes') },
+                    { to: '/portal/cronograma', icon: 'fa fa-calendar-alt', label: 'Agenda', active: () => path.startsWith('/portal/cronograma') },
                 ];
             }
             const home = this.auth.isMasterOrSuper() ? '/admin' : '/';

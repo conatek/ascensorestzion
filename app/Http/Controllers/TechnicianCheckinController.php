@@ -7,12 +7,18 @@ use App\Models\Equipment;
 use App\Models\TechnicianCheckin;
 use App\Models\User;
 use App\Notifications\TechnicianCheckedInNotification;
+use App\Services\ScheduleService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
 class TechnicianCheckinController extends Controller
 {
+    public function __construct(
+        private ScheduleService $schedule,
+    ) {}
+
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -104,6 +110,14 @@ class TechnicianCheckinController extends Controller
             'call_received_at' => $validated['call_received_at'] ?? null,
             'response_time_minutes' => $responseTimeMinutes,
         ]);
+
+        // El cronograma deja de ser un plan: la visita programada de ese equipo
+        // pasa a en_curso en cuanto el tecnico llega.
+        $this->schedule->startVisitFor(
+            $equipment->id,
+            $user->id,
+            CarbonImmutable::parse($checkedInAt),
+        );
 
         // Notificar a usuarios master
         $masterIds = User::role('master')->pluck('id')->toArray();

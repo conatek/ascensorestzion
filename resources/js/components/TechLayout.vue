@@ -10,7 +10,7 @@
             </div>
             <div class="tech-header__right">
                 <NotificationBell />
-                <ConnectionStatus to="tech.pending" />
+                <ConnectionStatus to="tech.pending" persistent />
                 <button class="tech-header__logout" @click="handleLogout" title="Cerrar sesion">
                     <i class="fa fa-sign-out-alt"></i>
                 </button>
@@ -53,16 +53,16 @@
                 </div>
                 <span>Check-in</span>
             </router-link>
+            <!-- Sync salió de aquí y vive en el header (icono con estado): la
+                 agenda se consulta varias veces al día y la cola solo cuando algo
+                 va mal. -->
             <router-link
-                to="/tech/pendientes"
+                to="/tech/agenda"
                 class="tech-bottom-nav__item"
-                :class="{ 'is-active': $route.path.startsWith('/tech/pendientes') }"
+                :class="{ 'is-active': $route.path.startsWith('/tech/agenda') }"
             >
-                <span class="nav-icon-wrap">
-                    <i class="fa fa-sync"></i>
-                    <span v-if="offlineState.pendingCount > 0" class="nav-badge nav-badge--sync">{{ offlineState.pendingCount }}</span>
-                </span>
-                <span>Sync</span>
+                <i class="fa fa-calendar-week"></i>
+                <span>Agenda</span>
             </router-link>
             <router-link
                 to="/tech/perfil"
@@ -273,10 +273,6 @@ export default {
     font-weight: 700;
     line-height: 16px;
     text-align: center;
-}
-
-.nav-badge--sync {
-    background: #f59e0b;
 }
 
 .checkin-btn-circle {

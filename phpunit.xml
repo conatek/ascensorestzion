@@ -28,6 +28,10 @@
              borraría la base de desarrollo. -->
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Credenciales falsas: el SDK de Cloudinary valida la configuración en el
+             constructor, así que sin esto no se puede ni instanciar un controller
+             que lo inyecte (los de reportes lo hacen). No se sube nada en tests. -->
+        <env name="CLOUDINARY_URL" value="cloudinary://000000000000000:testtesttesttesttesttesttest@test"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

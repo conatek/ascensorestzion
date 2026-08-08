@@ -26,6 +26,7 @@ class ServiceReportController extends Controller
         private ServiceReportSigningService $signing,
         private \App\Services\CloudinaryService $cloudinary,
         private ServiceReportPdfService $pdfService,
+        private \App\Services\ScheduleService $schedule,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -172,6 +173,10 @@ class ServiceReportController extends Controller
             'user_agent' => $request->userAgent(),
             'created_at' => now(),
         ]);
+
+        // Enlaza la visita programada con la ejecutada: sin este uuid la firma en
+        // lote no sabria que visita del cronograma tiene que cerrar.
+        $this->schedule->linkVisitUuid($report);
 
         return response()->json(
             $report->load(['equipment.site.client', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks', 'technician']),
@@ -332,6 +337,7 @@ class ServiceReportController extends Controller
         // de la firma del cliente en lote.
         if ($request->filled('visit_uuid') && ! $serviceReport->visit_uuid) {
             $serviceReport->update(['visit_uuid' => $request->visit_uuid]);
+            $this->schedule->linkVisitUuid($serviceReport);
         }
 
         $this->signing->signAsTechnician($serviceReport, $request->signature, $user);
@@ -362,6 +368,9 @@ class ServiceReportController extends Controller
         $serviceReport->update([
             'reception_token' => Str::random(64),
         ]);
+
+        // La firma del cliente cierra tambien la visita del cronograma.
+        $this->schedule->completeFromReports([$serviceReport]);
 
         // Notificar a masters, tecnico y cliente
         $serviceReport->refresh()->load(['technician', 'client']);

@@ -76,6 +76,29 @@
                 </div>
             </div>
 
+            <!-- Proxima visita programada -->
+            <router-link v-if="nextVisit" to="/portal/cronograma" class="next-visit-card">
+                <div class="next-visit-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="5" width="18" height="16" rx="2"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                        <line x1="8" y1="3" x2="8" y2="7"/>
+                        <line x1="16" y1="3" x2="16" y2="7"/>
+                    </svg>
+                </div>
+                <div class="next-visit-body">
+                    <span class="next-visit-label">Próxima visita</span>
+                    <span class="next-visit-title">
+                        {{ nextVisit.equipment?.internal_code }} · {{ nextVisit.site?.name }}
+                    </span>
+                    <span class="next-visit-when">{{ nextVisitWhen }}</span>
+                </div>
+                <div class="next-visit-aside">
+                    <span class="next-visit-countdown">{{ nextVisitCountdown }}</span>
+                    <span class="next-visit-tech">{{ nextVisit.technician?.name || 'Técnico por asignar' }}</span>
+                </div>
+            </router-link>
+
             <!-- Stat Cards -->
             <div class="stats-grid">
                 <div class="stat-card stat-green">
@@ -275,6 +298,7 @@ export default {
             loading: true,
             chartsReady: false,
             pdfLoading: null,
+            nextVisit: null,
             stats: {
                 total_equipment: 0,
                 active_equipment: 0,
@@ -293,6 +317,34 @@ export default {
     },
 
     computed: {
+        /** "Hoy" / "Mañana" / "En N días" para la tarjeta de próxima visita. */
+        nextVisitCountdown() {
+            if (!this.nextVisit) return '';
+
+            const start = new Date(this.nextVisit.scheduled_start);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            start.setHours(0, 0, 0, 0);
+
+            const days = Math.round((start - today) / 86400000);
+            if (days <= 0) return 'Hoy';
+            if (days === 1) return 'Mañana';
+            return `En ${days} días`;
+        },
+
+        nextVisitWhen() {
+            if (!this.nextVisit) return '';
+
+            const start = new Date(this.nextVisit.scheduled_start);
+            const end = new Date(this.nextVisit.scheduled_end);
+            const day = start.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+            // hour12 explícito: el locale es-CO devuelve "08:30 a. m." y aquí todo
+            // el cronograma está en 24 horas.
+            const hour = t => t.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            return `${day.charAt(0).toUpperCase() + day.slice(1)} · ${hour(start)}–${hour(end)}`;
+        },
+
         compliancePercent() {
             return Math.min(100, Math.max(0, Math.round(this.stats.maintenance_compliance_percent || 0)));
         },
@@ -420,6 +472,7 @@ export default {
                     reports_by_month: data.reports_by_month ?? [],
                     compliance_detail: data.compliance_detail ?? { completed: 0, expected: 0 },
                 };
+                this.nextVisit = data.next_visit ?? null;
             } finally {
                 this.loading = false;
                 this.$nextTick(() => { this.chartsReady = true; });
@@ -486,6 +539,108 @@ export default {
     padding: 4rem 2rem;
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-radius: 20px;
+}
+
+/* Proxima visita */
+.next-visit-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.1rem 1.4rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #30ab0a;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+    transition: box-shadow 0.2s;
+}
+
+.next-visit-card:hover {
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.next-visit-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #eefbe9;
+    color: #30ab0a;
+}
+
+.next-visit-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.next-visit-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.next-visit-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+}
+
+.next-visit-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.next-visit-when {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.next-visit-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.next-visit-countdown {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #227a0c;
+    background: #eefbe9;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    white-space: nowrap;
+}
+
+.next-visit-tech {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+@media (max-width: 576px) {
+    .next-visit-card {
+        flex-wrap: wrap;
+        gap: 0.85rem;
+    }
+
+    .next-visit-aside {
+        align-items: flex-start;
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
 }
 
 /* Stats Grid */

@@ -279,6 +279,12 @@ const routes = [
         meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
     },
     {
+        path: '/portal/cronograma',
+        name: 'portal.schedule',
+        component: () => import('../js/views/portal/PortalSchedule.vue'),
+        meta: { requiresAuth: true, layout: 'portal', roles: ['admin'] },
+    },
+    {
         path: '/portal/perfil',
         name: 'portal.profile',
         component: () => import('../js/views/Profile.vue'),
@@ -392,6 +398,20 @@ const routes = [
         path: '/tech/pendientes',
         name: 'tech.pending',
         component: () => import('../js/views/tech/TechPending.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    // Perezosas: arrastran dayjs (y Leaflet en el detalle), y el técnico no las
+    // abre en cada arranque como el check-in.
+    {
+        path: '/tech/agenda',
+        name: 'tech.agenda',
+        component: () => import('../js/views/tech/TechAgenda.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        path: '/tech/agenda/:id',
+        name: 'tech.visit',
+        component: () => import('../js/views/tech/TechVisitDetail.vue'),
         meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
     },
     {

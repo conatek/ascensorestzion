@@ -28,6 +28,10 @@ export default {
         // Nombre de ruta a abrir al tocar el badge (detalle de pendientes).
         // Si no se pasa, el badge no es clickeable (p.ej. en el header admin).
         to: { type: String, default: '' },
+        // Mantiene el icono visible aunque no haya nada pendiente. Lo usa el header
+        // del técnico: desde que "Sync" salió del bottom-nav, este es el único
+        // acceso a la cola de sincronización (reintentar / descartar).
+        persistent: { type: Boolean, default: false },
     },
 
     data() {
@@ -41,22 +45,28 @@ export default {
             return offlineManager.state;
         },
 
+        /** Todo en orden: online, sin pendientes y sin errores. */
+        idle() {
+            return this.offlineState.isOnline
+                && this.offlineState.pendingCount === 0
+                && this.offlineState.errorCount === 0;
+        },
+
         visible() {
-            return !this.offlineState.isOnline
-                || this.offlineState.pendingCount > 0
-                || this.offlineState.errorCount > 0;
+            return this.persistent || !this.idle;
         },
 
         statusClass() {
             if (!this.offlineState.isOnline) return 'connection-status--offline';
             if (this.offlineState.errorCount > 0) return 'connection-status--error';
             if (this.offlineState.pendingCount > 0) return 'connection-status--pending';
-            return '';
+            return 'connection-status--idle';
         },
 
         iconClass() {
             if (!this.offlineState.isOnline) return 'fa fa-wifi-slash';
             if (this.offlineState.errorCount > 0) return 'fa fa-exclamation-triangle';
+            if (this.idle) return 'fa fa-sync';
             return 'fa fa-cloud-upload-alt';
         },
 
@@ -151,6 +161,13 @@ export default {
     background-color: #fef2f2;
     color: #ba2831;
     border: 1px solid #fecaca;
+}
+
+.connection-status--idle {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 4px 6px;
 }
 
 .connection-status--clickable {

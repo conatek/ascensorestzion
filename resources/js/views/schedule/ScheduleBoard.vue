@@ -169,15 +169,7 @@ import clientService from '@/services/clientService.js';
 import equipmentService from '@/services/equipmentService.js';
 import VisitFormModal from './VisitFormModal.vue';
 import VisitDrawer from './VisitDrawer.vue';
-
-const STATUS_LABELS = {
-    programada: 'Programada',
-    reprogramacion_solicitada: 'Reprogramación solicitada',
-    en_curso: 'En curso',
-    completada: 'Completada',
-    no_realizada: 'No realizada',
-    cancelada: 'Cancelada',
-};
+import { STATUS_LABELS } from '@/utils/visitLabels.js';
 
 /** Estados que no se pueden arrastrar: la visita ya está cerrada. */
 const LOCKED_STATUSES = ['completada', 'cancelada'];

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Equipment;
 use App\Models\ScheduledVisit;
 use App\Models\ScheduleSetting;
+use App\Models\ServiceReport;
 use App\Models\TechnicianSchedule;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -140,6 +141,85 @@ class ScheduleService
         ]);
 
         return $visit->refresh();
+    }
+
+    // ── Ciclo de vida: la ejecucion mueve el estado de lo programado ──
+
+    /**
+     * El check-in del tecnico arranca la visita programada de ese equipo ese dia.
+     *
+     * Se busca por equipo + tecnico + dia y no por hora: el tecnico llega cuando
+     * llega, y exigir que caiga dentro del rango dejaria en programada casi todas.
+     */
+    public function startVisitFor(int $equipmentId, int $technicianId, CarbonImmutable $when): ?ScheduledVisit
+    {
+        $visit = ScheduledVisit::query()
+            ->where('equipment_id', $equipmentId)
+            ->where('technician_id', $technicianId)
+            ->whereDate('scheduled_start', $when->toDateString())
+            ->whereIn('status', ['programada', 'reprogramacion_solicitada'])
+            ->orderBy('scheduled_start')
+            ->first();
+
+        $visit?->update(['status' => 'en_curso']);
+
+        return $visit;
+    }
+
+    /**
+     * Enlaza la visita programada con la ejecutada copiandole el visit_uuid del
+     * reporte. Es lo que permite cerrarla despues con una sola firma en lote.
+     */
+    public function linkVisitUuid(ServiceReport $report): void
+    {
+        if (! $report->visit_uuid || ! $report->technician_id) {
+            return;
+        }
+
+        $this->matchingVisits($report)
+            ->whereNull('visit_uuid')
+            ->update(['visit_uuid' => $report->visit_uuid]);
+    }
+
+    /**
+     * Cierra las visitas de los reportes firmados por el cliente.
+     *
+     * Una firma en lote cubre varios equipos de la misma sede, y cada equipo tiene
+     * su propia visita programada: por eso se resuelve reporte a reporte y no por
+     * el visit_uuid a secas.
+     *
+     * @param  iterable<int, ServiceReport>  $reports
+     * @return int visitas cerradas
+     */
+    public function completeFromReports(iterable $reports): int
+    {
+        $completed = 0;
+
+        foreach ($reports as $report) {
+            $completed += $this->matchingVisits($report)->update(['status' => 'completada']);
+        }
+
+        return $completed;
+    }
+
+    /**
+     * Visitas activas que corresponden a un reporte: la que ya comparte visit_uuid
+     * o, si nunca se enlazo, la del mismo equipo, tecnico y dia.
+     */
+    private function matchingVisits(ServiceReport $report): \Illuminate\Database\Eloquent\Builder
+    {
+        return ScheduledVisit::query()
+            ->blocking()
+            ->where(function ($q) use ($report) {
+                if ($report->visit_uuid) {
+                    $q->orWhere('visit_uuid', $report->visit_uuid);
+                }
+
+                $q->orWhere(fn ($sub) => $sub
+                    ->where('equipment_id', $report->equipment_id)
+                    ->where('technician_id', $report->technician_id)
+                    ->whereDate('scheduled_start', CarbonImmutable::parse($report->service_date)->toDateString()));
+            });
     }
 
     /**

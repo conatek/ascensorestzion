@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Equipment;
+use App\Models\ScheduledVisit;
 use App\Models\ServiceReport;
 use App\Models\Site;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -53,13 +55,20 @@ class PortalController extends Controller
             ->count();
         $compliance = $equipConContrato > 0 ? round(($rstpMes / $equipConContrato) * 100, 1) : 0;
 
-        // Reportes últimos 6 meses desglosados por tipo
+        // Reportes últimos 6 meses desglosados por tipo. El agrupado se hace en PHP
+        // a propósito: DATE_FORMAT solo existe en MySQL y reventaba en sqlite (los
+        // tests). Son como mucho unos cientos de filas de un solo cliente.
         $rawByMonth = ServiceReport::where('client_id', $clientId)
             ->where('service_date', '>=', now()->subMonths(6)->startOfMonth())
-            ->selectRaw("DATE_FORMAT(service_date, '%Y-%m') as period, report_type, COUNT(*) as count")
-            ->groupBy('period', 'report_type')
-            ->orderBy('period')
-            ->get();
+            ->orderBy('service_date')
+            ->get(['service_date', 'report_type'])
+            ->groupBy(fn ($r) => $r->service_date->format('Y-m'))
+            ->flatMap(fn ($rows, $period) => $rows->groupBy('report_type')
+                ->map(fn ($byType, $type) => (object) [
+                    'period' => $period,
+                    'report_type' => $type,
+                    'count' => $byType->count(),
+                ])->values());
 
         $months = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -78,7 +87,21 @@ class PortalController extends Controller
             }
         }
 
+        // Tarjeta "Proxima visita": la mas cercana que aun no ha terminado.
+        $nextVisit = ScheduledVisit::query()
+            ->with([
+                'equipment:id,internal_code,equipment_type',
+                'site:id,name,address',
+                'technician:id,name',
+            ])
+            ->forClient($clientId)
+            ->blocking()
+            ->where('scheduled_end', '>=', now())
+            ->orderBy('scheduled_start')
+            ->first();
+
         return response()->json([
+            'next_visit' => $nextVisit,
             'total_equipment' => $totalEquipment,
             'active_equipment' => $activeEquipment,
             'total_sites' => $totalSites,
@@ -156,6 +179,93 @@ class PortalController extends Controller
         }
 
         return response()->json($query->orderByDesc('service_date')->get());
+    }
+
+    /**
+     * Cronograma del cliente. Dos modos a proposito:
+     *
+     * - con from/to devuelve la lista plana del rango, que es lo que necesita la
+     *   vista de calendario;
+     * - sin rango devuelve proximas + historial ya separados, que es como se pinta
+     *   la lista y evita traerse el historico entero al portal.
+     */
+    public function schedule(Request $request): JsonResponse
+    {
+        $clientId = $this->getClientId($request);
+
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        $base = fn () => ScheduledVisit::query()
+            ->with([
+                'equipment:id,internal_code,equipment_type',
+                'site:id,name,address',
+                'technician:id,name',
+                // Para enlazar el PDF firmado desde el historial sin una segunda vuelta.
+                'serviceReports:id,visit_uuid,report_number,report_type,status',
+            ])
+            ->forClient($clientId)
+            // El cliente no ve las canceladas: para el son visitas que no existen.
+            ->where('status', '!=', 'cancelada');
+
+        if (! empty($validated['from']) && ! empty($validated['to'])) {
+            return response()->json(
+                $base()
+                    ->between(
+                        CarbonImmutable::parse($validated['from']),
+                        CarbonImmutable::parse($validated['to']),
+                    )
+                    ->orderBy('scheduled_start')
+                    ->get()
+            );
+        }
+
+        // El corte es por fin de la visita: una que empezo hace una hora y sigue en
+        // curso pertenece a "proximas", no al historial.
+        $now = now();
+
+        $upcoming = $base()
+            ->where('scheduled_end', '>=', $now)
+            ->orderBy('scheduled_start')
+            ->get();
+
+        $history = $base()
+            ->where('scheduled_end', '<', $now)
+            ->orderByDesc('scheduled_start')
+            ->limit(50)
+            ->get();
+
+        return response()->json([
+            'upcoming' => $upcoming,
+            'history' => $history,
+        ]);
+    }
+
+    public function scheduleShow(Request $request, ScheduledVisit $scheduledVisit): JsonResponse
+    {
+        $clientId = $this->getClientId($request);
+
+        abort_if((int) $scheduledVisit->client_id !== $clientId, 403, 'No autorizado.');
+
+        $scheduledVisit->load([
+            'equipment:id,internal_code,equipment_type,brand,model,site_id',
+            'site:id,name,address,city,contact_name_onsite,contact_phone_onsite',
+            'technician:id,name',
+        ]);
+
+        // Los reportes de la visita ya ejecutada, para enlazar el PDF firmado.
+        $reports = $scheduledVisit->visit_uuid
+            ? ServiceReport::where('visit_uuid', $scheduledVisit->visit_uuid)
+                ->where('client_id', $clientId)
+                ->get(['id', 'report_number', 'report_type', 'service_date', 'status', 'equipment_id'])
+            : collect();
+
+        return response()->json([
+            'visit' => $scheduledVisit,
+            'reports' => $reports,
+        ]);
     }
 
     public function reportShow(Request $request, ServiceReport $serviceReport): JsonResponse

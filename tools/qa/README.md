@@ -34,8 +34,8 @@ uniformes, gráficos legibles, y nada solapado.
 | **master** | dashboard, clientes, cliente-detalle, equipos, equipo-detalle, reportes, usuarios, empresas, tarjetas |
 | **super** | dashboard, clientes, equipos, reportes, empresas |
 | **coordinator** | clientes, equipos, reportes |
-| **admin (portal)** | portal, portal-equipos, portal-reportes |
-| **technician** | tech-inicio, tech-checkin |
+| **admin (portal)** | portal, portal-equipos, portal-reportes, portal-cronograma |
+| **technician** | tech-inicio, tech-checkin, tech-agenda |
 
 Puntos por viewport:
 - **Móvil:** bottom nav visible con los ítems del rol; tablas en formato card sin

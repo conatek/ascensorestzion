@@ -43,4 +43,13 @@ export default {
     equipmentDuration(equipmentId) {
         return api.get(`${resource}/equipment/${equipmentId}/duration`);
     },
+
+    // ── Agenda del técnico (solo sus visitas, scoping en el backend) ──
+
+    techAgenda(from, to) {
+        return api.get('/tech/schedule', { params: { from, to } });
+    },
+    techVisit(id) {
+        return api.get(`/tech/schedule/${id}`);
+    },
 };

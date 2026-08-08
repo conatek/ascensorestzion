@@ -6,6 +6,7 @@ use App\Events\ReportCompleted;
 use App\Models\ServiceReport;
 use App\Models\User;
 use App\Notifications\VisitReportsCompletedNotification;
+use App\Services\ScheduleService;
 use App\Services\ServiceReportSigningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class VisitSignatureController extends Controller
 {
     public function __construct(
         private ServiceReportSigningService $signing,
+        private ScheduleService $schedule,
     ) {}
 
     /**
@@ -118,6 +120,10 @@ class VisitSignatureController extends Controller
                 $report->update(['reception_token' => Str::random(64)]);
             }
         });
+
+        // Una firma en lote cubre varios equipos de la sede y cada uno tiene su
+        // propia visita programada: se cierran todas.
+        $this->schedule->completeFromReports($pending);
 
         $this->notifyVisitCompleted($pending);
 

@@ -76,21 +76,7 @@
 
 <script>
 import dayjs from '@/utils/dayjs.js';
-
-const STATUS_LABELS = {
-    programada: 'Programada',
-    reprogramacion_solicitada: 'Reprogramación solicitada',
-    en_curso: 'En curso',
-    completada: 'Completada',
-    no_realizada: 'No realizada',
-    cancelada: 'Cancelada',
-};
-
-const TYPE_LABELS = {
-    preventivo: 'Mantenimiento preventivo',
-    correctivo: 'Mantenimiento correctivo',
-    especial: 'Servicio especial',
-};
+import { STATUS_LABELS, TYPE_LABELS } from '@/utils/visitLabels.js';
 
 export default {
     name: 'VisitDrawer',
