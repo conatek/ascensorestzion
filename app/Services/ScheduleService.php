@@ -135,6 +135,8 @@ class ScheduleService
      * Mueve una visita (edicion del modal o drag & drop del calendario). Revalida
      * siempre: arrastrar tambien puede dejarla en el descanso o en sabado.
      *
+     * @param  bool  $force  aprobar sobre un conflicto conocido; manda coordinacion
+     *
      * @throws ValidationException
      */
     public function reschedule(
@@ -142,10 +144,15 @@ class ScheduleService
         CarbonImmutable $start,
         CarbonImmutable $end,
         ?User $technician = null,
+        bool $force = false,
     ): ScheduledVisit {
         $technician ??= $visit->technician;
 
-        $this->assertSlotIsFree($technician, $start, $end, $visit->id);
+        // El unico caso que salta la validacion es una aprobacion forzada desde la
+        // bandeja, y ahi la advertencia ya se dio en la interfaz.
+        if (! $force) {
+            $this->assertSlotIsFree($technician, $start, $end, $visit->id);
+        }
 
         $previousStart = CarbonImmutable::parse($visit->scheduled_start);
         $previousEnd = CarbonImmutable::parse($visit->scheduled_end);
@@ -203,9 +210,13 @@ class ScheduleService
      * ven en el tablero; llenarles la campana de sus propias acciones solo hace
      * que dejen de mirarla.
      *
+     * Publico para que RescheduleRequestService avise a las mismas partes al
+     * resolver una solicitud: repetir la regla en dos sitios acabaria con un
+     * destinatario recibiendo la mitad de los avisos.
+     *
      * @param  array<int, User>  $extraRecipients
      */
-    private function notifyParties(ScheduledVisit $visit, Notification $notification, array $extraRecipients = []): void
+    public function notifyParties(ScheduledVisit $visit, Notification $notification, array $extraRecipients = []): void
     {
         $users = collect($this->reminderRecipients($visit))
             ->map(fn (array $pair) => $pair[0])

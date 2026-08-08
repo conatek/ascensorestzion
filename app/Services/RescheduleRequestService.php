@@ -7,6 +7,7 @@ use App\Models\ScheduledVisit;
 use App\Models\ScheduleSetting;
 use App\Models\User;
 use App\Notifications\RescheduleRequestedNotification;
+use App\Notifications\RescheduleResolvedNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -103,6 +104,103 @@ class RescheduleRequestService
     }
 
     /**
+     * Coordinacion aprueba: la visita se mueve a la fecha propuesta.
+     *
+     * Sin transaccion envolvente a proposito. reschedule() despacha jobs encolados
+     * y con QUEUE_CONNECTION=database un worker puede tomarlos antes de que el
+     * commit externo cierre, leyendo un estado a medias (las notificaciones usan
+     * fresh()). El precio es una ventana minuscula con la visita movida y la
+     * solicitud aun pendiente, y eso lo cubre la guarda de idempotencia de abajo.
+     *
+     * @throws ValidationException
+     */
+    public function approve(
+        RescheduleRequest $request,
+        User $actor,
+        bool $force = false,
+        ?string $notes = null,
+    ): RescheduleRequest {
+        abort_if(! $request->isPending(), 422, 'Esta solicitud ya fue resuelta.');
+
+        $visit = $request->scheduledVisit;
+        $start = CarbonImmutable::parse($request->proposed_start);
+        $end = CarbonImmutable::parse($request->proposed_end);
+
+        // Segunda validacion: entre que el cliente la mando y ahora, el hueco pudo
+        // ocuparse. Coordinacion puede seguir adelante, pero avisada.
+        if (! $force) {
+            $this->schedule->assertSlotIsFree($visit->technician, $start, $end, $visit->id);
+        }
+
+        $this->schedule->reschedule($visit, $start, $end, $visit->technician, force: $force);
+
+        DB::transaction(function () use ($visit, $request, $actor, $notes) {
+            // reschedule() mueve las fechas pero no toca el estado: si no se hace
+            // aqui, la visita se queda ambar para siempre.
+            $visit->update(['status' => 'programada']);
+            $request->resolve(RescheduleRequest::APROBADA, $actor, $notes);
+        });
+
+        $this->notifyResolution($request->refresh());
+
+        return $request->load(['requester:id,name', 'resolver:id,name']);
+    }
+
+    /** Coordinacion rechaza: la visita se queda donde estaba, con sus recordatorios. */
+    public function reject(RescheduleRequest $request, User $actor, string $notes): RescheduleRequest
+    {
+        abort_if(! $request->isPending(), 422, 'Esta solicitud ya fue resuelta.');
+
+        $visit = $request->scheduledVisit;
+
+        DB::transaction(function () use ($visit, $request, $actor, $notes) {
+            $request->resolve(RescheduleRequest::RECHAZADA, $actor, $notes);
+
+            if ($visit->status === 'reprogramacion_solicitada') {
+                $visit->update(['status' => 'programada']);
+            }
+        });
+
+        $this->notifyResolution($request->refresh());
+
+        return $request->load(['requester:id,name', 'resolver:id,name']);
+    }
+
+    /**
+     * ¿El tecnico sigue libre en el horario propuesto? Es lo que pinta la bandeja
+     * en verde o en rojo.
+     *
+     * Se resuelve con el mismo validador que usara la aprobacion, envuelto en un
+     * try/catch: una consulta paralela acabaria discrepando de el.
+     *
+     * @return array{technician_free: bool, problems: string[]}
+     */
+    public function availabilityCheck(RescheduleRequest $request): array
+    {
+        $visit = $request->scheduledVisit;
+
+        if (! $visit || ! $visit->technician) {
+            return ['technician_free' => false, 'problems' => ['La visita ya no tiene tecnico asignado.']];
+        }
+
+        try {
+            $this->schedule->assertSlotIsFree(
+                $visit->technician,
+                CarbonImmutable::parse($request->proposed_start),
+                CarbonImmutable::parse($request->proposed_end),
+                $visit->id,
+            );
+
+            return ['technician_free' => true, 'problems' => []];
+        } catch (ValidationException $e) {
+            return [
+                'technician_free' => false,
+                'problems' => $e->validator->errors()->get('scheduled_start'),
+            ];
+        }
+    }
+
+    /**
      * Cierra las solicitudes pendientes de una visita que cambio por otra via
      * (reprogramacion directa, cancelacion, check-in, vencimiento).
      *
@@ -122,6 +220,15 @@ class RescheduleRequestService
                 'resolved_at' => now(),
                 'resolution_notes' => $notes,
             ]);
+    }
+
+    /** Avisa al cliente y al tecnico, con la misma regla de partes de siempre. */
+    private function notifyResolution(RescheduleRequest $request): void
+    {
+        $this->schedule->notifyParties(
+            $request->scheduledVisit,
+            new RescheduleResolvedNotification($request),
+        );
     }
 
     /**

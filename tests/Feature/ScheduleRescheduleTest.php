@@ -11,6 +11,8 @@ use App\Models\Site;
 use App\Models\User;
 use App\Models\VisitReminder;
 use App\Notifications\RescheduleRequestedNotification;
+use App\Notifications\RescheduleResolvedNotification;
+use App\Notifications\VisitRescheduledNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -384,5 +386,294 @@ class ScheduleRescheduleTest extends TestCase
         $this->getJson('/api/portal/schedule')
             ->assertOk()
             ->assertJsonPath('upcoming.0.can_request_reschedule', false);
+    }
+
+    // ── Resolver ──
+
+    /** Crea una visita con solicitud pendiente y devuelve las dos. */
+    private function pending(string $target = self::TARGET_DAY.' 09:00'): array
+    {
+        Notification::fake();
+
+        $visit = $this->visit();
+        $this->request($visit, $target)->assertCreated();
+
+        return [$visit->refresh(), RescheduleRequest::latest('id')->first()];
+    }
+
+    public function test_aprobar_mueve_la_visita_y_la_deja_programada(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")
+            ->assertOk()
+            ->assertJsonPath('request.status', 'aprobada')
+            ->assertJsonPath('visit.status', 'programada');
+
+        $visit->refresh();
+
+        $this->assertSame(self::TARGET_DAY.' 09:00', $visit->scheduled_start->format('Y-m-d H:i'));
+        $this->assertSame(self::TARGET_DAY.' 10:30', $visit->scheduled_end->format('Y-m-d H:i'));
+        $this->assertSame($this->coordinator->id, $request->refresh()->resolved_by);
+        $this->assertNotNull($request->resolved_at);
+    }
+
+    public function test_rechazar_conserva_la_fecha_original_y_deja_la_visita_programada(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/reject", [
+            'resolution_notes' => 'Ese día el técnico está en otra sede',
+        ])
+            ->assertOk()
+            ->assertJsonPath('request.status', 'rechazada')
+            ->assertJsonPath('visit.status', 'programada');
+
+        $this->assertSame(self::VISIT_DAY.' 09:00', $visit->refresh()->scheduled_start->format('Y-m-d H:i'));
+    }
+
+    public function test_rechazar_exige_motivo(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/reject")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('resolution_notes');
+
+        $this->assertTrue($request->refresh()->isPending());
+    }
+
+    public function test_una_solicitud_resuelta_no_se_puede_volver_a_resolver(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertStatus(422);
+    }
+
+    public function test_aprobar_falla_si_el_hueco_se_ocupo_despues_de_la_solicitud(): void
+    {
+        [, $request] = $this->pending();
+
+        // Coordinacion programo otra cosa encima mientras la solicitud dormia.
+        $this->visit([
+            'scheduled_start' => self::TARGET_DAY.' 09:00',
+            'scheduled_end' => self::TARGET_DAY.' 10:30',
+        ]);
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('scheduled_start');
+
+        $this->assertTrue($request->refresh()->isPending());
+    }
+
+    public function test_aprobar_forzando_mueve_la_visita_aunque_haya_conflicto(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        $this->visit([
+            'scheduled_start' => self::TARGET_DAY.' 09:00',
+            'scheduled_end' => self::TARGET_DAY.' 10:30',
+        ]);
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve", ['force' => true])
+            ->assertOk()
+            ->assertJsonPath('request.status', 'aprobada');
+
+        $this->assertSame(self::TARGET_DAY.' 09:00', $visit->refresh()->scheduled_start->format('Y-m-d H:i'));
+    }
+
+    public function test_aprobar_regenera_los_recordatorios(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        $old = VisitReminder::create([
+            'scheduled_visit_id' => $visit->id,
+            'user_id' => $this->clientAdmin->id,
+            'send_at' => self::VISIT_DAY.' 08:00',
+            'channels' => ['database', 'mail'],
+        ]);
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        $this->assertSame('obsoleto', $old->refresh()->status);
+
+        // Los nuevos apuntan al dia de destino, no al original.
+        $pending = VisitReminder::where('scheduled_visit_id', $visit->id)->pending()->get();
+
+        $this->assertNotEmpty($pending);
+        $this->assertTrue($pending->every(fn ($r) => $r->send_at <= CarbonImmutable::parse(self::TARGET_DAY.' 23:59')));
+    }
+
+    public function test_rechazar_no_toca_los_recordatorios(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        $reminder = VisitReminder::create([
+            'scheduled_visit_id' => $visit->id,
+            'user_id' => $this->clientAdmin->id,
+            'send_at' => self::VISIT_DAY.' 08:00',
+            'channels' => ['database', 'mail'],
+        ]);
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/reject", [
+            'resolution_notes' => 'No se puede',
+        ])->assertOk();
+
+        $this->assertSame('pendiente', $reminder->refresh()->status);
+    }
+
+    public function test_la_bandeja_marca_si_el_tecnico_sigue_libre(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->getJson('/api/schedule/reschedule-requests')
+            ->assertOk()
+            ->assertJsonPath('pending_count', 1)
+            ->assertJsonPath('requests.0.availability.technician_free', true)
+            ->assertJsonPath('requests.0.scheduled_visit.equipment.internal_code', 'TZ-A-0001');
+
+        // Le ocupan el hueco: la tarjeta pasa a roja con el motivo.
+        $this->visit([
+            'scheduled_start' => self::TARGET_DAY.' 09:00',
+            'scheduled_end' => self::TARGET_DAY.' 10:30',
+        ]);
+
+        $response = $this->getJson('/api/schedule/reschedule-requests')->assertOk();
+
+        $response->assertJsonPath('requests.0.availability.technician_free', false);
+        $this->assertStringContainsString(
+            'Se cruza',
+            implode(' ', $response->json('requests.0.availability.problems')),
+        );
+    }
+
+    public function test_la_bandeja_no_revalida_las_resueltas(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        $this->getJson('/api/schedule/reschedule-requests?status=todas')
+            ->assertOk()
+            ->assertJsonPath('pending_count', 0)
+            ->assertJsonPath('requests.0.availability', null);
+    }
+
+    public function test_un_tecnico_no_puede_aprobar_una_solicitud(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->technician);
+
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertForbidden();
+        $this->assertTrue($request->refresh()->isPending());
+    }
+
+    public function test_un_cliente_no_puede_entrar_a_la_bandeja(): void
+    {
+        Sanctum::actingAs($this->clientAdmin);
+
+        $this->getJson('/api/schedule/reschedule-requests')->assertForbidden();
+    }
+
+    public function test_master_y_super_tambien_aprueban(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->master);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        $super = User::factory()->create();
+        $super->assignRole('super');
+
+        [, $second] = $this->pending(self::TARGET_DAY.' 14:00');
+
+        Sanctum::actingAs($super);
+        $this->postJson("/api/schedule/reschedule-requests/{$second->id}/approve")->assertOk();
+    }
+
+    public function test_al_aprobar_el_cliente_y_el_tecnico_reciben_el_aviso(): void
+    {
+        [, $request] = $this->pending();
+
+        Notification::fake();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        // El correo de "Antes / Ahora" lo manda reschedule().
+        Notification::assertSentTo($this->clientAdmin, VisitRescheduledNotification::class);
+        Notification::assertSentTo($this->technician, VisitRescheduledNotification::class);
+        Notification::assertSentTo($this->clientAdmin, RescheduleResolvedNotification::class);
+    }
+
+    /** Aprobada solo va a la campana: el correo del cambio ya lo mando reschedule(). */
+    public function test_la_resolucion_aprobada_no_manda_un_segundo_correo(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        $channels = (new RescheduleResolvedNotification($request->refresh()))->via($this->clientAdmin);
+
+        $this->assertSame(['database'], $channels);
+    }
+
+    public function test_al_rechazar_el_cliente_recibe_el_motivo(): void
+    {
+        [, $request] = $this->pending();
+
+        Notification::fake();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/reject", [
+            'resolution_notes' => 'El edificio está en obra esa semana',
+        ])->assertOk();
+
+        Notification::assertSentTo($this->clientAdmin, RescheduleResolvedNotification::class);
+
+        $mail = (new RescheduleResolvedNotification($request->refresh()))
+            ->toMail($this->clientAdmin)
+            ->render()
+            ->toHtml();
+
+        $this->assertStringContainsString('El edificio está en obra esa semana', $mail);
+        $this->assertStringContainsString('No pudimos mover tu visita', $mail);
+    }
+
+    public function test_el_detalle_de_la_visita_trae_la_linea_de_tiempo(): void
+    {
+        [$visit, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/reject", [
+            'resolution_notes' => 'No se puede',
+        ])->assertOk();
+
+        $this->getJson("/api/schedule/visits/{$visit->id}")
+            ->assertOk()
+            ->assertJsonPath('reschedule_requests.0.status', 'rechazada')
+            ->assertJsonPath('reschedule_requests.0.requester.name', $this->clientAdmin->name)
+            ->assertJsonPath('reschedule_requests.0.resolver.name', $this->coordinator->name);
     }
 }

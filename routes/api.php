@@ -136,6 +136,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('technicians/{user}/schedule', [TechnicianScheduleController::class, 'destroy']);
 
         Route::get('equipment/{equipment}/duration', [ScheduledVisitController::class, 'equipmentDuration']);
+
+        // Reprogramacion: la bandeja de aprobacion y la disponibilidad sin la
+        // antelacion minima (esa regla es para el cliente, no para coordinacion).
+        Route::get('visits/{scheduledVisit}/availability', [ScheduleAvailabilityController::class, 'forVisit']);
+        Route::get('reschedule-requests', [RescheduleRequestController::class, 'index']);
+        Route::post('reschedule-requests/{rescheduleRequest}/approve', [RescheduleRequestController::class, 'approve']);
+        Route::post('reschedule-requests/{rescheduleRequest}/reject', [RescheduleRequestController::class, 'reject']);
     });
 
     // Recordatorios de visita: cada quien configura los suyos

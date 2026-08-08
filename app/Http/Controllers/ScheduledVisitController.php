@@ -205,6 +205,10 @@ class ScheduledVisitController extends Controller
             // El drawer muestra que avisos salieron y cuales quedan: es la unica
             // forma de responder "¿al cliente se le avisó?" sin entrar a la base.
             'reminders' => fn ($q) => $q->with('user:id,name')->orderBy('send_at'),
+            // La linea de tiempo de reprogramaciones. Solo aqui y no en el indice:
+            // el listado del mes traeria cientos de filas para pintar un anillo que
+            // ya se deduce del estado.
+            'rescheduleRequests' => fn ($q) => $q->with(['requester:id,name', 'resolver:id,name'])->latest('id'),
         ]);
     }
 }
