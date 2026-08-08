@@ -23,12 +23,12 @@ class Kernel extends ConsoleKernel
         // Recordatorios de visita. Cada cinco minutos, que es la precision con la
         // que se respeta la hora que configuro cada usuario.
         //
-        // SIN withoutOverlapping a proposito: su mutex vive en la cache, y en el
-        // servidor la cache de ficheros la escriben dos usuarios distintos
-        // (www-data desde la web, ubuntu desde el cron), asi que reventaba con un
-        // TypeError que abortaba el schedule:run ENTERO — tambien mark-overdue.
-        // Contra los envios dobles, el comando reclama cada fila con un UPDATE
-        // condicional, que ademas aguanta varios servidores.
+        // SIN withoutOverlapping a proposito. Contra los envios dobles el comando
+        // reclama cada fila con un UPDATE condicional: es atomico en la base, no
+        // depende de nada mas y aguantaria varios servidores. El mutex del
+        // scheduler vive en la cache, y anadir esa dependencia no compensa —
+        // cuando la cache de ficheros estaba rota, su excepcion abortaba el
+        // schedule:run ENTERO, tambien mark-overdue.
         $schedule->command('visits:send-reminders')->everyFiveMinutes();
     }
 

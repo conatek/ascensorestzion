@@ -15,7 +15,15 @@ return [
     |
     */
 
-    'default' => env('CACHE_DRIVER', 'file'),
+    /*
+     * CACHE_STORE primero: es como se llama la variable desde Laravel 11, y es la
+     * que ya tenian puesta los dos .env. Este config venia del estilo antiguo y
+     * solo leia CACHE_DRIVER, asi que el `CACHE_STORE=database` de produccion no
+     * hacia nada y todo seguia yendo a la cache de ficheros — que en el servidor
+     * esta rota para el cron. Se conserva CACHE_DRIVER porque es lo que usa
+     * phpunit.xml para forzar el driver `array`.
+     */
+    'default' => env('CACHE_STORE', env('CACHE_DRIVER', 'file')),
 
     /*
     |--------------------------------------------------------------------------
