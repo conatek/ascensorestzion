@@ -11,6 +11,7 @@ use App\Models\VisitReminder;
 use App\Models\VisitReminderSetting;
 use App\Notifications\VisitCancelledNotification;
 use App\Notifications\VisitReminderNotification;
+use App\Notifications\VisitRescheduledNotification;
 use App\Notifications\VisitScheduledNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PermissionSeeder;
@@ -362,6 +363,47 @@ class ScheduleReminderTest extends TestCase
         $this->assertStringContainsString('Calle 1', $rendered);
         $this->assertStringContainsString('/tech/agenda', $rendered);
         $this->assertStringContainsString('Equipo de Ascensores Tzion', $rendered);
+    }
+
+    /**
+     * Decisión de Antonio (2026-08-07): el asunto empieza por lo que le importa a
+     * quien lo recibe y el código del equipo va al final, como referencia para
+     * buscarlo en la bandeja.
+     */
+    public function test_el_asunto_lleva_la_fecha_delante_y_el_codigo_como_referencia(): void
+    {
+        $visit = $this->schedule();
+        $recordatorio = VisitReminder::where('user_id', $this->clientAdmin->id)->first();
+
+        $this->assertSame(
+            'Recordatorio: mantenimiento del lunes 17 de agosto (TZ-A-0001)',
+            (new VisitReminderNotification($recordatorio))->toMail($this->clientAdmin)->subject,
+        );
+
+        $this->assertSame(
+            'Visita programada para el lunes 17 de agosto (TZ-A-0001)',
+            (new VisitScheduledNotification($visit))->toMail($this->clientAdmin)->subject,
+        );
+
+        $this->assertSame(
+            'Nueva visita en tu agenda — lunes 17 de agosto (TZ-A-0001)',
+            (new VisitScheduledNotification($visit))->toMail($this->technician)->subject,
+        );
+    }
+
+    /** "Antes" y "Ahora" con el mismo formato: si no, parecen de dos sitios. */
+    public function test_el_correo_de_reprogramacion_usa_el_mismo_formato_en_las_dos_fechas(): void
+    {
+        $visit = $this->schedule();
+
+        $rendered = (new VisitRescheduledNotification(
+            $visit,
+            CarbonImmutable::parse('2026-08-13 08:30'),
+            CarbonImmutable::parse('2026-08-13 10:00'),
+        ))->toMail($this->clientAdmin)->render();
+
+        $this->assertStringContainsString('jueves 13 de agosto, 08:30–10:00', $rendered);
+        $this->assertStringContainsString('lunes 17 de agosto, 09:00–10:30', $rendered);
     }
 
     public function test_el_enlace_del_correo_depende_del_rol(): void

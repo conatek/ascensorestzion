@@ -32,8 +32,11 @@ class VisitCancelledNotification extends Notification implements ShouldQueue
         $when = $this->whenLabel($visit);
 
         $mail = (new MailMessage)
-            ->subject("Visita cancelada — {$equipment} — {$this->dateLabel($visit)}")
-            ->greeting('Se canceló una visita programada')
+            ->subject($this->subjectWithRef(
+                'Visita cancelada — '.$this->longDate($visit->scheduled_start),
+                $visit,
+            ))
+            ->greeting('Hemos cancelado la visita del '.$this->longDate($visit->scheduled_start))
             ->line("**Estaba prevista para:** {$when}")
             ->line("**Equipo:** {$equipment}")
             ->line("**Sede:** {$site}");
@@ -56,7 +59,7 @@ class VisitCancelledNotification extends Notification implements ShouldQueue
         return array_merge($this->visitPayload($visit), [
             'type' => 'visit_cancelled',
             'cancel_reason' => $visit->cancel_reason,
-            'message' => "Se canceló la visita de {$equipment} del {$this->dateLabel($visit)}",
+            'message' => "Se canceló la visita de {$equipment} del {$this->longDate($visit->scheduled_start)}",
         ]);
     }
 }

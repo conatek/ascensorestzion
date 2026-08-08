@@ -35,8 +35,12 @@ class VisitScheduledNotification extends Notification implements ShouldQueue
         $technician = $visit->technician?->name ?? 'por asignar';
         $when = $this->whenLabel($visit);
 
+        $headline = $isTechnician
+            ? 'Nueva visita en tu agenda — '.$this->longDate($visit->scheduled_start)
+            : 'Visita programada para el '.$this->longDate($visit->scheduled_start);
+
         $mail = (new MailMessage)
-            ->subject("Visita programada — {$equipment} — {$this->dateLabel($visit)}")
+            ->subject($this->subjectWithRef($headline, $visit))
             ->greeting($isTechnician ? 'Tienes una visita nueva en tu agenda' : 'Hemos programado tu próxima visita')
             ->line("**Cuándo:** {$when}")
             ->line("**Equipo:** {$equipment}")
@@ -64,7 +68,7 @@ class VisitScheduledNotification extends Notification implements ShouldQueue
 
         return array_merge($this->visitPayload($visit), [
             'type' => 'visit_scheduled',
-            'message' => "Visita programada para {$equipment} el {$this->dateLabel($visit)}",
+            'message' => "Visita programada para {$equipment} el {$this->longDate($visit->scheduled_start)}",
         ]);
     }
 }

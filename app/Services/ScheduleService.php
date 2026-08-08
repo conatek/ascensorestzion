@@ -148,6 +148,7 @@ class ScheduleService
         $this->assertSlotIsFree($technician, $start, $end, $visit->id);
 
         $previousStart = CarbonImmutable::parse($visit->scheduled_start);
+        $previousEnd = CarbonImmutable::parse($visit->scheduled_end);
         $previousTechnicianId = (int) $visit->technician_id;
 
         DB::transaction(function () use ($visit, $technician, $start, $end) {
@@ -169,7 +170,7 @@ class ScheduleService
 
         $this->notifyParties(
             $visit,
-            new VisitRescheduledNotification($visit, $previousStart),
+            new VisitRescheduledNotification($visit, $previousStart, $previousEnd),
             $extra ? [$extra] : [],
         );
 

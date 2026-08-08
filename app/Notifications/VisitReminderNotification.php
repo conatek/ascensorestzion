@@ -44,8 +44,14 @@ class VisitReminderNotification extends Notification implements ShouldQueue
         $when = $this->whenLabel($visit);
         $countdown = $this->countdownLabel($visit->scheduled_start);
 
+        $headline = $isTechnician
+            ? 'Recordatorio: visita del '.$this->longDate($visit->scheduled_start)
+            : 'Recordatorio: mantenimiento del '.$this->longDate($visit->scheduled_start);
+
         $mail = (new MailMessage)
-            ->subject("Recordatorio: visita {$countdown} — {$equipment}")
+            // La fecha exacta y no "en 3 días": el asunto se lee días después,
+            // cuando el correo ya está enterrado en la bandeja.
+            ->subject($this->subjectWithRef($headline, $visit))
             ->greeting($isTechnician ? "Tu próxima visita es {$countdown}" : "Tu mantenimiento es {$countdown}")
             ->line("**Cuándo:** {$when}")
             ->line("**Equipo:** {$equipment}")

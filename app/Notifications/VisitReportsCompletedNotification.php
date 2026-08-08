@@ -85,7 +85,8 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
         }
 
         if ($this->recipientRole === 'client') {
-            $mail->line('Descargue cada informe y confirme su recepción desde los enlaces de arriba.');
+            // Tuteo, como el resto de los correos al cliente (decisión 2026-08-07).
+            $mail->line('Descarga cada informe y confirma su recepción desde los enlaces de arriba.');
         }
 
         return $mail->salutation('Equipo de Ascensores Tzion');

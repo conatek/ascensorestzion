@@ -35,25 +35,43 @@ trait DescribesVisit
         ]) ?? $visit;
     }
 
-    /** "jueves 14 de agosto, 08:00–09:30" */
-    protected function whenLabel(ScheduledVisit $visit): string
+    /** "jueves 14 de agosto" */
+    protected function longDate($date): string
     {
-        $start = $visit->scheduled_start;
-        $end = $visit->scheduled_end;
+        $day = self::DAYS[$date->dayOfWeekIso] ?? '';
+        $month = self::MONTHS[(int) $date->format('n')] ?? '';
 
-        $day = self::DAYS[$start->dayOfWeekIso] ?? '';
-        $month = self::MONTHS[(int) $start->format('n')] ?? '';
-
-        return sprintf(
-            '%s %d de %s, %s–%s',
-            $day, $start->day, $month, $start->format('H:i'), $end->format('H:i')
-        );
+        return sprintf('%s %d de %s', $day, $date->day, $month);
     }
 
-    /** "14/08/2026" */
-    protected function dateLabel(ScheduledVisit $visit): string
+    /**
+     * "jueves 14 de agosto, 08:00–09:30". Es el formato de fecha del proyecto:
+     * el mismo en todos los correos y en las dos mitades del de reprogramación.
+     */
+    protected function longDateTime($start, $end = null): string
     {
-        return $visit->scheduled_start->format('d/m/Y');
+        $range = $end
+            ? sprintf('%s–%s', $start->format('H:i'), $end->format('H:i'))
+            : $start->format('H:i');
+
+        return $this->longDate($start).', '.$range;
+    }
+
+    /** "jueves 14 de agosto, 08:00–09:30" para la visita. */
+    protected function whenLabel(ScheduledVisit $visit): string
+    {
+        return $this->longDateTime($visit->scheduled_start, $visit->scheduled_end);
+    }
+
+    /**
+     * Asunto: primero lo que le importa a quien lo recibe (qué y cuándo) y el
+     * código del equipo al final, como referencia para buscarlo en la bandeja.
+     */
+    protected function subjectWithRef(string $headline, ScheduledVisit $visit): string
+    {
+        $code = $visit->equipment?->internal_code;
+
+        return $code ? "{$headline} ({$code})" : $headline;
     }
 
     /**

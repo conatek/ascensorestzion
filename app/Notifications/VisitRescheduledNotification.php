@@ -21,6 +21,9 @@ class VisitRescheduledNotification extends Notification implements ShouldQueue
     public function __construct(
         private ScheduledVisit $visit,
         private CarbonImmutable $previousStart,
+        // El fin anterior solo sirve para que "Antes" y "Ahora" se lean con el
+        // mismo formato; sin el, una linea saldria con rango y la otra sin el.
+        private ?CarbonImmutable $previousEnd = null,
     ) {}
 
     public function via(object $notifiable): array
@@ -36,11 +39,14 @@ class VisitRescheduledNotification extends Notification implements ShouldQueue
         $equipment = $visit->equipment?->internal_code ?? '—';
         $site = $visit->site?->name ?? '—';
         $technician = $visit->technician?->name ?? 'por asignar';
-        $before = $this->previousStart->format('d/m/Y H:i');
+        $before = $this->longDateTime($this->previousStart, $this->previousEnd);
         $when = $this->whenLabel($visit);
 
         $mail = (new MailMessage)
-            ->subject("Visita reprogramada — {$equipment} — {$this->dateLabel($visit)}")
+            ->subject($this->subjectWithRef(
+                ($isTechnician ? 'Visita movida al ' : 'Tu visita cambió al ').$this->longDate($visit->scheduled_start),
+                $visit,
+            ))
             ->greeting('Cambió la fecha de una visita')
             ->line("**Antes:** {$before}")
             ->line("**Ahora:** {$when}")
@@ -60,12 +66,12 @@ class VisitRescheduledNotification extends Notification implements ShouldQueue
     {
         $visit = $this->visitWithRelations($this->visit);
         $equipment = $visit->equipment?->internal_code ?? 'equipo';
-        $before = $this->previousStart->format('d/m/Y');
+        $before = $this->longDate($this->previousStart);
 
         return array_merge($this->visitPayload($visit), [
             'type' => 'visit_rescheduled',
             'previous_start' => $this->previousStart->toIso8601String(),
-            'message' => "La visita de {$equipment} pasó del {$before} al {$this->dateLabel($visit)}",
+            'message' => "La visita de {$equipment} pasó del {$before} al {$this->longDate($visit->scheduled_start)}",
         ]);
     }
 }
