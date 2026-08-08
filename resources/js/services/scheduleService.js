@@ -40,6 +40,23 @@ export default {
     },
 
     /** Duración sugerida al elegir equipo en el modal. */
+    // ── Reprogramaciones ──
+
+    /** Bandeja de solicitudes. Por defecto solo las pendientes. */
+    rescheduleRequests(params = {}) {
+        return api.get(`${resource}/reschedule-requests`, { params });
+    },
+    approveRescheduleRequest(id, payload = {}) {
+        return api.post(`${resource}/reschedule-requests/${id}/approve`, payload);
+    },
+    rejectRescheduleRequest(id, notes) {
+        return api.post(`${resource}/reschedule-requests/${id}/reject`, { resolution_notes: notes });
+    },
+    /** Espacios libres de una visita, sin la antelacion minima del portal. */
+    visitAvailability(visitId, params = {}) {
+        return api.get(`${resource}/visits/${visitId}/availability`, { params });
+    },
+
     equipmentDuration(equipmentId) {
         return api.get(`${resource}/equipment/${equipmentId}/duration`);
     },

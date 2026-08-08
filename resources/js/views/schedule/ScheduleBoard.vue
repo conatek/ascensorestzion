@@ -22,6 +22,28 @@
             </div>
         </div>
 
+        <!-- Solicitudes del cliente esperando decisión -->
+        <div v-if="pendingRequests.length" class="resched-banner">
+            <i class="fa fa-history"></i>
+            <span>
+                <strong>{{ pendingRequests.length }}</strong>
+                {{ pendingRequests.length === 1 ? 'solicitud de reprogramación pendiente' : 'solicitudes de reprogramación pendientes' }}
+            </span>
+            <button class="resched-banner__btn" @click="showRequests = !showRequests">
+                {{ showRequests ? 'Ocultar' : 'Revisar' }}
+                <i :class="showRequests ? 'fa fa-chevron-up' : 'fa fa-arrow-right'" class="ms-1"></i>
+            </button>
+        </div>
+
+        <RescheduleInbox
+            v-if="showRequests"
+            :requests="pendingRequests"
+            :loading="loadingRequests"
+            @approve="approveRequest"
+            @reject="rejectRequest"
+            @locate="locateRequest"
+        />
+
         <!-- Controles -->
         <div class="filter-bar">
             <div class="filter-row">
@@ -83,6 +105,8 @@
                 <span class="legend-item"><i class="legend-dot dot-preventivo"></i> Preventivo</span>
                 <span class="legend-item"><i class="legend-dot dot-correctivo"></i> Correctivo</span>
                 <span class="legend-item"><i class="legend-dot dot-especial"></i> Especial</span>
+                <span class="legend-item"><i class="legend-ring ring-encurso"></i> En curso</span>
+                <span class="legend-item"><i class="legend-ring ring-reprog"></i> Reprogramación solicitada</span>
                 <span class="legend-item"><i class="legend-dot dot-cerrada"></i> Completada o cancelada</span>
                 <span class="legend-item"><i class="legend-dot dot-break"></i> No agendable (descanso o día no laborable)</span>
             </div>
@@ -98,6 +122,7 @@
                     :time-cell-height="30"
                     :disable-views="['years', 'year']"
                     :active-view="view"
+                    :selected-date="selectedDate"
                     :split-days="splits"
                     :sticky-split-labels="useSplits"
                     :min-split-width="minSplitWidth"
@@ -169,6 +194,7 @@ import clientService from '@/services/clientService.js';
 import equipmentService from '@/services/equipmentService.js';
 import VisitFormModal from './VisitFormModal.vue';
 import VisitDrawer from './VisitDrawer.vue';
+import RescheduleInbox from '@/components/schedule/RescheduleInbox.vue';
 import { STATUS_LABELS } from '@/utils/visitLabels.js';
 
 /** Estados que no se pueden arrastrar: la visita ya está cerrada. */
@@ -176,7 +202,7 @@ const LOCKED_STATUSES = ['completada', 'cancelada'];
 
 export default {
     name: 'ScheduleBoard',
-    components: { VueCal, VisitFormModal, VisitDrawer },
+    components: { VueCal, VisitFormModal, VisitDrawer, RescheduleInbox },
     data() {
         return {
             loading: true,
@@ -204,6 +230,13 @@ export default {
             editingVisit: null,
             prefill: null,
             selectedVisit: null,
+            // Bandeja de reprogramaciones: panel dentro del tablero, sin ruta
+            // propia. El correo a coordinación llega con ?solicitudes=1.
+            pendingRequests: [],
+            loadingRequests: false,
+            showRequests: false,
+            // Fecha a la que salta el calendario al pulsar "Ver en calendario".
+            selectedDate: null,
         };
     },
     computed: {
@@ -315,7 +348,11 @@ export default {
         },
     },
     async created() {
-        await this.loadCatalogs();
+        // El enlace del correo de solicitud trae ?solicitudes=1: quien viene de
+        // ahí viene a decidir, no a mirar el calendario.
+        this.showRequests = this.$route.query.solicitudes === '1';
+
+        await Promise.all([this.loadCatalogs(), this.loadRequests()]);
     },
     methods: {
         toMinutes(hhmm) {
@@ -570,6 +607,137 @@ export default {
                 });
             }
         },
+
+        // ── Bandeja de reprogramaciones ──
+
+        async loadRequests() {
+            this.loadingRequests = true;
+            try {
+                const { data } = await scheduleService.rescheduleRequests({ status: 'pendiente' });
+                this.pendingRequests = data.requests || [];
+            } catch {
+                // Sin ruido: el tablero sigue siendo útil aunque la bandeja falle.
+                this.pendingRequests = [];
+            } finally {
+                this.loadingRequests = false;
+            }
+        },
+
+        async approveRequest(request, force = false) {
+            const clash = !request.availability?.technician_free;
+
+            const { isConfirmed } = clash
+                ? await this.$swal.fire({
+                    icon: 'warning',
+                    title: 'El horario ya no está libre',
+                    html: `${(request.availability?.problems || []).join('<br>')}`
+                        + '<br><br>Puedes aprobarla igual, pero el técnico quedará con dos visitas encima.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Aprobar de todos modos',
+                    cancelButtonText: 'Volver',
+                    confirmButtonColor: '#ba2831',
+                })
+                : await this.$swal.fire({
+                    icon: 'question',
+                    title: '¿Aprobar la reprogramación?',
+                    html: `<b>${request.scheduled_visit?.equipment?.internal_code || 'Visita'}</b><br>`
+                        + `${dayjs(request.proposed_start).format('dddd D [de] MMMM, HH:mm')}`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Aprobar y mover',
+                    cancelButtonText: 'Volver',
+                    confirmButtonColor: '#30ab0a',
+                });
+
+            if (!isConfirmed) return;
+
+            try {
+                await scheduleService.approveRescheduleRequest(request.id, { force: force || clash });
+                this.$swal.fire({
+                    icon: 'success',
+                    title: 'Visita reprogramada',
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+                this.selectedVisit = null;
+            } catch (err) {
+                const bag = err.response?.data?.errors;
+
+                // Carrera: el hueco se ocupó entre la carga de la bandeja y el
+                // clic. Se ofrece forzar en vez de dejar el aviso en un callejón.
+                if (bag?.scheduled_start && !force) {
+                    const retry = await this.$swal.fire({
+                        icon: 'warning',
+                        title: 'El horario acaba de ocuparse',
+                        html: bag.scheduled_start.join('<br>'),
+                        showCancelButton: true,
+                        confirmButtonText: 'Aprobar de todos modos',
+                        cancelButtonText: 'Volver',
+                        confirmButtonColor: '#ba2831',
+                    });
+
+                    if (retry.isConfirmed) {
+                        await scheduleService.approveRescheduleRequest(request.id, { force: true });
+                        this.selectedVisit = null;
+                    }
+                } else {
+                    this.$swal.fire({
+                        icon: 'error',
+                        title: 'No se pudo aprobar',
+                        html: bag
+                            ? Object.values(bag).flat().join('<br>')
+                            : (err.response?.data?.message || err.message),
+                        confirmButtonText: 'Aceptar',
+                    });
+                }
+            } finally {
+                await Promise.all([this.loadRequests(), this.load()]);
+            }
+        },
+
+        async rejectRequest(request) {
+            const { isConfirmed, value } = await this.$swal.fire({
+                icon: 'warning',
+                title: '¿Rechazar la solicitud?',
+                input: 'textarea',
+                inputLabel: 'Motivo (se le enviará al cliente)',
+                inputPlaceholder: 'Por ejemplo: ese día el técnico está en mantenimiento en otra sede',
+                inputValidator: v => (v && v.trim() ? undefined : 'Explica al cliente por qué no se puede.'),
+                showCancelButton: true,
+                confirmButtonText: 'Rechazar',
+                cancelButtonText: 'Volver',
+                confirmButtonColor: '#ba2831',
+            });
+
+            if (!isConfirmed) return;
+
+            try {
+                await scheduleService.rejectRescheduleRequest(request.id, value.trim());
+                this.selectedVisit = null;
+                this.$swal.fire({
+                    icon: 'success',
+                    title: 'Solicitud rechazada',
+                    text: 'Le avisamos al cliente con tu motivo.',
+                    timer: 2200,
+                    showConfirmButton: false,
+                });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo rechazar',
+                    text: err.response?.data?.message || err.message,
+                    confirmButtonText: 'Aceptar',
+                });
+            } finally {
+                await Promise.all([this.loadRequests(), this.load()]);
+            }
+        },
+
+        /** Salta al día propuesto para ver el hueco en contexto. */
+        locateRequest(request) {
+            this.showRequests = false;
+            this.view = 'day';
+            this.selectedDate = dayjs(request.proposed_start).toDate();
+        },
     },
 };
 </script>
@@ -695,6 +863,48 @@ export default {
     gap: 0.4rem;
 }
 
+/* Banner de solicitudes pendientes */
+.resched-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #b45309;
+}
+
+.resched-banner > i {
+    color: #f59e0b;
+}
+
+.resched-banner__btn {
+    margin-left: auto;
+    border: 0;
+    border-radius: 9px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+    .resched-banner {
+        flex-wrap: wrap;
+    }
+
+    .resched-banner__btn {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
 .legend-dot {
     width: 11px;
     height: 11px;
@@ -706,6 +916,19 @@ export default {
 .dot-correctivo { background: #ba2831; }
 .dot-especial   { background: #2563eb; }
 .dot-cerrada    { background: #94a3b8; }
+
+/* El estado se pinta como anillo sobre el color del tipo, así que en la leyenda
+   también va como anillo y no como punto lleno. */
+.legend-ring {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    display: inline-block;
+    background: #fff;
+}
+
+.ring-encurso { box-shadow: 0 0 0 2px #0ea5e9; }
+.ring-reprog  { box-shadow: 0 0 0 2px #f59e0b; }
 
 .dot-break {
     background: repeating-linear-gradient(
@@ -912,8 +1135,14 @@ export default {
     opacity: 0.75;
 }
 
+/* Anillo y no fondo: el fondo sigue diciendo el tipo de visita, que es la regla
+   que explica la leyenda. */
 .tz-schedule .vuecal__event.tz-ev-status-en_curso {
     box-shadow: 0 0 0 2px #0ea5e9;
+}
+
+.tz-schedule .vuecal__event.tz-ev-status-reprogramacion_solicitada {
+    box-shadow: 0 0 0 2px #f59e0b;
 }
 
 /* Los nombres largos ("Andrés Felipe Cardona") se salían de su columna y pisaban
