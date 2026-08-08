@@ -53,7 +53,10 @@ import notificationService from '@/services/notificationService.js';
 import { useAuth } from '@/stores/auth';
 
 /** Notificaciones del cronograma: todas llevan a la misma pantalla por rol. */
-const VISIT_TYPES = ['visit_scheduled', 'visit_reminder', 'visit_rescheduled', 'visit_cancelled'];
+const VISIT_TYPES = [
+    'visit_scheduled', 'visit_reminder', 'visit_rescheduled', 'visit_cancelled',
+    'reschedule_requested', 'reschedule_resolved',
+];
 
 export default {
     name: 'NotificationBell',
@@ -187,6 +190,9 @@ export default {
             if (type === 'report_completed') return 'icon--report';
             if (type === 'report_reception_confirmed') return 'icon--confirmed';
             if (type === 'visit_cancelled') return 'icon--emergency';
+            // Una solicitud sin resolver es lo unico del cronograma que pide una
+            // accion: se distingue en ambar del resto, que solo informan.
+            if (type === 'reschedule_requested') return 'icon--pending';
             if (VISIT_TYPES.includes(type)) return 'icon--visit';
             return 'icon--default';
         },
@@ -200,6 +206,8 @@ export default {
             if (type === 'visit_cancelled') return 'fa fa-calendar-times';
             if (type === 'visit_rescheduled') return 'fa fa-calendar-alt';
             if (type === 'visit_scheduled') return 'fa fa-calendar-plus';
+            if (type === 'reschedule_requested') return 'fa fa-calendar-day';
+            if (type === 'reschedule_resolved') return 'fa fa-calendar-check';
             return 'fa fa-bell';
         },
 
@@ -371,6 +379,7 @@ export default {
 .icon--report { background: #dbeafe; color: #2563eb; }
 .icon--confirmed { background: #e8f5e4; color: #279208; }
 .icon--visit { background: #eefbe9; color: #227a0c; }
+.icon--pending { background: #fef6e7; color: #b45309; }
 .icon--default { background: #f1f5f9; color: #64748b; }
 
 .notif-item__content {

@@ -72,9 +72,21 @@
                             <p class="sched-card__meta">
                                 {{ timeRange(visit) }} · {{ visit.technician?.name || 'Técnico por asignar' }}
                             </p>
+                            <p v-if="visit.pending_reschedule_request" class="sched-card__pending">
+                                <i class="fa fa-clock me-1"></i>
+                                Pediste moverla al {{ fullDateTime(visit.pending_reschedule_request.proposed_start) }},
+                                pendiente de aprobación.
+                            </p>
                         </div>
                         <div class="sched-card__aside">
                             <span class="sched-countdown">{{ countdown(visit.scheduled_start) }}</span>
+                            <button
+                                v-if="visit.can_request_reschedule"
+                                class="sched-reschedule"
+                                @click="reschedulingVisit = visit"
+                            >
+                                <i class="fa fa-calendar-day me-1"></i> Reprogramar
+                            </button>
                         </div>
                     </article>
                 </div>
@@ -168,6 +180,13 @@
                 </div>
             </div>
         </section>
+
+        <RescheduleRequestModal
+            v-if="reschedulingVisit"
+            :visit="reschedulingVisit"
+            @close="reschedulingVisit = null"
+            @submitted="onRescheduleSubmitted"
+        />
     </div>
 </template>
 
@@ -175,9 +194,14 @@
 import dayjs from '@/utils/dayjs.js';
 import portalService from '@/services/portalService.js';
 import { statusLabel } from '@/utils/visitLabels.js';
+// Import estatico: la vista ya es perezosa en el router, asi que el modal viaja
+// en su mismo chunk y no engorda el bundle principal.
+import RescheduleRequestModal from '@/components/schedule/RescheduleRequestModal.vue';
 
 export default {
     name: 'PortalSchedule',
+
+    components: { RescheduleRequestModal },
 
     data() {
         return {
@@ -188,6 +212,7 @@ export default {
             monthStart: dayjs().startOf('month'),
             todayIso: dayjs().format('YYYY-MM-DD'),
             loading: true,
+            reschedulingVisit: null,
         };
     },
 
@@ -254,6 +279,9 @@ export default {
         fullDate(value) {
             return dayjs(value).format('D MMM YYYY');
         },
+        fullDateTime(value) {
+            return dayjs(value).format('D [de] MMMM [a las] HH:mm');
+        },
         timeRange(visit) {
             return `${this.time(visit.scheduled_start)}–${this.time(visit.scheduled_end)}`;
         },
@@ -298,6 +326,22 @@ export default {
         shiftMonth(delta) {
             this.monthStart = this.monthStart.add(delta, 'month');
             this.loadMonth();
+        },
+
+        async onRescheduleSubmitted() {
+            this.reschedulingVisit = null;
+
+            this.$swal?.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Solicitud enviada',
+                text: 'Coordinación la revisará y te avisaremos por correo.',
+                showConfirmButton: false,
+                timer: 3500,
+            });
+
+            await this.loadList();
         },
     },
 };
@@ -439,9 +483,36 @@ export default {
     color: #94a3b8;
 }
 
+.sched-card__pending {
+    margin: 0.4rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #b45309;
+}
+
 .sched-card__aside {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.sched-reschedule {
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    border-radius: 9px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.sched-reschedule:hover {
+    border-color: #30ab0a;
+    color: #30ab0a;
 }
 
 .sched-countdown {
@@ -634,8 +705,15 @@ export default {
         flex-wrap: wrap;
     }
 
+    /* En movil la tarjeta se parte y el lateral pasa a ser una fila propia: en
+       horizontal el countdown y el boton caben de sobra. */
     .sched-card__aside {
         width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 0.6rem;
+        border-top: 1px solid #f1f5f9;
     }
 
     .sched-cal-cell {

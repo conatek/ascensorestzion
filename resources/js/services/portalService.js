@@ -25,4 +25,11 @@ export default {
     scheduleShow(id) {
         return api.get(`${prefix}/schedule/${id}`);
     },
+    /** Espacios libres del tecnico asignado para mover esta visita. */
+    scheduleAvailability(visitId, params = {}) {
+        return api.get(`${prefix}/schedule/${visitId}/availability`, { params });
+    },
+    requestReschedule(visitId, payload) {
+        return api.post(`${prefix}/schedule/${visitId}/reschedule-request`, payload);
+    },
 };
