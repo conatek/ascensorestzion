@@ -85,6 +85,19 @@ class ScheduledVisit extends Model
         return $this->hasMany(VisitReminder::class);
     }
 
+    public function rescheduleRequests()
+    {
+        return $this->hasMany(RescheduleRequest::class);
+    }
+
+    /** Solo puede haber una a la vez; la regla la impone RescheduleRequestService. */
+    public function pendingRescheduleRequest()
+    {
+        return $this->hasOne(RescheduleRequest::class)
+            ->where('status', RescheduleRequest::PENDIENTE)
+            ->latestOfMany();
+    }
+
     /**
      * Reportes de la visita ejecutada. No es una FK: los une el visit_uuid que
      * comparten, y solo existe una vez que el tecnico hizo check-in.
@@ -92,6 +105,26 @@ class ScheduledVisit extends Model
     public function serviceReports()
     {
         return $this->hasMany(ServiceReport::class, 'visit_uuid', 'visit_uuid');
+    }
+
+    /**
+     * Si el cliente puede pedir moverla: solo las futuras que siguen programadas y
+     * con la antelacion minima por delante. No incluye "que no haya otra pendiente"
+     * — esa se consulta aparte para no forzar una query por visita en la lista.
+     *
+     * Metodo y no accessor a proposito: como accessor con $appends se serializaria
+     * tambien en el indice del tablero, disparando un ScheduleSetting::get por cada
+     * una de las cientos de visitas del mes.
+     */
+    public function canBeRescheduledByClient(): bool
+    {
+        if ($this->status !== 'programada') {
+            return false;
+        }
+
+        $notice = (int) ScheduleSetting::get('min_reschedule_notice_hours');
+
+        return $this->scheduled_start > now()->addHours($notice);
     }
 
     // ── Scopes ──
