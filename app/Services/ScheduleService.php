@@ -137,6 +137,7 @@ class ScheduleService
      * siempre: arrastrar tambien puede dejarla en el descanso o en sabado.
      *
      * @param  bool  $force  aprobar sobre un conflicto conocido; manda coordinacion
+     * @param  bool  $notify  false cuando quien llama manda su propio aviso del cambio
      *
      * @throws ValidationException
      */
@@ -146,6 +147,7 @@ class ScheduleService
         CarbonImmutable $end,
         ?User $technician = null,
         bool $force = false,
+        bool $notify = true,
     ): ScheduledVisit {
         $technician ??= $visit->technician;
 
@@ -171,16 +173,21 @@ class ScheduleService
 
         $visit->refresh();
 
-        // El tecnico anterior tambien se entera: tenia la visita en su agenda.
-        $extra = $previousTechnicianId !== (int) $visit->technician_id
-            ? User::find($previousTechnicianId)
-            : null;
+        // Al aprobar una solicitud el aviso lo manda RescheduleRequestService, con
+        // el "aprobamos tu cambio" y el antes/ahora en el mismo correo. Dos correos
+        // en el mismo segundo diciendo lo mismo hacen que se dejen de leer los dos.
+        if ($notify) {
+            // El tecnico anterior tambien se entera: tenia la visita en su agenda.
+            $extra = $previousTechnicianId !== (int) $visit->technician_id
+                ? User::find($previousTechnicianId)
+                : null;
 
-        $this->notifyParties(
-            $visit,
-            new VisitRescheduledNotification($visit, $previousStart, $previousEnd),
-            $extra ? [$extra] : [],
-        );
+            $this->notifyParties(
+                $visit,
+                new VisitRescheduledNotification($visit, $previousStart, $previousEnd),
+                $extra ? [$extra] : [],
+            );
+        }
 
         return $visit;
     }

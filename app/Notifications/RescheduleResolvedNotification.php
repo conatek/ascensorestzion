@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\RescheduleRequest;
 use App\Notifications\Concerns\DescribesVisit;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,6 +12,11 @@ use Illuminate\Notifications\Notification;
 
 /**
  * Coordinacion resolvio la solicitud. Va al cliente y al tecnico.
+ *
+ * Cuando se aprueba, este es el UNICO correo del cambio: `reschedule()` se llama
+ * con notify:false para que no salga ademas el VisitRescheduledNotification. Por
+ * eso el cuerpo de la version aprobada lleva tambien el "Antes / Ahora" — quien lo
+ * recibe necesita las dos cosas: que le dijeron que si, y a que hora queda.
  */
 class RescheduleResolvedNotification extends Notification implements ShouldQueue
 {
@@ -18,16 +24,9 @@ class RescheduleResolvedNotification extends Notification implements ShouldQueue
 
     public function __construct(private RescheduleRequest $request) {}
 
-    /**
-     * Aprobada no lleva correo: reschedule() ya mando el de "Antes / Ahora" en el
-     * mismo segundo, y dos correos diciendo lo mismo hacen que se dejen de leer
-     * los dos. Rechazada si, porque es el unico aviso que hay.
-     */
     public function via(object $notifiable): array
     {
-        return $this->request->status === RescheduleRequest::APROBADA
-            ? ['database']
-            : ['database', 'mail'];
+        return ['database', 'mail'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -36,24 +35,64 @@ class RescheduleResolvedNotification extends Notification implements ShouldQueue
         $visit = $this->visitWithRelations($request->scheduledVisit);
         $isTechnician = $notifiable->hasRole('technician');
 
-        $mail = (new MailMessage)
+        $mail = $request->status === RescheduleRequest::APROBADA
+            ? $this->approvedMail($request, $visit, $isTechnician)
+            : $this->rejectedMail($request, $visit, $isTechnician);
+
+        $mail->line('**Equipo:** '.($visit->equipment?->internal_code ?? '—'))
+            ->line('**Sede:** '.($visit->site?->name ?? '—'));
+
+        if (! $isTechnician) {
+            $mail->line('**Técnico asignado:** '.($visit->technician?->name ?? 'por asignar'));
+        }
+
+        if ($request->resolution_notes) {
+            $mail->line("**Nota de coordinación:** {$request->resolution_notes}");
+        }
+
+        return $mail
+            ->action($isTechnician ? 'Ver mi agenda' : 'Ver mi cronograma', $this->deepLink($notifiable))
+            ->salutation('Equipo de Ascensores Tzion');
+    }
+
+    private function approvedMail(RescheduleRequest $request, $visit, bool $isTechnician): MailMessage
+    {
+        $headline = $isTechnician
+            ? 'Visita movida al '.$this->longDate($request->proposed_start)
+            : 'Aprobamos el cambio: tu visita pasa al '.$this->longDate($request->proposed_start);
+
+        return (new MailMessage)
+            ->subject($this->subjectWithRef($headline, $visit))
+            ->greeting($isTechnician
+                ? 'Se aprobó una reprogramación'
+                : 'Listo, movimos tu visita')
+            ->line('**Antes:** '.$this->longDateTime($request->original_start, $this->originalEnd($request)))
+            ->line('**Ahora:** '.$this->longDateTime($request->proposed_start, $request->proposed_end));
+    }
+
+    private function rejectedMail(RescheduleRequest $request, $visit, bool $isTechnician): MailMessage
+    {
+        return (new MailMessage)
             ->subject($this->subjectWithRef(
                 'No pudimos mover la visita del '.$this->longDate($request->original_start),
                 $visit,
             ))
             ->greeting($isTechnician ? 'Una reprogramación no salió adelante' : 'No pudimos mover tu visita')
             ->line('**Pediste:** '.$this->longDateTime($request->proposed_start, $request->proposed_end))
-            ->line('**Sigue siendo:** '.$this->whenLabel($visit))
-            ->line('**Equipo:** '.($visit->equipment?->internal_code ?? '—'))
-            ->line('**Sede:** '.($visit->site?->name ?? '—'));
+            ->line('**Sigue siendo:** '.$this->whenLabel($visit));
+    }
 
-        if ($request->resolution_notes) {
-            $mail->line("**Motivo:** {$request->resolution_notes}");
-        }
+    /**
+     * La duracion se conserva al reprogramar, asi que el fin original se deriva del
+     * rango propuesto. No se guarda en la tabla porque seria un dato redundante que
+     * podria quedar desalineado.
+     */
+    private function originalEnd(RescheduleRequest $request): CarbonImmutable
+    {
+        $minutes = CarbonImmutable::parse($request->proposed_start)
+            ->diffInMinutes(CarbonImmutable::parse($request->proposed_end));
 
-        return $mail
-            ->action($isTechnician ? 'Ver mi agenda' : 'Ver mi cronograma', $this->deepLink($notifiable))
-            ->salutation('Equipo de Ascensores Tzion');
+        return CarbonImmutable::parse($request->original_start)->addMinutes((int) $minutes);
     }
 
     public function toArray(object $notifiable): array

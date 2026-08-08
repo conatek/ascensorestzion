@@ -132,7 +132,11 @@ class RescheduleRequestService
             $this->schedule->assertSlotIsFree($visit->technician, $start, $end, $visit->id);
         }
 
-        $this->schedule->reschedule($visit, $start, $end, $visit->technician, force: $force);
+        // notify: false — el aviso del cambio lo manda RescheduleResolvedNotification
+        // unas lineas mas abajo, con el "aprobamos tu solicitud" y el antes/ahora
+        // juntos. El tecnico no cambia en este camino, asi que no hay tecnico
+        // anterior al que avisar aparte.
+        $this->schedule->reschedule($visit, $start, $end, $visit->technician, force: $force, notify: false);
 
         DB::transaction(function () use ($visit, $request, $actor, $notes) {
             // reschedule() mueve las fechas pero no toca el estado: si no se hace

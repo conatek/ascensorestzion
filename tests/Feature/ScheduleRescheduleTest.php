@@ -620,23 +620,78 @@ class ScheduleRescheduleTest extends TestCase
         Sanctum::actingAs($this->coordinator);
         $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
 
-        // El correo de "Antes / Ahora" lo manda reschedule().
-        Notification::assertSentTo($this->clientAdmin, VisitRescheduledNotification::class);
-        Notification::assertSentTo($this->technician, VisitRescheduledNotification::class);
         Notification::assertSentTo($this->clientAdmin, RescheduleResolvedNotification::class);
+        Notification::assertSentTo($this->technician, RescheduleResolvedNotification::class);
+        Notification::assertNotSentTo($this->coordinator, RescheduleResolvedNotification::class);
     }
 
-    /** Aprobada solo va a la campana: el correo del cambio ya lo mando reschedule(). */
-    public function test_la_resolucion_aprobada_no_manda_un_segundo_correo(): void
+    /**
+     * Un solo correo al aprobar. La resolucion lleva dentro el antes/ahora, asi que
+     * reschedule() se llama con notify:false: dos correos en el mismo segundo
+     * diciendo lo mismo hacen que se dejen de leer los dos.
+     */
+    public function test_aprobar_no_manda_ademas_el_correo_generico_de_reprogramacion(): void
+    {
+        [, $request] = $this->pending();
+
+        Notification::fake();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        Notification::assertNotSentTo($this->clientAdmin, VisitRescheduledNotification::class);
+        Notification::assertNotSentTo($this->technician, VisitRescheduledNotification::class);
+    }
+
+    /** Pero reprogramar directo si lo manda: ahi no hay solicitud que resolver. */
+    public function test_la_reprogramacion_directa_sigue_mandando_el_correo_de_siempre(): void
+    {
+        $visit = $this->visit();
+
+        Notification::fake();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->putJson("/api/schedule/visits/{$visit->id}", [
+            'scheduled_start' => '2026-08-12 15:00',
+            'scheduled_end' => '2026-08-12 16:30',
+        ])->assertOk();
+
+        Notification::assertSentTo($this->clientAdmin, VisitRescheduledNotification::class);
+    }
+
+    public function test_el_correo_de_aprobada_dice_que_se_aprobo_y_lleva_el_antes_y_el_ahora(): void
     {
         [, $request] = $this->pending();
 
         Sanctum::actingAs($this->coordinator);
         $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
 
-        $channels = (new RescheduleResolvedNotification($request->refresh()))->via($this->clientAdmin);
+        $notification = new RescheduleResolvedNotification($request->refresh());
 
-        $this->assertSame(['database'], $channels);
+        $this->assertSame(['database', 'mail'], $notification->via($this->clientAdmin));
+
+        $mail = $notification->toMail($this->clientAdmin);
+        $html = $mail->render()->toHtml();
+
+        $this->assertStringContainsString('Aprobamos el cambio', $mail->subject);
+        $this->assertStringContainsString('Listo, movimos tu visita', $html);
+        // El antes sale con la duracion original (90 min), derivada del propuesto.
+        $this->assertStringContainsString('lunes 10 de agosto, 09:00', $html);
+        $this->assertStringContainsString('martes 11 de agosto, 09:00', $html);
+    }
+
+    /** Al tecnico no se le dice "aprobamos tu solicitud": no la pidio el. */
+    public function test_el_correo_de_aprobada_al_tecnico_habla_de_la_visita_no_de_su_solicitud(): void
+    {
+        [, $request] = $this->pending();
+
+        Sanctum::actingAs($this->coordinator);
+        $this->postJson("/api/schedule/reschedule-requests/{$request->id}/approve")->assertOk();
+
+        $mail = (new RescheduleResolvedNotification($request->refresh()))->toMail($this->technician);
+
+        $this->assertStringContainsString('Visita movida al', $mail->subject);
+        $this->assertStringNotContainsString('tu visita', $mail->subject);
     }
 
     public function test_al_rechazar_el_cliente_recibe_el_motivo(): void
