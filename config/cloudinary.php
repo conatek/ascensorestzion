@@ -21,6 +21,7 @@ return [
     */
     'notification_url' => env('CLOUDINARY_NOTIFICATION_URL'),
 
+
     /*
     |--------------------------------------------------------------------------
     | Cloudinary Configuration
@@ -35,6 +36,7 @@ return [
 
     /**
      * Upload Preset From Cloudinary Dashboard
+     *
      */
     'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
 

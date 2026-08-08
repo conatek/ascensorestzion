@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\City;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CitySeeder extends Seeder
@@ -26,6 +27,7 @@ class CitySeeder extends Seeder
         City::create(['province_id' => 1, 'dane_code' => '91540', 'name' => 'Puerto Nariño']);
         City::create(['province_id' => 1, 'dane_code' => '91669', 'name' => 'Puerto Santander']);
         City::create(['province_id' => 1, 'dane_code' => '91798', 'name' => 'Tarapacá']);
+
 
         // Antioquia
         City::create(['province_id' => 2, 'dane_code' => '05120', 'name' => 'Cáceres']);

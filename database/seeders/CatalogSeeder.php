@@ -97,7 +97,7 @@ class CatalogSeeder extends Seeder
             ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'puertas_piso',              'label' => 'Puertas De Piso'],
             ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'instrumentacion_recorrido', 'label' => 'Instrumentación De Recorrido'],
             ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'aceiteras_pozo',            'label' => 'Aceiteras Lubricantes/Guides'],
-            ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'microswitches_seguridad_pf', 'label' => 'Microswitches de Seguridad'],
+            ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'microswitches_seguridad_pf','label' => 'Microswitches de Seguridad'],
             ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'rieles_guias',              'label' => 'Rieles Guías/Contrapeso'],
             ['scope' => 'RSTE', 'category' => 'rste_work', 'group_key' => 'pozo_foso', 'key' => 'amortiguadores',            'label' => 'Amortiguadores'],
         ];

@@ -21,6 +21,7 @@ class CompanyFactory extends Factory
         $provinces = Province::all()->modelKeys();
         $cities = City::all()->modelKeys();
 
+
         return [
             'company_name' => $this->faker->company(),
             'company_type_id' => $this->faker->randomElement([1, 2]),
@@ -45,11 +46,11 @@ class CompanyFactory extends Factory
             'phone' => $this->faker->phoneNumber(),
             'cellphone' => $this->faker->e164PhoneNumber(),
 
-            'facebook' => 'https://www.facebook.com/'.$this->faker->userName,
-            'linkedin' => 'https://www.linkedin.com/'.$this->faker->userName,
-            'instagram' => 'https://www.instagram.com/'.$this->faker->userName,
-            'x_twitter' => 'https://www.x.com/'.$this->faker->userName,
-            'youtube' => 'https://www.youtube.com/'.$this->faker->userName,
+            'facebook' => 'https://www.facebook.com/' . $this->faker->userName,
+            'linkedin' => 'https://www.linkedin.com/' . $this->faker->userName,
+            'instagram' => 'https://www.instagram.com/' . $this->faker->userName,
+            'x_twitter' => 'https://www.x.com/' . $this->faker->userName,
+            'youtube' => 'https://www.youtube.com/' . $this->faker->userName,
 
             'created_at' => $this->faker->dateTime(),
             'updated_at' => $this->faker->dateTime(),
