@@ -305,6 +305,29 @@ class ScheduleReminderTest extends TestCase
         Notification::assertSentToTimes($this->clientAdmin, VisitReminderNotification::class, 1);
     }
 
+    /**
+     * Dos pasadas simultaneas no mandan el mismo aviso dos veces. Aqui se simula
+     * la que ya lo reclamo dejandole el sent_at puesto.
+     */
+    public function test_una_fila_ya_reclamada_no_se_vuelve_a_enviar(): void
+    {
+        Notification::fake();
+
+        $this->schedule();
+
+        $this->travelTo('2026-08-10 08:03:00');
+        CarbonImmutable::setTestNow('2026-08-10 08:03:00');
+
+        VisitReminder::query()
+            ->where('user_id', $this->clientAdmin->id)
+            ->pending()
+            ->update(['sent_at' => now()]);
+
+        $this->artisan('visits:send-reminders')->assertSuccessful();
+
+        Notification::assertNotSentTo($this->clientAdmin, VisitReminderNotification::class);
+    }
+
     /** Entre la materializacion y el envio la visita pudo cancelarse. */
     public function test_el_comando_no_avisa_de_una_visita_cancelada(): void
     {

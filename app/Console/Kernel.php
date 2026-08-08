@@ -21,10 +21,15 @@ class Kernel extends ConsoleKernel
         $schedule->command('visits:mark-overdue')->dailyAt('23:30');
 
         // Recordatorios de visita. Cada cinco minutos, que es la precision con la
-        // que se respeta la hora que configuro cada usuario. withoutOverlapping
-        // porque una pasada lenta no puede solaparse con la siguiente y mandar
-        // dos veces el mismo aviso.
-        $schedule->command('visits:send-reminders')->everyFiveMinutes()->withoutOverlapping();
+        // que se respeta la hora que configuro cada usuario.
+        //
+        // SIN withoutOverlapping a proposito: su mutex vive en la cache, y en el
+        // servidor la cache de ficheros la escriben dos usuarios distintos
+        // (www-data desde la web, ubuntu desde el cron), asi que reventaba con un
+        // TypeError que abortaba el schedule:run ENTERO — tambien mark-overdue.
+        // Contra los envios dobles, el comando reclama cada fila con un UPDATE
+        // condicional, que ademas aguanta varios servidores.
+        $schedule->command('visits:send-reminders')->everyFiveMinutes();
     }
 
     /**

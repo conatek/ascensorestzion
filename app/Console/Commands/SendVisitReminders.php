@@ -50,13 +50,27 @@ class SendVisitReminders extends Command
                 continue;
             }
 
+            // Reclamar la fila antes de mandarla. El UPDATE condicional es atomico
+            // en la base: si dos pasadas coinciden, solo una lo gana y la otra
+            // sigue de largo. Sustituye al withoutOverlapping del scheduler, cuyo
+            // mutex vive en la cache y no es de fiar aqui (ver Kernel).
+            $claimed = VisitReminder::query()
+                ->whereKey($reminder->id)
+                ->where('status', 'pendiente')
+                ->whereNull('sent_at')
+                ->update(['sent_at' => now()]);
+
+            if (! $claimed) {
+                continue;
+            }
+
             try {
                 $reminder->user->notify(new VisitReminderNotification($reminder));
 
                 // "enviado" es despachado: las notificaciones van por cola y el
                 // correo sale en el worker. Si la entrega acaba fallando,
                 // MarkVisitReminderFailed corrige la fila.
-                $reminder->update(['status' => 'enviado', 'sent_at' => now(), 'error' => null]);
+                $reminder->update(['status' => 'enviado', 'error' => null]);
                 $sent++;
             } catch (\Throwable $e) {
                 // Se marca fallido y se sigue: un destinatario con el correo mal
