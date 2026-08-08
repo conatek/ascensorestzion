@@ -78,6 +78,11 @@ export function useAuth() {
         localStorage.removeItem('original_token');
         localStorage.removeItem('original_user');
         localStorage.removeItem('original_permissions');
+
+        // La agenda descargada es de quien cerró sesión: sedes y horarios de sus
+        // clientes. No tiene por qué quedarse en el teléfono para el siguiente.
+        // La cola de sincronización NO se toca: ahí hay trabajo hecho sin subir.
+        localStorage.removeItem('tzion-tech-agenda');
     }
 
     function setUser(user, permissions = null) {
