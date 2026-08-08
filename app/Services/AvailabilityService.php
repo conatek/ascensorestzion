@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ScheduledVisit;
+use App\Models\ScheduleException;
 use App\Models\ScheduleSetting;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -63,9 +64,11 @@ class AvailabilityService
         ?int $ignoreVisitId = null,
         ?CarbonImmutable $notBefore = null,
     ): array {
-        // Una sola vez: resolverla dentro del bucle serian treinta consultas a
-        // technician_schedules para responder treinta veces lo mismo.
-        $window = $this->schedule->workingWindowFor($technician);
+        // Las dos, una sola vez: resolverlas dentro del bucle serian sesenta
+        // consultas para responder treinta veces lo mismo.
+        $baseWindow = $this->schedule->workingWindowFor($technician);
+        $exceptions = ScheduleException::mapForRange($technician->id, $from->startOfDay(), $to->startOfDay());
+
         $step = max(5, (int) ScheduleSetting::get('availability_slot_minutes'));
         $buffer = max(0, (int) ScheduleSetting::get('travel_buffer_minutes'));
 
@@ -76,6 +79,7 @@ class AvailabilityService
 
         for ($day = $from->startOfDay(); $day <= $to->startOfDay(); $day = $day->addDay()) {
             $key = $day->toDateString();
+            $window = $this->schedule->applyException($baseWindow, $exceptions[$key] ?? null, $day);
             $isWorkingDay = in_array($day->dayOfWeekIso, $window['days'], true);
 
             $found = $isWorkingDay
@@ -90,7 +94,10 @@ class AvailabilityService
                 'date' => $key,
                 'is_working_day' => $isWorkingDay,
                 'slot_count' => count($found['slots']),
-                'reason' => $this->reasonFor($isWorkingDay, $found),
+                'reason' => $this->reasonFor($isWorkingDay, $found, $window['exception']),
+                // Para que el portal pueda decir "festivo" y no un generico "tu
+                // tecnico no trabaja ese dia".
+                'exception_note' => $window['exception']['note'] ?? null,
             ];
         }
 
@@ -234,10 +241,12 @@ class AvailabilityService
      * Por que un dia se quedo sin horarios. Se devuelve siempre para que el modal
      * diga algo util en vez de enseñar un vacio mudo.
      */
-    private function reasonFor(bool $isWorkingDay, array $found): ?string
+    private function reasonFor(bool $isWorkingDay, array $found, ?array $exception): ?string
     {
         if (! $isWorkingDay) {
-            return 'no_laborable';
+            // Distinguirlo del domingo de siempre: "es festivo" y "tu tecnico no
+            // trabaja los domingos" piden respuestas distintas del cliente.
+            return $exception ? 'excepcion' : 'no_laborable';
         }
 
         if ($found['slots']) {

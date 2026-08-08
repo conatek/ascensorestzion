@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Equipment;
 use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
+use App\Models\ScheduleException;
 use App\Models\ScheduleSetting;
 use App\Models\ServiceReport;
 use App\Models\TechnicianSchedule;
@@ -32,14 +33,19 @@ use Illuminate\Validation\ValidationException;
 class ScheduleService
 {
     /**
-     * Jornada efectiva de un tecnico: la global con los overrides propios encima.
+     * Jornada efectiva de un tecnico: la global con los overrides propios encima y,
+     * si se pasa fecha, la excepcion de ese dia por encima de todo.
      *
      * Cada campo se resuelve por separado a proposito, para poder cambiarle a un
      * tecnico solo el horario y que siga heredando los dias.
      *
-     * @return array{days: int[], start: string, end: string, break_start: ?string, break_end: ?string}
+     * Sin `$date` devuelve la jornada habitual, que es lo que necesitan el grid del
+     * calendario y la ficha del tecnico. Con fecha devuelve la del dia concreto,
+     * que es lo que tienen que mirar la validacion y la disponibilidad.
+     *
+     * @return array{days: int[], start: string, end: string, break_start: ?string, break_end: ?string, exception: ?array{type: string, note: ?string}}
      */
-    public function workingWindowFor(User $technician): array
+    public function workingWindowFor(User $technician, ?CarbonImmutable $date = null): array
     {
         $hours = ScheduleSetting::get('working_hours');
         $break = ScheduleSetting::get('working_break');
@@ -50,28 +56,70 @@ class ScheduleService
             'end' => $hours['end'] ?? '18:00',
             'break_start' => $break['start'] ?? null,
             'break_end' => $break['end'] ?? null,
+            'exception' => null,
         ];
 
         $own = TechnicianSchedule::query()->where('user_id', $technician->id)->first();
 
-        if (! $own || ! $own->enabled) {
+        if ($own && $own->enabled) {
+            if (! empty($own->working_days)) {
+                $window['days'] = $own->working_days;
+            }
+
+            if (! empty($own->working_hours['start']) && ! empty($own->working_hours['end'])) {
+                $window['start'] = $own->working_hours['start'];
+                $window['end'] = $own->working_hours['end'];
+            }
+
+            // El descanso se sobrescribe en bloque: una fila con break_start nulo es un
+            // tecnico SIN descanso, no un tecnico que hereda el descanso global. Si no
+            // fuera asi no habria forma de quitarselo a nadie.
+            $window['break_start'] = $this->normalizeTime($own->break_start);
+            $window['break_end'] = $this->normalizeTime($own->break_end);
+        }
+
+        if (! $date) {
             return $window;
         }
 
-        if (! empty($own->working_days)) {
-            $window['days'] = $own->working_days;
+        return $this->applyException(
+            $window,
+            ScheduleException::resolveFor($technician->id, $date),
+            $date,
+        );
+    }
+
+    /**
+     * Superpone la excepcion de un dia sobre la jornada habitual.
+     *
+     * Va suelto y es publico porque el calculo de disponibilidad recorre treinta
+     * dias con las excepciones ya cargadas de una vez: si tuviera que llamar a
+     * workingWindowFor() por dia serian sesenta consultas para pintar unos chips.
+     *
+     * @param  array<string, mixed>  $window
+     * @return array<string, mixed>
+     */
+    public function applyException(array $window, ?ScheduleException $exception, CarbonImmutable $date): array
+    {
+        if (! $exception) {
+            return $window;
         }
 
-        if (! empty($own->working_hours['start']) && ! empty($own->working_hours['end'])) {
-            $window['start'] = $own->working_hours['start'];
-            $window['end'] = $own->working_hours['end'];
+        if ($exception->isClosed()) {
+            // Sin dias laborables no cabe nada: la validacion y la disponibilidad
+            // ya tratan "no es un dia laborable" como no agendable.
+            $window['days'] = [];
+            $window['exception'] = ['type' => 'cerrado', 'note' => $exception->note];
+
+            return $window;
         }
 
-        // El descanso se sobrescribe en bloque: una fila con break_start nulo es un
-        // tecnico SIN descanso, no un tecnico que hereda el descanso global. Si no
-        // fuera asi no habria forma de quitarselo a nadie.
-        $window['break_start'] = $this->normalizeTime($own->break_start);
-        $window['break_end'] = $this->normalizeTime($own->break_end);
+        // Un horario especial habilita el dia aunque no fuera laborable — que es
+        // justo el caso de "este sabado sí se trabaja".
+        $window['days'] = array_values(array_unique([...$window['days'], $date->dayOfWeekIso]));
+        $window['start'] = $exception->working_hours['start'];
+        $window['end'] = $exception->working_hours['end'];
+        $window['exception'] = ['type' => 'personalizada', 'note' => $exception->note];
 
         return $window;
     }
@@ -564,12 +612,18 @@ class ScheduleService
             return ['La visita debe empezar y terminar el mismo dia.'];
         }
 
-        $window = $this->workingWindowFor($technician);
+        // Con la fecha: si ese dia tiene excepcion (festivo, vacaciones, un sabado
+        // habilitado) manda la excepcion, no la jornada habitual.
+        $window = $this->workingWindowFor($technician, $start);
         $errors = [];
 
         if (! in_array($start->dayOfWeekIso, $window['days'], true)) {
-            $errors[] = sprintf('%s no es un dia laborable para %s.',
-                $this->dayName($start->dayOfWeekIso), $technician->name);
+            $errors[] = $window['exception']
+                ? sprintf('El %s no se trabaja%s.',
+                    $start->format('d/m/Y'),
+                    $window['exception']['note'] ? " ({$window['exception']['note']})" : '')
+                : sprintf('%s no es un dia laborable para %s.',
+                    $this->dayName($start->dayOfWeekIso), $technician->name);
         }
 
         $dayStart = $this->atTime($start, $window['start']);

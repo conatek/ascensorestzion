@@ -22,6 +22,7 @@ use App\Http\Controllers\ReportConfirmationController;
 use App\Http\Controllers\RescheduleRequestController;
 use App\Http\Controllers\ScheduleAvailabilityController;
 use App\Http\Controllers\ScheduledVisitController;
+use App\Http\Controllers\ScheduleExceptionController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\SiteController;
@@ -134,6 +135,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('technicians/{user}/schedule', [TechnicianScheduleController::class, 'show']);
         Route::put('technicians/{user}/schedule', [TechnicianScheduleController::class, 'update']);
         Route::delete('technicians/{user}/schedule', [TechnicianScheduleController::class, 'destroy']);
+
+        // Festivos (sin tecnico) y vacaciones o turnos sueltos (con tecnico)
+        Route::get('exceptions', [ScheduleExceptionController::class, 'index']);
+        Route::post('exceptions', [ScheduleExceptionController::class, 'store']);
+        Route::delete('exceptions/{scheduleException}', [ScheduleExceptionController::class, 'destroy']);
 
         Route::get('equipment/{equipment}/duration', [ScheduledVisitController::class, 'equipmentDuration']);
 
