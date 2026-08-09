@@ -24,7 +24,7 @@
                         <i class="fa fa-arrows-alt-v"></i>
                     </div>
                     <div class="dash-stat-info">
-                        <span class="dash-stat-number">{{ stats.active_equipments ?? 0 }}</span>
+                        <span class="dash-stat-number">{{ stats.active_equipment ?? 0 }}</span>
                         <span class="dash-stat-label">Equipos Activos</span>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                         <i class="fa fa-exclamation-triangle"></i>
                     </div>
                     <div class="dash-stat-info">
-                        <span class="dash-stat-number">{{ stats.open_rstc ?? 0 }}</span>
+                        <span class="dash-stat-number">{{ stats.rstc_open ?? 0 }}</span>
                         <span class="dash-stat-label">RSTC Abiertos</span>
                     </div>
                 </div>
@@ -279,7 +279,12 @@ export default {
     methods: {
         formatDate(dateStr) {
             if (!dateStr) return '-';
-            const date = new Date(dateStr + 'T00:00:00');
+            // service_date llega como ISO completa ("2026-08-07T00:00:00.000000Z"),
+            // no como "2026-08-07": concatenarle la hora daba "Invalid Date" en
+            // toda la columna. Se recorta a los diez primeros caracteres para
+            // leer el dia en local y no correrlo por la zona horaria.
+            const date = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
+            if (Number.isNaN(date.getTime())) return '-';
             return date.toLocaleDateString('es-VE', {
                 day: '2-digit',
                 month: '2-digit',

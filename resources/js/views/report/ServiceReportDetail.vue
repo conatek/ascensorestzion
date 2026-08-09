@@ -775,6 +775,10 @@ export default {
                 edited:          'Editado',
                 signed_tech:     'Firmado por tecnico',
                 signed_customer: 'Firmado por cliente',
+                // Sin esta linea la traza mostraba la clave cruda,
+                // «confirmed_reception», en el ultimo evento de todo informe
+                // cerrado, que es justo el que se le enseña al cliente.
+                confirmed_reception: 'Recepcion confirmada por el cliente',
                 reopened:        'Reabierto',
                 cancelled:       'Anulado',
             },
