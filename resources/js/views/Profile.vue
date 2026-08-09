@@ -369,6 +369,9 @@ export default {
     bottom: -6px;
     width: 28px;
     height: 28px;
+    /* custom-cntk.css le pone min-height:44px a TODO button en movil, como area
+       tactil. En un boton redondo de tamaño fijo eso lo convierte en un ovalo. */
+    min-height: 0;
     border-radius: 50%;
     background: #30ab0a;
     color: #fff;
@@ -388,6 +391,7 @@ export default {
     top: -6px;
     width: 24px;
     height: 24px;
+    min-height: 0;   /* ver .avatar-edit */
     border-radius: 50%;
     background: #ba2831;
     color: #fff;

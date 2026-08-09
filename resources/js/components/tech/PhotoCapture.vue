@@ -202,6 +202,9 @@ export default {
     right: 2px;
     width: 20px;
     height: 20px;
+    /* Sin esto sale ovalada: custom-cntk.css fuerza min-height:44px a todo
+       button en movil. */
+    min-height: 0;
     background: rgba(186, 40, 49, 0.9);
     border: none;
     border-radius: 50%;

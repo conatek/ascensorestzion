@@ -213,7 +213,10 @@ background: rgba(250, 251, 252, 0.1); }
    MOBILE-FIRST GLOBAL ENHANCEMENTS
    ============================================================ */
 
-/* Touch-friendly targets: minimo 44px */
+/* Touch-friendly targets: minimo 44px
+   OJO: alcanza a TODO <button>. Un boton redondo de tamaño fijo mas pequeño que
+   44px sale ovalado, porque conserva su width y estira el height. Si creas uno,
+   ponle `min-height: 0` en su propia regla (ver .avatar-edit en Profile.vue). */
 @media (max-width: 768px) {
     .btn, button, a.nav-link, .dropdown-item, .form-select, .form-control {
         min-height: 44px;
