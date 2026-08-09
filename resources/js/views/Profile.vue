@@ -528,6 +528,13 @@ export default {
 .field {
     display: flex;
     flex-direction: column;
+    /* Sin esto, en movil los campos se salen de la tarjeta por la derecha.
+       Un elemento de rejilla trae `min-width: auto`, o sea que no encoge por
+       debajo de su contenido minimo, y el contenido minimo de `.field--split`
+       son DOS inputs con su ancho intrinseco (unos 20 caracteres cada uno).
+       Con eso la columna 1fr se estira a 444 px dentro de una tarjeta de 318 y
+       arrastra a todos los demas campos con ella. */
+    min-width: 0;
 }
 
 .field--full {
@@ -538,11 +545,13 @@ export default {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
+    min-width: 0;
 }
 
 .field--split > div {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .field label,
@@ -557,6 +566,9 @@ export default {
 .field select,
 .field--split input,
 .field--split select {
+    /* El ancho lo manda la columna, no el atributo `size` del input. */
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.6rem 0.75rem;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
