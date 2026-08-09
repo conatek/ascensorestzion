@@ -6,9 +6,11 @@ use App\Models\Card;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\Service;
+use App\Models\ServiceReport;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 /**
  * Completa la base de demostracion con lo que hace falta para fotografiar los
@@ -54,9 +56,72 @@ class DemoManualesSeeder extends Seeder
         $this->copiarRetratos();
         $this->asignarFotos();
         $this->nombrarSuper();
+        $this->sembrarFirmasPendientes();
         $this->sembrarTarjetas();
         $this->sembrarServicios();
         $this->sembrarProductos();
+    }
+
+    /**
+     * Deja al tecnico con dos informes firmados por el, esperando la firma del
+     * cliente, de una misma visita reciente.
+     *
+     * Es el escenario de la firma diferida en lote —dos equipos de una sede en
+     * una sola visita— y sin el la pantalla "Firmas pendientes" sale vacia. En la
+     * base sembrada los ocho informes en ese estado no tienen visit_uuid y son de
+     * hace mas de noventa dias, asi que el endpoint los descarta.
+     */
+    private function sembrarFirmasPendientes(): void
+    {
+        $tecnico = User::where('email', 'tecnico1@ascensorestzion.com')->first();
+
+        if (! $tecnico) {
+            return;
+        }
+
+        $yaHay = ServiceReport::where('technician_id', $tecnico->id)
+            ->where('status', 'firmado_tecnico')
+            ->whereNotNull('visit_uuid')
+            ->where('service_date', '>=', now()->subDays(80))
+            ->count();
+
+        if ($yaHay >= 2) {
+            $this->command->info('Firmas pendientes: ya hay '.$yaHay);
+
+            return;
+        }
+
+        // Dos equipos de la misma sede: es lo que hace interesante el lote.
+        $candidatos = ServiceReport::where('technician_id', $tecnico->id)
+            ->where('status', 'cerrado')
+            ->whereNotNull('site_id')
+            ->orderByDesc('service_date')
+            ->get()
+            ->groupBy('site_id')
+            ->first(fn ($grupo) => $grupo->count() >= 2)
+            ?->take(2);
+
+        if (! $candidatos || $candidatos->count() < 2) {
+            $this->command->warn('Sin informes para preparar las firmas pendientes.');
+
+            return;
+        }
+
+        $uuid = (string) Str::uuid();
+
+        foreach ($candidatos as $informe) {
+            $informe->update([
+                'status' => 'firmado_tecnico',
+                'visit_uuid' => $uuid,
+                'service_date' => now()->subDay()->toDateString(),
+                'customer_signature_path' => null,
+                'customer_signed_at' => null,
+                'customer_signer_name' => null,
+                'customer_signer_document' => null,
+            ]);
+        }
+
+        $this->command->info('Firmas pendientes preparadas: '.$candidatos->count().' informes, visita '.substr($uuid, 0, 8));
     }
 
     /**
