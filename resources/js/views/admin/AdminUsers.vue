@@ -503,13 +503,28 @@ export default {
         },
 
         async confirmDelete(user) {
-            if (!confirm(`¿Eliminar al usuario "${user.name}"? Esta acción no se puede deshacer.`)) return;
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: '¿Eliminar usuario?',
+                text: `Se eliminará a "${user.name}". Esta acción no se puede deshacer.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
+
             this.deletingId = user.id;
             try {
                 await adminService.deleteUser(user.id);
                 await this.load();
+                this.$swal.fire({ icon: 'success', title: 'Usuario eliminado', timer: 1600, showConfirmButton: false });
             } catch (err) {
-                alert(err.response?.data?.message || 'No se pudo eliminar el usuario.');
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el usuario.',
+                });
             } finally {
                 this.deletingId = null;
             }

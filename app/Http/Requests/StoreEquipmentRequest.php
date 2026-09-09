@@ -30,7 +30,7 @@ class StoreEquipmentRequest extends FormRequest
             'speed_mps' => ['nullable', 'numeric', 'min:0'],
             'installation_date' => ['nullable', 'date'],
             'commissioning_date' => ['nullable', 'date'],
-            'contract_type' => ['nullable', Rule::in(['mantenimiento', 'garantia', 'por_llamada', 'integral'])],
+            'contract_type' => ['nullable', Rule::in(['mantenimiento', 'correctivo', 'modernizacion', 'instalacion', 'integral'])],
             'contract_start' => ['nullable', 'date'],
             'contract_end' => ['nullable', 'date', 'after_or_equal:contract_start'],
             'maintenance_frequency_days' => ['nullable', 'integer', 'min:1'],

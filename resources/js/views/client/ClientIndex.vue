@@ -157,31 +157,6 @@
                 </table>
             </div>
         </div>
-
-        <!-- Modal confirmacion de borrado -->
-        <div v-if="toDelete" class="modal-overlay" @click.self="toDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar cliente</h4>
-                <p class="modal-message">
-                    ¿Estas seguro de eliminar <strong>{{ toDelete.business_name }}</strong>?
-                    Se eliminaran tambien todas sus sedes y equipos asociados.
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="toDelete = null">
-                        Cancelar
-                    </button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteClient" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -199,8 +174,6 @@ export default {
             filteredClients: [],
             loading: true,
             search: '',
-            toDelete: null,
-            deleting: false,
             impersonating: null,
         };
     },
@@ -235,19 +208,29 @@ export default {
             );
         },
 
-        confirmDelete(client) {
-            this.toDelete = client;
-        },
+        async confirmDelete(client) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar cliente',
+                text: `¿Eliminar "${client.business_name}"? Se eliminarán también todas sus sedes y equipos asociados.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteClient() {
-            this.deleting = true;
             try {
-                await clientService.destroy(this.toDelete.id);
-                this.clients = this.clients.filter(c => c.id !== this.toDelete.id);
+                await clientService.destroy(client.id);
+                this.clients = this.clients.filter(c => c.id !== client.id);
                 this.filterClients();
-                this.toDelete = null;
-            } finally {
-                this.deleting = false;
+                this.$swal.fire({ icon: 'success', title: 'Cliente eliminado', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el cliente.',
+                });
             }
         },
 

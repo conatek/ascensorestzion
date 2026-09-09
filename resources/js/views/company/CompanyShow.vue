@@ -286,72 +286,6 @@
                 </div>
             </div>
         </template>
-
-        <!-- Modal eliminar tarjeta -->
-        <div v-if="cardToDelete" class="modal-overlay" @click.self="cardToDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar tarjeta</h4>
-                <p class="modal-message">
-                    ¿Eliminar la tarjeta de <strong>{{ cardToDelete.first_name }} {{ cardToDelete.last_name }}</strong>?
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="cardToDelete = null">Cancelar</button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteCard" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal eliminar servicio -->
-        <div v-if="serviceToDelete" class="modal-overlay" @click.self="serviceToDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar servicio</h4>
-                <p class="modal-message">
-                    ¿Eliminar el servicio <strong>{{ serviceToDelete.name }}</strong>?
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="serviceToDelete = null">Cancelar</button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteService" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal eliminar producto -->
-        <div v-if="productToDelete" class="modal-overlay" @click.self="productToDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar producto</h4>
-                <p class="modal-message">
-                    ¿Eliminar el producto <strong>{{ productToDelete.name }}</strong>?
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="productToDelete = null">Cancelar</button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteProduct" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -369,10 +303,6 @@ export default {
         return {
             company: {},
             loading: true,
-            cardToDelete: null,
-            serviceToDelete: null,
-            productToDelete: null,
-            deleting: false,
         };
     },
 
@@ -468,48 +398,78 @@ export default {
             return parseFloat(price).toFixed(2);
         },
 
-        confirmDeleteCard(card) {
-            this.cardToDelete = card;
-        },
+        async confirmDeleteCard(card) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar tarjeta',
+                text: `¿Eliminar la tarjeta de "${card.first_name} ${card.last_name}"?`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteCard() {
-            this.deleting = true;
             try {
-                await cardService.destroy(this.company.id, this.cardToDelete.id);
-                this.company.cards = this.company.cards.filter(c => c.id !== this.cardToDelete.id);
-                this.cardToDelete = null;
-            } finally {
-                this.deleting = false;
+                await cardService.destroy(this.company.id, card.id);
+                this.company.cards = this.company.cards.filter(c => c.id !== card.id);
+                this.$swal.fire({ icon: 'success', title: 'Tarjeta eliminada', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar la tarjeta.',
+                });
             }
         },
 
-        confirmDeleteService(service) {
-            this.serviceToDelete = service;
-        },
+        async confirmDeleteService(service) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar servicio',
+                text: `¿Eliminar el servicio "${service.name}"?`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteService() {
-            this.deleting = true;
             try {
-                await serviceService.destroy(this.company.id, this.serviceToDelete.id);
-                this.company.services = this.company.services.filter(s => s.id !== this.serviceToDelete.id);
-                this.serviceToDelete = null;
-            } finally {
-                this.deleting = false;
+                await serviceService.destroy(this.company.id, service.id);
+                this.company.services = this.company.services.filter(s => s.id !== service.id);
+                this.$swal.fire({ icon: 'success', title: 'Servicio eliminado', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el servicio.',
+                });
             }
         },
 
-        confirmDeleteProduct(product) {
-            this.productToDelete = product;
-        },
+        async confirmDeleteProduct(product) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar producto',
+                text: `¿Eliminar el producto "${product.name}"?`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteProduct() {
-            this.deleting = true;
             try {
-                await productService.destroy(this.company.id, this.productToDelete.id);
-                this.company.products = this.company.products.filter(p => p.id !== this.productToDelete.id);
-                this.productToDelete = null;
-            } finally {
-                this.deleting = false;
+                await productService.destroy(this.company.id, product.id);
+                this.company.products = this.company.products.filter(p => p.id !== product.id);
+                this.$swal.fire({ icon: 'success', title: 'Producto eliminado', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el producto.',
+                });
             }
         },
     },

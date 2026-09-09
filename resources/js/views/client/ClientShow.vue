@@ -177,29 +177,6 @@
                 </div>
             </div>
         </template>
-
-        <!-- Modal eliminar sede -->
-        <div v-if="siteToDelete" class="modal-overlay" @click.self="siteToDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar sede</h4>
-                <p class="modal-message">
-                    ¿Eliminar la sede <strong>{{ siteToDelete.name }}</strong>?
-                    Se eliminaran tambien todos los equipos asociados.
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="siteToDelete = null">Cancelar</button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteSite" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -214,8 +191,6 @@ export default {
         return {
             client: {},
             loading: true,
-            siteToDelete: null,
-            deleting: false,
         };
     },
 
@@ -247,18 +222,28 @@ export default {
             }
         },
 
-        confirmDeleteSite(site) {
-            this.siteToDelete = site;
-        },
+        async confirmDeleteSite(site) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar sede',
+                text: `¿Eliminar la sede "${site.name}"? Se eliminarán también todos los equipos asociados.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteSite() {
-            this.deleting = true;
             try {
-                await siteService.destroy(this.client.id, this.siteToDelete.id);
-                this.client.sites = this.client.sites.filter(s => s.id !== this.siteToDelete.id);
-                this.siteToDelete = null;
-            } finally {
-                this.deleting = false;
+                await siteService.destroy(this.client.id, site.id);
+                this.client.sites = this.client.sites.filter(s => s.id !== site.id);
+                this.$swal.fire({ icon: 'success', title: 'Sede eliminada', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar la sede.',
+                });
             }
         },
     },

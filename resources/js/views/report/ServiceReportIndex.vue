@@ -184,31 +184,6 @@
                 </table>
             </div>
         </div>
-
-        <!-- Modal confirmacion de borrado -->
-        <div v-if="toDelete" class="modal-overlay" @click.self="toDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar reporte</h4>
-                <p class="modal-message">
-                    ¿Estas seguro de eliminar el reporte <strong>{{ toDelete.report_number }}</strong>?
-                    Esta accion no se puede deshacer.
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="toDelete = null">
-                        Cancelar
-                    </button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteReport" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -224,8 +199,6 @@ export default {
             reports: [],
             clients: [],
             loading: true,
-            toDelete: null,
-            deleting: false,
             pdfLoading: null,
             exporting: false,
             searchTimeout: null,
@@ -363,18 +336,28 @@ export default {
             }
         },
 
-        confirmDelete(report) {
-            this.toDelete = report;
-        },
+        async confirmDelete(report) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar reporte',
+                text: `¿Eliminar el reporte "${report.report_number}"? Esta acción no se puede deshacer.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteReport() {
-            this.deleting = true;
             try {
-                await reportService.destroy(this.toDelete.id);
-                this.reports = this.reports.filter(r => r.id !== this.toDelete.id);
-                this.toDelete = null;
-            } finally {
-                this.deleting = false;
+                await reportService.destroy(report.id);
+                this.reports = this.reports.filter(r => r.id !== report.id);
+                this.$swal.fire({ icon: 'success', title: 'Reporte eliminado', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el reporte.',
+                });
             }
         },
 

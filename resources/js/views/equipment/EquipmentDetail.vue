@@ -659,6 +659,8 @@ export default {
             contractLabels: {
                 mantenimiento: 'Mantenimiento',
                 correctivo: 'Correctivo',
+                modernizacion: 'Modernización',
+                instalacion: 'Instalación',
                 integral: 'Integral',
             },
             reportStatusLabels: {
@@ -913,14 +915,24 @@ export default {
         },
 
         async confirmDeleteAttachment(att) {
-            if (!confirm('¿Eliminar este archivo adjunto?')) return;
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: '¿Eliminar archivo adjunto?',
+                text: 'Esta acción no se puede deshacer.',
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
+
             att.deleting = true;
             try {
                 await equipmentService.deleteAttachment(this.equipment.id, att.id);
                 const resp = await equipmentService.get(this.equipment.id);
                 this.equipment = resp.data;
             } catch (e) {
-                alert('Error al eliminar el archivo.');
+                this.$swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: 'Error al eliminar el archivo.' });
             } finally {
                 att.deleting = false;
             }

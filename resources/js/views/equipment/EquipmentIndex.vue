@@ -156,31 +156,6 @@
                 </table>
             </div>
         </div>
-
-        <!-- Modal confirmacion de borrado -->
-        <div v-if="toDelete" class="modal-overlay" @click.self="toDelete = null">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Eliminar equipo</h4>
-                <p class="modal-message">
-                    ¿Estas seguro de eliminar el equipo <strong>{{ toDelete.internal_code }}</strong>?
-                    Esta accion no se puede deshacer.
-                </p>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="toDelete = null">
-                        Cancelar
-                    </button>
-                    <button class="modal-btn modal-btn-danger" @click="deleteEquipment" :disabled="deleting">
-                        <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -197,8 +172,6 @@ export default {
             equipments: [],
             clients: [],
             loading: true,
-            toDelete: null,
-            deleting: false,
             downloadingQr: false,
             searchTimeout: null,
             filters: {
@@ -291,18 +264,28 @@ export default {
             }, 400);
         },
 
-        confirmDelete(equipment) {
-            this.toDelete = equipment;
-        },
+        async confirmDelete(equipment) {
+            const res = await this.$swal.fire({
+                icon: 'warning',
+                title: 'Eliminar equipo',
+                text: `¿Eliminar el equipo "${equipment.internal_code}"? Esta acción no se puede deshacer.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ba2831',
+            });
+            if (!res.isConfirmed) return;
 
-        async deleteEquipment() {
-            this.deleting = true;
             try {
-                await equipmentService.destroy(this.toDelete.id);
-                this.equipments = this.equipments.filter(e => e.id !== this.toDelete.id);
-                this.toDelete = null;
-            } finally {
-                this.deleting = false;
+                await equipmentService.destroy(equipment.id);
+                this.equipments = this.equipments.filter(e => e.id !== equipment.id);
+                this.$swal.fire({ icon: 'success', title: 'Equipo eliminado', timer: 1600, showConfirmButton: false });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo eliminar',
+                    text: err.response?.data?.message || 'No se pudo eliminar el equipo.',
+                });
             }
         },
     },

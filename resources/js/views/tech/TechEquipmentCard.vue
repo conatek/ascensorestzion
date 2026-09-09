@@ -181,8 +181,9 @@ const STATUS_LABELS = {
 
 const CONTRACT_LABELS = {
     mantenimiento: 'Mantenimiento',
-    garantia: 'Garantía',
-    por_llamada: 'Por Llamada',
+    correctivo: 'Correctivo',
+    modernizacion: 'Modernización',
+    instalacion: 'Instalación',
     integral: 'Integral',
 };
 

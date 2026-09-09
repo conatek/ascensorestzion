@@ -130,6 +130,8 @@
                                     <option value="">Sin contrato</option>
                                     <option value="mantenimiento">Mantenimiento</option>
                                     <option value="correctivo">Correctivo</option>
+                                    <option value="modernizacion">Modernización</option>
+                                    <option value="instalacion">Instalación</option>
                                     <option value="integral">Integral</option>
                                 </select>
                                 <span v-if="errors.contract_type" class="error-text">{{ errors.contract_type[0] }}</span>
