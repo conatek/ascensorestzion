@@ -21,24 +21,29 @@
             :services="company.services || []"
             :products="company.products || []"
         />
+
+        <!-- Flecha "hay más contenido abajo": por ahora solo en la plantilla Cristal -->
+        <ScrollHint v-if="templateName === 'cristal'" />
     </div>
 </template>
 
 <script>
 import publicCardService from '@/services/publicCardService.js';
-import TemplateModern from '@/components/templates/TemplateModern.vue';
-import TemplateCreative from '@/components/templates/TemplateCreative.vue';
-import TemplateCyber from '@/components/templates/TemplateCyber.vue';
-import TemplateVibrant from '@/components/templates/TemplateVibrant.vue';
+import { defineAsyncComponent } from 'vue';
+import ScrollHint from '@/components/shared/ScrollHint.vue';
 
+// Carga perezosa: cada plantilla va a su propio chunk y no engorda el bundle
+// principal (roza el limite de precache de la PWA, 2 MiB).
 export default {
     name: 'CardPublic',
 
     components: {
-        TemplateModern,
-        TemplateCreative,
-        TemplateCyber,
-        TemplateVibrant,
+        ScrollHint,
+        TemplateModern: defineAsyncComponent(() => import('@/components/templates/TemplateModern.vue')),
+        TemplateCristal: defineAsyncComponent(() => import('@/components/templates/TemplateCristal.vue')),
+        TemplateCreative: defineAsyncComponent(() => import('@/components/templates/TemplateCreative.vue')),
+        TemplateCyber: defineAsyncComponent(() => import('@/components/templates/TemplateCyber.vue')),
+        TemplateVibrant: defineAsyncComponent(() => import('@/components/templates/TemplateVibrant.vue')),
     },
 
     data() {
@@ -56,6 +61,7 @@ export default {
         currentTemplateComponent() {
             const templates = {
                 modern: 'TemplateModern',
+                cristal: 'TemplateCristal',
                 creative: 'TemplateCreative',
                 cyber: 'TemplateCyber',
                 vibrant: 'TemplateVibrant',

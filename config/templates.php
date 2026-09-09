@@ -1,6 +1,6 @@
 <?php
 
-return [
+$templates = [
     /*
     |--------------------------------------------------------------------------
     | Plantillas Disponibles
@@ -869,3 +869,70 @@ return [
         ],
     ],
 ];
+
+/*
+|--------------------------------------------------------------------------
+| Plantilla Cristal (derivada de Moderna)
+|--------------------------------------------------------------------------
+|
+| Reutiliza TODOS los controles de Moderna y les añade dos secciones nuevas:
+| el efecto cristal (glass + luces ambientales) y un video vertical. Se deriva
+| en PHP para no duplicar el schema; el fondo por defecto se pone oscuro para
+| que el cristal y las luces luzcan.
+|
+*/
+$templates['available']['cristal'] = [
+    'name' => 'Cristal',
+    'description' => 'Moderna con efecto cristal, luces ambientales y video vertical',
+    'component' => 'TemplateCristal',
+    'thumbnail' => '/img/templates/modern.png',
+];
+
+$cristalSchema = $templates['schemas']['modern'];
+$cristalSchema['general']['colorFondo']['value'] = '#0f172a';
+// Fondo oscuro por defecto -> texto claro para que se lea sobre el cristal.
+$cristalSchema['profile']['nombreColor']['value'] = '#f5f5f5';
+$cristalSchema['profile']['apellidoColor']['value'] = '#e2e8f0';
+$cristalSchema['profile']['cargoColor']['value'] = '#cbd5e1';
+if (isset($cristalSchema['footer']['colorFuente'])) {
+    $cristalSchema['footer']['colorFuente']['value'] = '#e5e7eb';
+}
+$cristalSchema['glass'] = [
+    '_label' => 'Efecto Cristal',
+    'activar' => [
+        'type' => 'toggle',
+        'label' => 'Activar efecto cristal',
+        'value' => true,
+    ],
+    'colorLuz1' => [
+        'type' => 'color',
+        'label' => 'Color Luz 1',
+        'value' => '#30ab0a',
+    ],
+    'colorLuz2' => [
+        'type' => 'color',
+        'label' => 'Color Luz 2',
+        'value' => '#ba2831',
+    ],
+];
+$cristalSchema['video'] = [
+    '_label' => 'Video',
+    'mostrar' => [
+        'type' => 'toggle',
+        'label' => 'Mostrar botón de video',
+        'value' => true,
+    ],
+    'urlId' => [
+        'type' => 'text',
+        'label' => 'URL o ID de YouTube',
+        'value' => '',
+    ],
+    'textoBoton' => [
+        'type' => 'text',
+        'label' => 'Texto del botón',
+        'value' => 'Ver video',
+    ],
+];
+$templates['schemas']['cristal'] = $cristalSchema;
+
+return $templates;

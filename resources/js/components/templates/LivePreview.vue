@@ -12,19 +12,19 @@
 </template>
 
 <script>
-import TemplateModern from './TemplateModern.vue'
-import TemplateCreative from './TemplateCreative.vue'
-import TemplateCyber from './TemplateCyber.vue'
-import TemplateVibrant from './TemplateVibrant.vue'
+import { defineAsyncComponent } from 'vue'
 
+// Carga perezosa: cada plantilla en su propio chunk, para no engordar el bundle
+// principal (roza el limite de precache de la PWA, 2 MiB).
 export default {
     name: 'LivePreview',
 
     components: {
-        TemplateModern,
-        TemplateCreative,
-        TemplateCyber,
-        TemplateVibrant,
+        TemplateModern: defineAsyncComponent(() => import('./TemplateModern.vue')),
+        TemplateCristal: defineAsyncComponent(() => import('./TemplateCristal.vue')),
+        TemplateCreative: defineAsyncComponent(() => import('./TemplateCreative.vue')),
+        TemplateCyber: defineAsyncComponent(() => import('./TemplateCyber.vue')),
+        TemplateVibrant: defineAsyncComponent(() => import('./TemplateVibrant.vue')),
     },
 
     props: {
@@ -90,6 +90,7 @@ export default {
         currentTemplateComponent() {
             const templates = {
                 modern: 'TemplateModern',
+                cristal: 'TemplateCristal',
                 creative: 'TemplateCreative',
                 cyber: 'TemplateCyber',
                 vibrant: 'TemplateVibrant',
