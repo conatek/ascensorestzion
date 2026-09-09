@@ -71,9 +71,9 @@ class ReportConfirmationController extends Controller
             'created_at' => now(),
         ]);
 
-        // Notificar a masters y al tecnico
-        $masters = User::role('master')->get();
-        Notification::send($masters, new ReportReceptionConfirmedNotification($report));
+        // Notificar al equipo de operación (master, coordinación y super activos) y al técnico
+        $recipients = User::role(['master', 'coordinator', 'super'])->where('active', true)->get();
+        Notification::send($recipients, new ReportReceptionConfirmedNotification($report));
 
         if ($report->technician_id) {
             $technician = User::find($report->technician_id);

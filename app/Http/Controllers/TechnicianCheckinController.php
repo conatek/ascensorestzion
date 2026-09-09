@@ -119,13 +119,13 @@ class TechnicianCheckinController extends Controller
             CarbonImmutable::parse($checkedInAt),
         );
 
-        // Notificar a usuarios master
-        $masterIds = User::role('master')->pluck('id')->toArray();
-        $masters = User::role('master')->get();
+        // Notificar al equipo de operación: master, coordinación y super (activos).
+        $recipients = User::role(['master', 'coordinator', 'super'])->where('active', true)->get();
+        $recipientIds = $recipients->pluck('id')->toArray();
 
-        if ($masterIds) {
-            TechnicianCheckedIn::dispatch($checkin, $masterIds);
-            Notification::send($masters, new TechnicianCheckedInNotification($checkin));
+        if ($recipientIds) {
+            TechnicianCheckedIn::dispatch($checkin, $recipientIds);
+            Notification::send($recipients, new TechnicianCheckedInNotification($checkin));
         }
 
         return $this->checkinResponse($checkin, 201);

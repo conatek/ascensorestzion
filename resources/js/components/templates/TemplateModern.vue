@@ -369,12 +369,25 @@ export default {
             }
         },
 
+        // ¿El fondo detrás del perfil es oscuro? Sirve para elegir un color de texto
+        // por defecto legible: sin esto, el nombre en gris oscuro sobre un fondo negro
+        // queda casi ilegible. Solo afecta a los valores por defecto; si el usuario
+        // fijó un color propio, se respeta.
+        profileIsDark() {
+            const profile = this.customization?.profile || {}
+            const general = this.customization?.general || {}
+            const bg = (profile.colorFondo && profile.colorFondo !== 'transparent')
+                ? profile.colorFondo
+                : (general.colorFondo || '#ffffff')
+            return this.isDarkColor(bg)
+        },
+
         // Estilo del nombre
         firstNameStyle() {
             const profile = this.customization?.profile || {}
             return {
                 fontSize: `${profile.nombreTamano || 1.5}em`,
-                color: profile.nombreColor || '#333333',
+                color: profile.nombreColor || (this.profileIsDark ? '#f5f5f5' : '#333333'),
                 fontWeight: profile.nombrePeso || '600',
             }
         },
@@ -384,7 +397,7 @@ export default {
             const profile = this.customization?.profile || {}
             return {
                 fontSize: `${profile.apellidoTamano || 1.5}em`,
-                color: profile.apellidoColor || '#555555',
+                color: profile.apellidoColor || (this.profileIsDark ? '#e2e2e2' : '#555555'),
                 fontWeight: profile.apellidoPeso || '400',
             }
         },
@@ -394,7 +407,7 @@ export default {
             const profile = this.customization?.profile || {}
             return {
                 fontSize: `${profile.cargoTamano || 1}em`,
-                color: profile.cargoColor || '#606060',
+                color: profile.cargoColor || (this.profileIsDark ? '#cbcbcb' : '#606060'),
                 fontWeight: profile.cargoPeso || '400',
             }
         },
@@ -493,6 +506,32 @@ export default {
     },
 
     methods: {
+        // Devuelve true si el color (hex #rgb/#rrggbb o rgb()/rgba()) es oscuro,
+        // según su luminancia percibida. Ante un valor no interpretable asume claro.
+        isDarkColor(color) {
+            if (!color || typeof color !== 'string') return false
+            let c = color.trim().toLowerCase()
+            if (c === 'transparent' || c === 'none') return false
+
+            let r, g, b
+            if (c[0] === '#') {
+                c = c.slice(1)
+                if (c.length === 3) c = c.split('').map(ch => ch + ch).join('')
+                if (c.length !== 6) return false
+                r = parseInt(c.slice(0, 2), 16)
+                g = parseInt(c.slice(2, 4), 16)
+                b = parseInt(c.slice(4, 6), 16)
+            } else {
+                const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/)
+                if (!m) return false
+                r = +m[1]; g = +m[2]; b = +m[3]
+            }
+            if ([r, g, b].some(n => Number.isNaN(n))) return false
+
+            // Luminancia percibida (0..255): oscuro por debajo de 140.
+            return (0.299 * r + 0.587 * g + 0.114 * b) < 140
+        },
+
         toggleAccordion(section) {
             this.openAccordion = this.openAccordion === section ? null : section
         },

@@ -144,12 +144,13 @@ class VisitSignatureController extends Controller
         $reportIds = $reports->pluck('id')->all();
         $first = $reports->first()->fresh(['technician', 'client']);
 
-        $masters = User::role('master')->get();
+        // Equipo de operación: master, coordinación y super (activos).
+        $recipients = User::role(['master', 'coordinator', 'super'])->where('active', true)->get();
 
-        if ($masters->isNotEmpty()) {
+        if ($recipients->isNotEmpty()) {
             // Un solo broadcast: la campana solo lo usa para refrescar.
-            ReportCompleted::dispatch($first, $masters->pluck('id')->all());
-            Notification::send($masters, new VisitReportsCompletedNotification($reportIds, 'master'));
+            ReportCompleted::dispatch($first, $recipients->pluck('id')->all());
+            Notification::send($recipients, new VisitReportsCompletedNotification($reportIds, 'master'));
         }
 
         if ($first->technician) {
