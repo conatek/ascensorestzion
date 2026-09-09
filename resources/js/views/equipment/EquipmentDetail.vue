@@ -104,15 +104,15 @@
                         <div class="info-card">
                             <div class="info-header">
                                 <i class="fa fa-fingerprint"></i>
-                                <span>Identificacion</span>
+                                <span>Identificación</span>
                             </div>
                             <div class="info-body">
                                 <div class="detail-item">
-                                    <span class="detail-label">Codigo interno</span>
+                                    <span class="detail-label">Código interno</span>
                                     <span class="detail-value">{{ equipment.internal_code }}</span>
                                 </div>
                                 <div class="detail-item" v-if="equipment.customer_code">
-                                    <span class="detail-label">Codigo del cliente</span>
+                                    <span class="detail-label">Código del cliente</span>
                                     <span class="detail-value">{{ equipment.customer_code }}</span>
                                 </div>
                                 <div class="detail-item">
@@ -130,7 +130,7 @@
                                     <span class="detail-value">{{ equipment.model }}</span>
                                 </div>
                                 <div class="detail-item" v-if="equipment.serial_number">
-                                    <span class="detail-label">Numero de serie</span>
+                                    <span class="detail-label">Número de serie</span>
                                     <span class="detail-value">{{ equipment.serial_number }}</span>
                                 </div>
                             </div>
@@ -140,7 +140,7 @@
                         <div class="info-card">
                             <div class="info-header">
                                 <i class="fa fa-map-marker-alt"></i>
-                                <span>Ubicacion y Contrato</span>
+                                <span>Ubicación y Contrato</span>
                             </div>
                             <div class="info-body">
                                 <div class="detail-item" v-if="equipment.site?.client">
@@ -301,11 +301,11 @@
                         <!-- Resumen -->
                         <div class="maint-summary">
                             <div class="maint-summary-item">
-                                <span class="maint-summary-label">Ultimo mantenimiento</span>
+                                <span class="maint-summary-label">Último mantenimiento</span>
                                 <span class="maint-summary-value">{{ lastRstpDate ? formatDateShort(lastRstpDate) : 'Sin registro' }}</span>
                             </div>
                             <div class="maint-summary-item">
-                                <span class="maint-summary-label">Proximo esperado</span>
+                                <span class="maint-summary-label">Próximo esperado</span>
                                 <span class="maint-summary-value" :class="{ 'text-danger': isOverdue }">{{ nextMaintenanceDate || 'N/A' }}</span>
                             </div>
                             <div class="maint-summary-item">
@@ -335,7 +335,7 @@
                                             <tr>
                                                 <th>Fecha</th>
                                                 <th>Reporte</th>
-                                                <th>Tecnico</th>
+                                                <th>Técnico</th>
                                                 <th>Estado</th>
                                             </tr>
                                         </thead>
@@ -348,7 +348,7 @@
                                                     </router-link>
                                                     <span v-else>-</span>
                                                 </td>
-                                                <td data-label="Tecnico">{{ r.technician?.name || '-' }}</td>
+                                                <td data-label="Técnico">{{ r.technician?.name || '-' }}</td>
                                                 <td data-label="Estado">
                                                     <span v-if="r.status" class="report-status-badge" :class="'rs-' + r.status">
                                                         {{ reportStatusLabels[r.status] || r.status }}
@@ -637,7 +637,7 @@ export default {
             qrLoading: false,
             qrError: '',
             tabs: [
-                { key: 'ficha', label: 'Ficha Tecnica', icon: 'fa fa-id-card' },
+                { key: 'ficha', label: 'Ficha Técnica', icon: 'fa fa-id-card' },
                 { key: 'vida', label: 'Hoja de Vida', icon: 'fa fa-clipboard-list' },
                 { key: 'mantenimientos', label: 'Mantenimientos', icon: 'fa fa-wrench' },
                 { key: 'adjuntos', label: 'Adjuntos', icon: 'fa fa-paperclip' },
@@ -646,7 +646,7 @@ export default {
             ],
             typeLabels: {
                 ascensor: 'Ascensor',
-                escalera_electrica: 'Escalera Electrica',
+                escalera_electrica: 'Escalera Eléctrica',
                 montacargas: 'Montacargas',
                 otro: 'Otro',
             },

@@ -37,22 +37,22 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <i class="fa fa-fingerprint section-icon"></i>
-                                <span>Identificacion</span>
+                                <span>Identificación</span>
                             </div>
                             <div class="section-body">
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label class="form-label">Codigo interno <span class="required">*</span></label>
+                                        <label class="form-label">Código interno <span class="required">*</span></label>
                                         <input v-model="form.internal_code" type="text" class="form-input"
                                                :class="{ 'has-error': errors.internal_code }"
                                                placeholder="Ej: ASC-001" />
                                         <span v-if="errors.internal_code" class="error-text">{{ errors.internal_code[0] }}</span>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Codigo del cliente</label>
+                                        <label class="form-label">Código del cliente</label>
                                         <input v-model="form.customer_code" type="text" class="form-input"
                                                :class="{ 'has-error': errors.customer_code }"
-                                               placeholder="Codigo asignado por el cliente" />
+                                               placeholder="Código asignado por el cliente" />
                                         <span v-if="errors.customer_code" class="error-text">{{ errors.customer_code[0] }}</span>
                                     </div>
                                 </div>
@@ -63,7 +63,7 @@
                                             :class="{ 'has-error': errors.equipment_type }">
                                         <option value="">Seleccionar tipo</option>
                                         <option value="ascensor">Ascensor</option>
-                                        <option value="escalera_electrica">Escalera Electrica</option>
+                                        <option value="escalera_electrica">Escalera Eléctrica</option>
                                         <option value="montacargas">Montacargas</option>
                                         <option value="otro">Otro</option>
                                     </select>
@@ -88,10 +88,10 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="form-label">Numero de serie</label>
+                                    <label class="form-label">Número de serie</label>
                                     <input v-model="form.serial_number" type="text" class="form-input"
                                            :class="{ 'has-error': errors.serial_number }"
-                                           placeholder="Numero de serie del fabricante" />
+                                           placeholder="Número de serie del fabricante" />
                                     <span v-if="errors.serial_number" class="error-text">{{ errors.serial_number[0] }}</span>
                                 </div>
                             </div>
@@ -101,7 +101,7 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <i class="fa fa-map-marker-alt section-icon"></i>
-                                <span>Ubicacion y Contrato</span>
+                                <span>Ubicación y Contrato</span>
                             </div>
                             <div class="section-body">
                                 <div class="form-row">

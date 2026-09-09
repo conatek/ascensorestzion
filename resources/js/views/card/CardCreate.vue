@@ -110,7 +110,7 @@
 
                             <div class="form-group">
                                 <label class="form-label">Perfil profesional</label>
-                                <RichEditor v-model="form.description" placeholder="Breve descripcion profesional..." />
+                                <RichEditor v-model="form.description" placeholder="Breve descripción profesional..." />
                             </div>
                         </div>
                     </div>
@@ -126,7 +126,7 @@
                         <div class="section-body">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Telefono movil</label>
+                                    <label class="form-label">Teléfono móvil</label>
                                     <input v-model="form.mobile_phone" type="text" class="form-input" placeholder="+58 412..." />
                                 </div>
                                 <div class="form-group">
@@ -156,7 +156,7 @@
                             <div class="form-group">
                                 <label class="form-label">Mensaje predeterminado de WhatsApp</label>
                                 <textarea v-model="form.whatsapp_message" class="form-input" rows="2"
-                                    placeholder="Hola, me gustaria obtener mas informacion..."></textarea>
+                                    placeholder="Hola, me gustaría obtener más información..."></textarea>
                                 <span class="help-text">Se usara cuando hagan clic en el boton de WhatsApp.</span>
                             </div>
 

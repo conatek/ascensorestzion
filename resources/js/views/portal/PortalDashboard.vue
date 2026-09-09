@@ -18,7 +18,7 @@
                 <div class="hero-content">
                     <div class="hero-text">
                         <h1 class="hero-title">
-                            Gestion integral de
+                            Gestión integral de
                             <span class="gradient-text">transporte vertical</span>
                         </h1>
                         <p class="hero-description">
@@ -308,7 +308,7 @@ export default {
             },
             statusLabels: {
                 borrador: 'Borrador',
-                firmado_tecnico: 'Firmado Tecnico',
+                firmado_tecnico: 'Firmado Técnico',
                 firmado_cliente: 'Firmado Cliente',
                 cerrado: 'Cerrado',
                 anulado: 'Anulado',

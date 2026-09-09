@@ -10,7 +10,7 @@
                     <div>
                         Editar Sede
                         <div class="page-title-subheading text-muted">
-                            Modifica la informacion de la sede
+                            Modifica la información de la sede
                         </div>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                     <div class="section-card">
                         <div class="section-header">
                             <i class="fa fa-map-marker-alt section-icon"></i>
-                            <span>Informacion de la Sede</span>
+                            <span>Información de la Sede</span>
                         </div>
                         <div class="section-body">
                             <div class="form-group">
@@ -46,7 +46,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Direccion</label>
+                                <label class="form-label">Dirección</label>
                                 <input v-model="form.address" type="text" class="form-input" :class="{ 'has-error': errors.address }"
                                     placeholder="Ej: Av. Principal #123" />
                                 <span v-if="errors.address" class="error-text">{{ errors.address[0] }}</span>
@@ -73,7 +73,7 @@
                     <div class="section-card">
                         <div class="section-header">
                             <i class="fa fa-map-marked-alt section-icon"></i>
-                            <span>Ubicacion geografica</span>
+                            <span>Ubicación geográfica</span>
                         </div>
                         <div class="section-body">
                             <LocationPicker
@@ -104,7 +104,7 @@
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Telefono del contacto</label>
+                                    <label class="form-label">Teléfono del contacto</label>
                                     <input v-model="form.contact_phone_onsite" type="text" class="form-input" :class="{ 'has-error': errors.contact_phone_onsite }"
                                         placeholder="Ej: +507 6000-0000" />
                                     <span v-if="errors.contact_phone_onsite" class="error-text">{{ errors.contact_phone_onsite[0] }}</span>

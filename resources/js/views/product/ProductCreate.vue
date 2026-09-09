@@ -29,7 +29,7 @@
                     <div class="section-card">
                         <div class="section-header">
                             <i class="fa fa-box section-icon"></i>
-                            <span>Informacion del producto</span>
+                            <span>Información del producto</span>
                         </div>
                         <div class="section-body">
                             <div class="form-group">
@@ -39,8 +39,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Descripcion</label>
-                                <RichEditor v-model="form.description" placeholder="Descripcion del producto..." />
+                                <label class="form-label">Descripción</label>
+                                <RichEditor v-model="form.description" placeholder="Descripción del producto..." />
                             </div>
 
                             <div class="form-group">

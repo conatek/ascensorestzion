@@ -7,7 +7,7 @@
                         <i class="fa fa-tachometer-alt icon-gradient bg-mean-fruit"></i>
                     </div>
                     <div>
-                        Panel de Administracion
+                        Panel de Administración
                         <div class="page-title-subheading text-muted">
                             Metricas globales de Ascensores Tzion
                         </div>
@@ -35,7 +35,7 @@
                     </select>
                 </div>
                 <div class="col" v-if="isAdmin">
-                    <label class="form-label fw-semibold">Tecnico</label>
+                    <label class="form-label fw-semibold">Técnico</label>
                     <select class="form-select" v-model="filters.technician_id">
                         <option value="">Todos los tecnicos</option>
                         <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -145,7 +145,7 @@
                 <div class="section-card">
                     <div class="section-header">
                         <i class="fa fa-hard-hat section-icon icon-green"></i>
-                        <span>Carga por Tecnico</span>
+                        <span>Carga por Técnico</span>
                     </div>
                     <div class="section-body">
                         <apexchart

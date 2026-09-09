@@ -85,7 +85,7 @@
                             <th>Tipo</th>
                             <th>Fecha</th>
                             <th>Equipo</th>
-                            <th>Tecnico</th>
+                            <th>Técnico</th>
                             <th>Estado</th>
                             <th class="th-actions">Acciones</th>
                         </tr>
@@ -102,7 +102,7 @@
                             </td>
                             <td data-label="Fecha">{{ formatDate(report.service_date) }}</td>
                             <td data-label="Equipo">{{ report.equipment?.internal_code || '-' }}</td>
-                            <td data-label="Tecnico">{{ report.technician?.name || '-' }}</td>
+                            <td data-label="Técnico">{{ report.technician?.name || '-' }}</td>
                             <td data-label="Estado">
                                 <span class="status-badge" :class="'status-' + report.status">
                                     {{ statusLabels[report.status] || report.status }}
@@ -149,7 +149,7 @@ export default {
             },
             statusLabels: {
                 borrador: 'Borrador',
-                firmado_tecnico: 'Firmado Tecnico',
+                firmado_tecnico: 'Firmado Técnico',
                 firmado_cliente: 'Firmado Cliente',
                 cerrado: 'Cerrado',
                 anulado: 'Anulado',

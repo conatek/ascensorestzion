@@ -82,7 +82,7 @@
                             {{ report.report_type }} &mdash; {{ formatDate(report.service_date) }}
                         </p>
                         <p class="header-subtitle" v-if="report.technician">
-                            Tecnico: {{ report.technician.name }}
+                            Técnico: {{ report.technician.name }}
                         </p>
                     </div>
                 </div>
@@ -92,7 +92,7 @@
             <div class="info-card">
                 <div class="info-header">
                     <i class="fa fa-info-circle"></i>
-                    <span>Informacion Basica</span>
+                    <span>Información Básica</span>
                 </div>
                 <div class="info-body">
                     <div class="detail-grid">
@@ -105,7 +105,7 @@
                             <span class="detail-value">{{ report.equipment?.site?.name || '-' }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Equipo (codigo interno)</span>
+                            <span class="detail-label">Equipo (código interno)</span>
                             <span class="detail-value">{{ report.equipment?.internal_code || '-' }}</span>
                         </div>
                         <div class="detail-item">
@@ -125,7 +125,7 @@
                             <span class="detail-value">{{ report.customer_order_ref || '-' }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Tecnico</span>
+                            <span class="detail-label">Técnico</span>
                             <span class="detail-value">{{ report.technician?.name || '-' }}</span>
                         </div>
                     </div>
@@ -143,7 +143,7 @@
                     <table class="condition-table">
                         <thead>
                             <tr>
-                                <th>Descripcion</th>
+                                <th>Descripción</th>
                                 <th class="text-center" style="width: 80px;">Si/No</th>
                                 <th>Observacion</th>
                             </tr>
@@ -172,7 +172,7 @@
                             <table class="condition-table">
                                 <thead>
                                     <tr>
-                                        <th>Descripcion</th>
+                                        <th>Descripción</th>
                                         <th class="text-center" style="width: 80px;">Si/No</th>
                                         <th>Observacion</th>
                                     </tr>
@@ -198,7 +198,7 @@
                             <table class="condition-table">
                                 <thead>
                                     <tr>
-                                        <th>Descripcion</th>
+                                        <th>Descripción</th>
                                         <th class="text-center" style="width: 80px;">Si/No</th>
                                         <th>Observacion</th>
                                     </tr>
@@ -309,7 +309,7 @@
                 <div class="info-body">
                     <!-- Ubicacion de La Falla -->
                     <div class="analysis-subsection">
-                        <h6 class="subsection-title">Ubicacion de La Falla</h6>
+                        <h6 class="subsection-title">Ubicación de La Falla</h6>
                         <p class="subsection-value">
                             {{ faultLocationLabels[report.rstc_details.fault_location] || report.rstc_details.fault_location || '-' }}
                             <span v-if="report.rstc_details.fault_location === 'otra' && report.rstc_details.fault_location_other" class="text-muted">
@@ -506,7 +506,7 @@
                     <div class="signatures-grid">
                         <!-- Firma tecnico -->
                         <div class="signature-box">
-                            <h6 class="signature-title">Firma Tecnico</h6>
+                            <h6 class="signature-title">Firma Técnico</h6>
                             <div v-if="report.technician_signed_at" class="signature-signed">
                                 <i class="fa fa-check-circle text-success me-1"></i>
                                 Firmado el {{ formatDateTime(report.technician_signed_at) }}
@@ -636,7 +636,7 @@ export default {
 
             statusLabels: {
                 borrador: 'Borrador',
-                firmado_tecnico: 'Firmado por Tecnico',
+                firmado_tecnico: 'Firmado por Técnico',
                 firmado_cliente: 'Firmado por Cliente',
                 cerrado: 'Cerrado',
                 anulado: 'Anulado',
@@ -669,7 +669,7 @@ export default {
                 freno_mecanico:          'Freno Mecanico',
                 control_principal:       'Control Principal',
                 variador_principal:      'Variador Principal',
-                acometida_electrica:     'Acometida Electrica',
+                acometida_electrica:     'Acometida Eléctrica',
                 cable_viajero:           'Cable Viajero',
                 cable_pozo:              'Cable De Pozo',
                 limitador_velocidad:     'Limitador De Velocidad',
@@ -698,10 +698,10 @@ export default {
             },
 
             faultCauseLabels: {
-                energia_externa:    'Energia Externa/Tormenta Electrica',
+                energia_externa:    'Energía Externa/Tormenta Eléctrica',
                 inundacion_humedad: 'Inundacion/Humedad',
                 tercero:            'Provocada Por Tercero',
-                tecnica_equipo:     'Tecnica Por El Equipo',
+                tecnica_equipo:     'Técnica Por El Equipo',
                 otra:               'Otra',
             },
 
@@ -773,7 +773,7 @@ export default {
             auditActionLabels: {
                 created:         'Creado',
                 edited:          'Editado',
-                signed_tech:     'Firmado por tecnico',
+                signed_tech:     'Firmado por técnico',
                 signed_customer: 'Firmado por cliente',
                 // Sin esta linea la traza mostraba la clave cruda,
                 // «confirmed_reception», en el ultimo evento de todo informe

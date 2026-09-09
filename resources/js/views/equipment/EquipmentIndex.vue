@@ -59,7 +59,7 @@
                 <div class="filter-group filter-search">
                     <label class="filter-label">Buscar</label>
                     <input v-model="filters.search" type="text" class="filter-input"
-                           placeholder="Codigo, marca, modelo..." @input="onSearch" />
+                           placeholder="Código, marca, modelo..." @input="onSearch" />
                 </div>
             </div>
         </div>
@@ -108,7 +108,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Codigo Interno</th>
+                            <th>Código Interno</th>
                             <th>Tipo</th>
                             <th>Marca / Modelo</th>
                             <th>Sede</th>
@@ -119,7 +119,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="eq in equipments" :key="eq.id">
-                            <td data-label="Codigo">
+                            <td data-label="Código">
                                 <span class="code-text">{{ eq.internal_code }}</span>
                             </td>
                             <td data-label="Tipo">
@@ -182,7 +182,7 @@ export default {
             },
             typeLabels: {
                 ascensor: 'Ascensor',
-                escalera_electrica: 'Escalera Electrica',
+                escalera_electrica: 'Escalera Eléctrica',
                 montacargas: 'Montacargas',
                 otro: 'Otro',
             },

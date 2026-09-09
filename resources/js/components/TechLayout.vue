@@ -11,7 +11,7 @@
             <div class="tech-header__right">
                 <NotificationBell />
                 <ConnectionStatus to="tech.pending" persistent />
-                <button class="tech-header__logout" @click="handleLogout" title="Cerrar sesion">
+                <button class="tech-header__logout" @click="handleLogout" title="Cerrar sesión">
                     <i class="fa fa-sign-out-alt"></i>
                 </button>
             </div>

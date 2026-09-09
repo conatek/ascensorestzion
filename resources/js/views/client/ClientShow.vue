@@ -69,7 +69,7 @@
                 <div class="info-card" v-if="hasGeneralInfo">
                     <div class="info-header">
                         <i class="fa fa-building"></i>
-                        <span>Informacion General</span>
+                        <span>Información General</span>
                     </div>
                     <div class="info-body">
                         <div v-if="client.address" class="info-item">
@@ -141,7 +141,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>Direccion</th>
+                                    <th>Dirección</th>
                                     <th>Contacto en sitio</th>
                                     <th class="text-center">Equipos</th>
                                     <th class="text-center">Acciones</th>
@@ -150,7 +150,7 @@
                             <tbody>
                                 <tr v-for="site in client.sites" :key="site.id">
                                     <td class="td-name" data-label="Nombre">{{ site.name }}</td>
-                                    <td data-label="Direccion">{{ site.address || '—' }}</td>
+                                    <td data-label="Dirección">{{ site.address || '—' }}</td>
                                     <td data-label="Contacto">{{ site.contact_name_onsite || '—' }}</td>
                                     <td class="text-center" data-label="Equipos">
                                         <span class="count-badge">{{ site.equipment_count ?? 0 }}</span>

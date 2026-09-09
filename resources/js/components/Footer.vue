@@ -16,7 +16,7 @@
 
             <div class="footer-right">
                 <div class="footer-version">
-                    <span class="version-label">Version</span>
+                    <span class="version-label">Versión</span>
                     <span class="version-badge">1.0.0</span>
                 </div>
             </div>

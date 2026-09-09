@@ -6,7 +6,7 @@
                 <i class="fa fa-user-secret"></i>
                 <span>Estas viendo como <strong>{{ clientName }}</strong></span>
                 <button class="impersonate-return-btn" @click="handleStopImpersonating">
-                    <i class="fa fa-arrow-left me-1"></i> Volver a mi sesion
+                    <i class="fa fa-arrow-left me-1"></i> Volver a mi sesión
                 </button>
             </div>
         </div>

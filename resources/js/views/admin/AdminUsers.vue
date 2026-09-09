@@ -38,7 +38,7 @@
                     <option value="master">Master</option>
                     <option value="super">Super</option>
                     <option value="coordinator">Coordinador</option>
-                    <option value="technician">Tecnico</option>
+                    <option value="technician">Técnico</option>
                     <option value="admin">Admin</option>
                 </select>
                 <select v-model="filterClient" class="filter-select">
@@ -171,7 +171,7 @@
                         <span class="detail-value">{{ displayCompany(selectedUser) }}</span>
                     </div>
                     <div v-if="selectedUser.phone" class="detail-row">
-                        <span class="detail-label">Telefono</span>
+                        <span class="detail-label">Teléfono</span>
                         <span class="detail-value">{{ selectedUser.phone }}</span>
                     </div>
                     <div v-if="selectedUser.document_number" class="detail-row">
@@ -341,7 +341,7 @@ export default {
                 master: 'Master',
                 super: 'Super',
                 coordinator: 'Coordinador',
-                technician: 'Tecnico',
+                technician: 'Técnico',
                 admin: 'Admin',
             },
             columns: [

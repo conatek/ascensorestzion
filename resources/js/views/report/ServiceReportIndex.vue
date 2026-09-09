@@ -10,7 +10,7 @@
                     <div>
                         Reportes de Servicio
                         <div class="page-title-subheading text-muted">
-                            Gestiona los reportes de servicio tecnico
+                            Gestiona los reportes de servicio técnico
                         </div>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
                 <div class="filter-group filter-search">
                     <label class="filter-label">Buscar</label>
                     <input v-model="filters.search" type="text" class="filter-input"
-                           placeholder="N° reporte, equipo, tecnico..." @input="onSearch" />
+                           placeholder="N° reporte, equipo, técnico..." @input="onSearch" />
                 </div>
             </div>
             <div class="filter-row filter-row-dates">
@@ -137,7 +137,7 @@
                             <th>Fecha</th>
                             <th>Equipo</th>
                             <th>Cliente</th>
-                            <th>Tecnico</th>
+                            <th>Técnico</th>
                             <th>Estado</th>
                             <th class="th-actions">Acciones</th>
                         </tr>
@@ -155,7 +155,7 @@
                             <td data-label="Fecha">{{ formatDate(report.service_date) }}</td>
                             <td data-label="Equipo">{{ report.equipment?.internal_code || '-' }}</td>
                             <td data-label="Cliente">{{ report.client?.business_name || report.equipment?.site?.client?.business_name || '-' }}</td>
-                            <td data-label="Tecnico">{{ report.technician?.name || '-' }}</td>
+                            <td data-label="Técnico">{{ report.technician?.name || '-' }}</td>
                             <td data-label="Estado">
                                 <span class="status-badge" :class="'status-' + report.status">
                                     {{ statusLabels[report.status] || report.status }}
@@ -213,7 +213,7 @@ export default {
             },
             statusLabels: {
                 borrador: 'Borrador',
-                firmado_tecnico: 'Firmado Tecnico',
+                firmado_tecnico: 'Firmado Técnico',
                 firmado_cliente: 'Firmado Cliente',
                 cerrado: 'Cerrado',
                 anulado: 'Anulado',

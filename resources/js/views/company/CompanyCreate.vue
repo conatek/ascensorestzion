@@ -29,7 +29,7 @@
                     <div class="section-card">
                         <div class="section-header">
                             <i class="fa fa-building section-icon"></i>
-                            <span>Informacion general</span>
+                            <span>Información general</span>
                         </div>
                         <div class="section-body">
                             <div class="form-group">
@@ -40,7 +40,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Slug (URL publica) <span class="required">*</span></label>
+                                <label class="form-label">Slug (URL pública) <span class="required">*</span></label>
                                 <div class="input-with-prefix">
                                     <span class="input-prefix">dominio.com/</span>
                                     <input v-model="form.slug" type="text" class="form-input" :class="{ 'has-error': errors.slug }"
@@ -68,7 +68,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Direccion</label>
+                                <label class="form-label">Dirección</label>
                                 <input v-model="form.address" type="text" class="form-input" :class="{ 'has-error': errors.address }"
                                     placeholder="Ej: Av. Principal #123, Ciudad" />
                                 <span v-if="errors.address" class="error-text">{{ errors.address[0] }}</span>

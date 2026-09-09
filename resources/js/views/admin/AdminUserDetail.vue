@@ -31,7 +31,7 @@
                 <div class="section-card">
                     <div class="section-header">
                         <i class="fa fa-info-circle section-icon icon-purple"></i>
-                        <span>Informacion del usuario</span>
+                        <span>Información del usuario</span>
                     </div>
                     <div class="section-body">
                         <div class="detail-row">
@@ -116,7 +116,7 @@ export default {
             availableRoles: [
                 { value: 'master', label: 'Master' },
                 { value: 'coordinator', label: 'Coordinador' },
-                { value: 'technician', label: 'Tecnico' },
+                { value: 'technician', label: 'Técnico' },
                 { value: 'admin', label: 'Administrador' },
             ],
         };

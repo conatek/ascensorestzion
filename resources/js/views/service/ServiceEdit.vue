@@ -35,7 +35,7 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <i class="fa fa-concierge-bell section-icon"></i>
-                                <span>Informacion del servicio</span>
+                                <span>Información del servicio</span>
                             </div>
                             <div class="section-body">
                                 <div class="form-group">
@@ -45,8 +45,8 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="form-label">Descripcion</label>
-                                    <RichEditor v-model="form.description" placeholder="Descripcion del servicio..." />
+                                    <label class="form-label">Descripción</label>
+                                    <RichEditor v-model="form.description" placeholder="Descripción del servicio..." />
                                 </div>
 
                                 <div class="form-group">

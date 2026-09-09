@@ -10,7 +10,7 @@
                 <i class="fa fa-user-secret"></i>
                 <span>Estas viendo como <strong>{{ portalClientName }}</strong></span>
                 <button class="impersonate-return-btn" @click="handleStopImpersonating">
-                    <i class="fa fa-arrow-left me-1"></i> Volver a mi sesion
+                    <i class="fa fa-arrow-left me-1"></i> Volver a mi sesión
                 </button>
             </div>
         </div>
@@ -198,7 +198,7 @@
 
                             <!-- Info de sesion -->
                             <div class="quick-panel-section">
-                                <div class="quick-panel-section-title">Sesion</div>
+                                <div class="quick-panel-section-title">Sesión</div>
                                 <div class="quick-panel-info">
                                     <i class="fa fa-envelope"></i> {{ authUser?.email }}
                                 </div>
@@ -321,7 +321,7 @@ export default {
             if (auth.isMaster()) return 'Master';
             if (auth.isSuper()) return 'Super';
             if (auth.isCoordinator()) return 'Coordinador';
-            if (auth.isTechnician()) return 'Tecnico';
+            if (auth.isTechnician()) return 'Técnico';
             if (auth.isAdmin()) return 'Administrador';
             return 'Usuario';
         },

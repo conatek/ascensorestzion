@@ -58,7 +58,7 @@
             <div v-show="currentStep === 1" class="section-card">
                 <div class="section-header">
                     <i class="fa fa-info-circle section-icon"></i>
-                    <span>Informacion Basica</span>
+                    <span>Información Básica</span>
                 </div>
                 <div class="section-body">
                     <div class="form-row">
@@ -238,7 +238,7 @@
                                             <span class="fault-code-label">{{ fc.code }}</span>
                                         </label>
                                         <input v-model="fc.description" type="text" class="form-input form-input-sm"
-                                               placeholder="Descripcion..." :disabled="!fc.active" />
+                                               placeholder="Descripción..." :disabled="!fc.active" />
                                     </div>
                                 </div>
                             </div>
@@ -328,7 +328,7 @@
                         <div class="section-body">
                             <!-- Ubicacion de La Falla -->
                             <div class="form-group">
-                                <label class="form-label fw-bold">Ubicacion de La Falla</label>
+                                <label class="form-label fw-bold">Ubicación de La Falla</label>
                                 <div class="radio-group-vertical">
                                     <label class="radio-option" v-for="opt in faultLocationOptions" :key="opt.value">
                                         <input type="radio" v-model="rstcDetails.fault_location" :value="opt.value"
@@ -539,7 +539,7 @@
                 <div class="section-card">
                     <div class="section-header">
                         <i class="fa fa-pen-nib section-icon"></i>
-                        <span>Firma del Tecnico</span>
+                        <span>Firma del Técnico</span>
                     </div>
                     <div class="section-body">
                         <SignaturePad ref="techSignature" :width="400" :height="150" />
@@ -632,7 +632,7 @@ export default {
         return {
             currentStep: 1,
             steps: [
-                'Informacion Basica',
+                'Información Básica',
                 'Condicion Inicial',
                 'Actividades',
                 'Conclusion',
@@ -792,10 +792,10 @@ export default {
         },
         faultCauseOptions() {
             return [
-                { value: 'energia_externa_tormenta', label: 'Energia Externa/Tormenta Electrica' },
+                { value: 'energia_externa_tormenta', label: 'Energía Externa/Tormenta Eléctrica' },
                 { value: 'inundacion_humedad', label: 'Inundacion/Humedad' },
                 { value: 'provocada_tercero', label: 'Provocada Por Tercero' },
-                { value: 'tecnica_equipo', label: 'Tecnica Por El Equipo' },
+                { value: 'tecnica_equipo', label: 'Técnica Por El Equipo' },
                 { value: 'otra', label: 'Otra' },
             ];
         },

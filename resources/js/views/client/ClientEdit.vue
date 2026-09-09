@@ -36,7 +36,7 @@
                         <div class="section-card">
                             <div class="section-header">
                                 <i class="fa fa-building section-icon"></i>
-                                <span>Informacion General</span>
+                                <span>Información General</span>
                             </div>
                             <div class="section-body">
                                 <div class="form-group">
@@ -52,7 +52,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="form-label">Direccion</label>
+                                    <label class="form-label">Dirección</label>
                                     <input v-model="form.address" type="text" class="form-input" :class="{ 'has-error': errors.address }"
                                         placeholder="Ej: Cra. 7 #45-12, Oficina 301" />
                                     <span v-if="errors.address" class="error-text">{{ errors.address[0] }}</span>
@@ -97,7 +97,7 @@
                                         <span v-if="errors.contact_email" class="error-text">{{ errors.contact_email[0] }}</span>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Telefono de contacto</label>
+                                        <label class="form-label">Teléfono de contacto</label>
                                         <input v-model="form.contact_phone" type="text" class="form-input" :class="{ 'has-error': errors.contact_phone }" />
                                         <span v-if="errors.contact_phone" class="error-text">{{ errors.contact_phone[0] }}</span>
                                     </div>
