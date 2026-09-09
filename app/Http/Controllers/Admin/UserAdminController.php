@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserAdminController extends Controller
@@ -31,6 +33,15 @@ class UserAdminController extends Controller
         }
 
         $users = $query->latest()->get();
+
+        // Marca qué usuarios tienen historial que impide su borrado, para que el panel
+        // muestre "eliminar" solo en los que sí se pueden borrar. Una consulta por
+        // origen (no una por usuario), sea cual sea el tamaño del listado.
+        $withHistory = $this->usersWithHistory($users->pluck('id'));
+        $users->each(function (User $u) use ($withHistory) {
+            $u->has_history = $withHistory->has($u->id);
+            $u->can_delete = ! $u->has_history;
+        });
 
         return response()->json($users);
     }
@@ -92,7 +103,16 @@ class UserAdminController extends Controller
             unset($data['role']);
         }
 
+        // Desactivar = corte inmediato de sesión. Sin esto, `active` solo frena el
+        // próximo login (AuthController) y quien ya tuviera token seguiría dentro,
+        // porque los tokens de Sanctum no expiran.
+        $deactivating = array_key_exists('active', $data) && ! $data['active'] && $user->active;
+
         $user->update($data);
+
+        if ($deactivating) {
+            $user->tokens()->delete();
+        }
 
         return response()->json($user->fresh()->load(['company:id,name', 'client:id,business_name', 'roles:id,name']));
     }
@@ -133,6 +153,41 @@ class UserAdminController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * De un conjunto de ids, devuelve (como set indexado por id) los que tienen algún
+     * registro con FK restrictiva hacia users, es decir, los que NO se pueden borrar.
+     * Son las mismas relaciones que bloquearían `$user->delete()`.
+     */
+    private function usersWithHistory(Collection $ids): Collection
+    {
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        // [tabla, columna] de cada FK restrictiva hacia users.
+        $sources = [
+            ['service_reports', 'technician_id'],
+            ['service_reports', 'created_by'],
+            ['scheduled_visits', 'technician_id'],
+            ['scheduled_visits', 'created_by'],
+            ['technician_checkins', 'technician_id'],
+            ['service_report_audit_log', 'user_id'],
+            ['service_report_attachments', 'uploaded_by'],
+            ['reschedule_requests', 'requested_by'],
+            ['reschedule_requests', 'resolved_by'],
+            ['visit_reminders', 'user_id'],
+        ];
+
+        $found = collect();
+        foreach ($sources as [$table, $column]) {
+            $found = $found->merge(
+                DB::table($table)->whereIn($column, $ids)->distinct()->pluck($column)
+            );
+        }
+
+        return $found->unique()->flip();
     }
 
     /**

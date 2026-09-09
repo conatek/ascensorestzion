@@ -74,6 +74,12 @@
                             {{ displayCompany(props.row) }}
                         </span>
 
+                        <span v-else-if="props.column.field === 'active'">
+                            <span class="status-badge" :class="props.row.active ? 'status-active' : 'status-inactive'">
+                                {{ props.row.active ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </span>
+
                         <span v-else-if="props.column.field === 'created_at'">
                             {{ formatDate(props.row.created_at) }}
                         </span>
@@ -96,7 +102,22 @@
                                 <button @click="openEdit(props.row)" class="action-btn" title="Editar">
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button @click="confirmDelete(props.row)" class="action-btn action-danger" title="Eliminar" :disabled="deletingId === props.row.id">
+                                <!-- Activar/desactivar. Desactivar corta la sesión al
+                                     instante (el backend revoca los tokens). Deshabilitado
+                                     sobre uno mismo para no autobloquearse. -->
+                                <button
+                                    @click="toggleActive(props.row)"
+                                    class="action-btn"
+                                    :class="props.row.active ? 'action-warning' : 'action-success'"
+                                    :title="props.row.active ? 'Desactivar' : 'Activar'"
+                                    :disabled="togglingId === props.row.id || props.row.id === auth.state.user?.id"
+                                >
+                                    <i v-if="togglingId === props.row.id" class="fa fa-spinner fa-spin"></i>
+                                    <i v-else :class="props.row.active ? 'fa fa-ban' : 'fa fa-check-circle'"></i>
+                                </button>
+                                <!-- Eliminar solo si no tiene historial que lo impida;
+                                     si lo tiene, únicamente se puede activar/desactivar. -->
+                                <button v-if="props.row.can_delete" @click="confirmDelete(props.row)" class="action-btn action-danger" title="Eliminar" :disabled="deletingId === props.row.id">
                                     <i v-if="deletingId === props.row.id" class="fa fa-spinner fa-spin"></i>
                                     <i v-else class="fa fa-trash"></i>
                                 </button>
@@ -312,6 +333,7 @@ export default {
             editingId: null,
             saving: false,
             deletingId: null,
+            togglingId: null,
             formErrors: {},
             formGeneralError: null,
             form: this.emptyForm(),
@@ -326,8 +348,9 @@ export default {
                 { label: 'Usuario', field: 'name', sortable: false },
                 { label: 'Rol', field: 'role', sortable: false, width: '130px' },
                 { label: 'Cliente', field: 'company', sortable: false },
+                { label: 'Estado', field: 'active', sortable: false, width: '110px' },
                 { label: 'Registro', field: 'created_at', sortable: false },
-                { label: '', field: 'actions', sortable: false, tdClass: 'text-center', width: '130px' },
+                { label: '', field: 'actions', sortable: false, tdClass: 'text-center', width: '170px' },
             ],
             paginationOptions: {
                 enabled: true,
@@ -502,6 +525,44 @@ export default {
             }
         },
 
+        async toggleActive(user) {
+            if (user.id === this.auth.state.user?.id) return;
+            const deactivating = user.active;
+
+            if (deactivating) {
+                const res = await this.$swal.fire({
+                    icon: 'warning',
+                    title: '¿Desactivar usuario?',
+                    text: `Se cerrará la sesión de "${user.name}" de inmediato y no podrá volver a iniciar sesión hasta reactivarlo.`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Desactivar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#ba2831',
+                });
+                if (!res.isConfirmed) return;
+            }
+
+            this.togglingId = user.id;
+            try {
+                await adminService.updateUser(user.id, { active: !user.active });
+                await this.load();
+                this.$swal.fire({
+                    icon: 'success',
+                    title: deactivating ? 'Usuario desactivado' : 'Usuario activado',
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            } catch (err) {
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo actualizar',
+                    text: err.response?.data?.message || 'No se pudo cambiar el estado del usuario.',
+                });
+            } finally {
+                this.togglingId = null;
+            }
+        },
+
         async confirmDelete(user) {
             const res = await this.$swal.fire({
                 icon: 'warning',
@@ -535,11 +596,12 @@ export default {
 
 <style scoped>
 /* Etiquetas por columna para las cards en móvil (≤768px) — scoped a esta vista.
-   Cols: 1 Usuario(título) · 2 Rol · 3 Cliente · 4 Registro · 5 Acciones */
+   Cols: 1 Usuario(título) · 2 Rol · 3 Cliente · 4 Estado · 5 Registro · 6 Acciones */
 @media (max-width: 768px) {
     :deep(.vgt-table tbody td:nth-of-type(2))::before { content: 'Rol'; }
     :deep(.vgt-table tbody td:nth-of-type(3))::before { content: 'Cliente'; }
-    :deep(.vgt-table tbody td:nth-of-type(4))::before { content: 'Registro'; }
+    :deep(.vgt-table tbody td:nth-of-type(4))::before { content: 'Estado'; }
+    :deep(.vgt-table tbody td:nth-of-type(5))::before { content: 'Registro'; }
 
     /* Contenedor transparente: las cards van sobre el fondo del body */
     .section-card {
@@ -680,6 +742,10 @@ export default {
 
 .action-danger { color: #dc2626; }
 .action-danger:hover { background: #fef2f2 !important; color: #b91c1c !important; }
+.action-success { color: #279208; }
+.action-success:hover { background: #e8f5e4 !important; color: #1f7506 !important; }
+.action-warning { color: #b45309; }
+.action-warning:hover { background: #fef3c7 !important; color: #92400e !important; }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .role-sin {
