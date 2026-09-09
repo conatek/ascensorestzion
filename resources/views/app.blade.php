@@ -114,7 +114,6 @@
 
     @vite('resources/js/app.js')
 
-    <script>window.mapboxToken = "{{ env('MAPBOX_TOKEN') }}";</script>
     <script src="{{ asset('build/registerSW.js') }}"></script>
 </body>
 </html>

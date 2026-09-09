@@ -79,7 +79,10 @@
                             <LocationPicker
                                 v-model:latitude="form.latitude"
                                 v-model:longitude="form.longitude"
-                                v-model:radius="form.geo_radius_meters" />
+                                v-model:radius="form.geo_radius_meters"
+                                :address="form.address"
+                                :city="form.city"
+                                :department="form.department" />
                         </div>
                     </div>
                 </div>
