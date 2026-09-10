@@ -872,6 +872,24 @@ $templates = [
 
 /*
 |--------------------------------------------------------------------------
+| Ajustes por defecto de Moderna
+|--------------------------------------------------------------------------
+|
+| Fondo negro por defecto y pie de página sin fondo propio con tipografía
+| blanca. Se aplican aquí para que Cristal (derivada más abajo) los herede.
+|
+*/
+$templates['schemas']['modern']['general']['colorFondo']['value'] = '#000000';
+$templates['schemas']['modern']['footer']['tipoFondo']['value'] = 'transparente';
+$templates['schemas']['modern']['footer']['colorFuente']['value'] = '#ffffff';
+// Sobre fondo negro, el texto del perfil va claro por defecto (Moderna no tiene
+// contraste automático como Cristal).
+$templates['schemas']['modern']['profile']['nombreColor']['value'] = '#f5f5f5';
+$templates['schemas']['modern']['profile']['apellidoColor']['value'] = '#e2e8f0';
+$templates['schemas']['modern']['profile']['cargoColor']['value'] = '#cbd5e1';
+
+/*
+|--------------------------------------------------------------------------
 | Plantilla Cristal (derivada de Moderna)
 |--------------------------------------------------------------------------
 |
@@ -889,7 +907,7 @@ $templates['available']['cristal'] = [
 ];
 
 $cristalSchema = $templates['schemas']['modern'];
-$cristalSchema['general']['colorFondo']['value'] = '#0f172a';
+$cristalSchema['general']['colorFondo']['value'] = '#000000';
 // Fondo oscuro por defecto -> texto claro para que se lea sobre el cristal.
 $cristalSchema['profile']['nombreColor']['value'] = '#f5f5f5';
 $cristalSchema['profile']['apellidoColor']['value'] = '#e2e8f0';
