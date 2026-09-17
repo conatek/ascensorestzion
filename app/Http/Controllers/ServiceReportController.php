@@ -390,10 +390,10 @@ class ServiceReportController extends Controller
             $serviceReport->technician->notify(new ReportCompletedNotification($serviceReport, 'technician'));
         }
 
-        // Notificar admin del cliente (si existe)
-        $clientAdmins = User::where('client_id', $serviceReport->client_id)->get();
-        if ($clientAdmins->isNotEmpty()) {
-            Notification::send($clientAdmins, new ReportCompletedNotification($serviceReport, 'client'));
+        // Notificar al cliente: sus usuarios con acceso + sus correos de notificación.
+        $clientTargets = $serviceReport->client?->notificationTargets() ?? [];
+        if ($clientTargets !== []) {
+            Notification::send($clientTargets, new ReportCompletedNotification($serviceReport, 'client'));
         }
 
         return response()->json($serviceReport->fresh());

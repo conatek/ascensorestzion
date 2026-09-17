@@ -13,6 +13,7 @@ class VisitReminder extends Model
     protected $fillable = [
         'scheduled_visit_id',
         'user_id',
+        'email',
         'send_at',
         'channels',
         'status',

@@ -3,6 +3,8 @@
 namespace App\Notifications\Concerns;
 
 use App\Models\ScheduledVisit;
+use App\Models\User;
+use Illuminate\Notifications\AnonymousNotifiable;
 
 /**
  * Lo que comparten las notificaciones del cronograma: como se describe una visita
@@ -75,20 +77,43 @@ trait DescribesVisit
     }
 
     /**
+     * ¿El destinatario es un técnico? Solo un usuario con ese rol. Un correo de
+     * notificación suelto (AnonymousNotifiable) NUNCA es técnico: es lado cliente.
+     */
+    protected function isTechnician(object $notifiable): bool
+    {
+        return $notifiable instanceof User && $notifiable->hasRole('technician');
+    }
+
+    /**
      * Cada rol tiene su pantalla: el cliente el portal, el tecnico su agenda y
      * coordinacion el tablero. Un enlace unico dejaria a alguien en un 403.
+     * Un correo de notificación suelto (sin login) se trata como lado cliente.
      */
     protected function deepLink(object $notifiable): string
     {
-        if ($notifiable->hasRole('admin')) {
-            return url('/portal/cronograma');
-        }
-
-        if ($notifiable->hasRole('technician')) {
+        if ($this->isTechnician($notifiable)) {
             return url('/tech/agenda');
         }
 
-        return url('/cronograma');
+        // Usuario interno (master/coordinador/super) → tablero.
+        if ($notifiable instanceof User && ! $notifiable->hasRole('admin')) {
+            return url('/cronograma');
+        }
+
+        // Admin del cliente o correo de notificación suelto → portal.
+        return url('/portal/cronograma');
+    }
+
+    /**
+     * Canales para las notificaciones del cronograma: un correo suelto solo recibe
+     * mail (no tiene fila en `notifications` ni teléfono); un usuario, base+mail.
+     *
+     * @return array<int, string>
+     */
+    protected function scheduleChannels(object $notifiable): array
+    {
+        return $notifiable instanceof AnonymousNotifiable ? ['mail'] : ['database', 'mail'];
     }
 
     /**

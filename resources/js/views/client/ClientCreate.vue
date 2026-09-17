@@ -86,19 +86,32 @@
                                 <span v-if="errors.contact_name" class="error-text">{{ errors.contact_name[0] }}</span>
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Email de contacto</label>
-                                    <input v-model="form.contact_email" type="email" class="form-input" :class="{ 'has-error': errors.contact_email }"
-                                        placeholder="correo@empresa.com" />
-                                    <span v-if="errors.contact_email" class="error-text">{{ errors.contact_email[0] }}</span>
+                            <div class="form-group">
+                                <label class="form-label">Teléfono de contacto</label>
+                                <input v-model="form.contact_phone" type="text" class="form-input" :class="{ 'has-error': errors.contact_phone }"
+                                    placeholder="Ej: 310 123 4567" />
+                                <span v-if="errors.contact_phone" class="error-text">{{ errors.contact_phone[0] }}</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Correos de notificación</label>
+                                <p class="field-hint">
+                                    Las notificaciones del cliente (recordatorios, informes, reprogramaciones) se envían a estos correos.
+                                    El acceso al portal es aparte: se gestiona en <strong>Usuarios</strong>.
+                                </p>
+                                <div v-for="(email, i) in form.notification_emails" :key="i" class="email-item">
+                                    <div class="email-row">
+                                        <input v-model="form.notification_emails[i]" type="email" class="form-input"
+                                            :class="{ 'has-error': errors['notification_emails.' + i] }" placeholder="correo@empresa.com" />
+                                        <button type="button" class="btn-remove-email" @click="removeEmail(i)" title="Quitar correo">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <span v-if="errors['notification_emails.' + i]" class="error-text">{{ errors['notification_emails.' + i][0] }}</span>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Teléfono de contacto</label>
-                                    <input v-model="form.contact_phone" type="text" class="form-input" :class="{ 'has-error': errors.contact_phone }"
-                                        placeholder="Ej: 310 123 4567" />
-                                    <span v-if="errors.contact_phone" class="error-text">{{ errors.contact_phone[0] }}</span>
-                                </div>
+                                <button type="button" class="btn-add-email" @click="addEmail">
+                                    <i class="fa fa-plus me-1"></i> Agregar correo
+                                </button>
                             </div>
 
                             <div class="form-group">
@@ -161,7 +174,7 @@ export default {
                 city: '',
                 department: '',
                 contact_name: '',
-                contact_email: '',
+                notification_emails: [''],
                 contact_phone: '',
                 notes: '',
                 active: true,
@@ -170,13 +183,29 @@ export default {
     },
 
     methods: {
+        addEmail() {
+            this.form.notification_emails.push('');
+        },
+
+        removeEmail(i) {
+            this.form.notification_emails.splice(i, 1);
+            if (this.form.notification_emails.length === 0) {
+                this.form.notification_emails.push('');
+            }
+        },
+
         async submit() {
             this.loading = true;
             this.errors = {};
             this.generalError = null;
 
+            const payload = {
+                ...this.form,
+                notification_emails: this.form.notification_emails.map((e) => e.trim()).filter(Boolean),
+            };
+
             try {
-                const { data } = await clientService.store(this.form);
+                const { data } = await clientService.store(payload);
                 this.$router.push({ name: 'clients.show', params: { id: data.id } });
             } catch (err) {
                 if (err.response?.status === 422) {
@@ -322,6 +351,64 @@ export default {
     font-size: 0.8rem;
     color: #ba2831;
     margin-top: 0.375rem;
+}
+
+.field-hint {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: -0.25rem 0 0.6rem;
+    line-height: 1.4;
+}
+
+.email-item {
+    margin-bottom: 0.5rem;
+}
+
+.email-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.email-row .form-input {
+    flex: 1;
+}
+
+.btn-remove-email {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #94a3b8;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-remove-email:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #ba2831;
+}
+
+.btn-add-email {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.25rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    background: #e8f5e4;
+    color: #279208;
+    border: 1px dashed #86c56f;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-email:hover {
+    background: #dcefd4;
 }
 
 .form-row {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Client;
 use App\Models\Equipment;
 use App\Models\RescheduleRequest;
 use App\Models\ScheduledVisit;
@@ -275,14 +276,36 @@ class ScheduleService
      */
     public function notifyParties(ScheduledVisit $visit, Notification $notification, array $extraRecipients = []): void
     {
-        $users = collect($this->reminderRecipients($visit))
-            ->map(fn (array $pair) => $pair[0])
-            ->concat($extraRecipients)
-            ->filter()
-            ->unique('id');
+        $notifiables = [];
+        $seenUsers = [];
+        $seenEmails = [];
 
-        if ($users->isNotEmpty()) {
-            NotificationFacade::send($users, $notification);
+        foreach ($this->reminderRecipients($visit) as $recipient) {
+            if ($recipient['user']) {
+                if (in_array($recipient['user']->id, $seenUsers, true)) {
+                    continue;
+                }
+                $seenUsers[] = $recipient['user']->id;
+                $notifiables[] = $recipient['user'];
+            } elseif ($recipient['email']) {
+                $key = mb_strtolower($recipient['email']);
+                if (in_array($key, $seenEmails, true)) {
+                    continue;
+                }
+                $seenEmails[] = $key;
+                $notifiables[] = NotificationFacade::route('mail', $recipient['email']);
+            }
+        }
+
+        foreach ($extraRecipients as $user) {
+            if ($user && ! in_array($user->id, $seenUsers, true)) {
+                $seenUsers[] = $user->id;
+                $notifiables[] = $user;
+            }
+        }
+
+        if ($notifiables !== []) {
+            NotificationFacade::send($notifiables, $notification);
         }
     }
 
@@ -308,8 +331,12 @@ class ScheduleService
         $start = CarbonImmutable::parse($visit->scheduled_start);
         $created = 0;
 
-        foreach ($this->reminderRecipients($visit) as [$user, $role]) {
-            foreach ($this->offsetsFor($user, $role) as $offset) {
+        foreach ($this->reminderRecipients($visit) as $recipient) {
+            $offsets = $recipient['user']
+                ? $this->offsetsFor($recipient['user'], $recipient['role'])
+                : $this->defaultOffsets($recipient['role']);
+
+            foreach ($offsets as $offset) {
                 $sendAt = $this->reminderSendAt($start, $offset);
 
                 // Un aviso con fecha pasada no se crea: nadie quiere recibir el
@@ -323,7 +350,8 @@ class ScheduleService
                 // vuelve a mandar.
                 $exists = VisitReminder::query()
                     ->where('scheduled_visit_id', $visit->id)
-                    ->where('user_id', $user->id)
+                    ->when($recipient['user'], fn ($q) => $q->where('user_id', $recipient['user']->id))
+                    ->when($recipient['email'], fn ($q) => $q->whereNull('user_id')->where('email', $recipient['email']))
                     ->where('send_at', $sendAt)
                     ->whereIn('status', ['pendiente', 'enviado'])
                     ->exists();
@@ -334,9 +362,11 @@ class ScheduleService
 
                 VisitReminder::create([
                     'scheduled_visit_id' => $visit->id,
-                    'user_id' => $user->id,
+                    'user_id' => $recipient['user']?->id,
+                    'email' => $recipient['email'],
                     'send_at' => $sendAt,
-                    'channels' => $this->reminderChannels($user),
+                    // Un correo suelto no tiene fila en `notifications`: solo mail.
+                    'channels' => $recipient['email'] ? ['mail'] : $this->reminderChannels($recipient['user']),
                 ]);
 
                 $created++;
@@ -403,21 +433,36 @@ class ScheduleService
     }
 
     /**
-     * Quien recibe avisos de una visita: los usuarios del cliente y el tecnico.
-     * Coordinacion no: ellos viven en el tablero.
+     * Quien recibe avisos de una visita: los usuarios del cliente (login), los
+     * correos de notificacion del cliente (sin login) y el tecnico. Coordinacion
+     * no: ellos viven en el tablero.
      *
-     * @return array<int, array{0: User, 1: string}> pares [usuario, rol]
+     * @return array<int, array{user: ?User, email: ?string, role: string}>
      */
     private function reminderRecipients(ScheduledVisit $visit): array
     {
         $recipients = [];
+        $seenEmails = [];
 
         foreach (User::query()->where('client_id', $visit->client_id)->where('active', true)->get() as $admin) {
-            $recipients[] = [$admin, 'admin'];
+            $recipients[] = ['user' => $admin, 'email' => null, 'role' => 'admin'];
+            if ($admin->email) {
+                $seenEmails[] = mb_strtolower($admin->email);
+            }
+        }
+
+        // Correos de notificacion del cliente que no correspondan ya a un usuario.
+        $client = Client::find($visit->client_id);
+        foreach ($client?->notificationEmails() ?? [] as $email) {
+            $key = mb_strtolower($email);
+            if (! in_array($key, $seenEmails, true)) {
+                $recipients[] = ['user' => null, 'email' => $email, 'role' => 'admin'];
+                $seenEmails[] = $key;
+            }
         }
 
         if ($visit->technician_id && $technician = User::find($visit->technician_id)) {
-            $recipients[] = [$technician, 'technician'];
+            $recipients[] = ['user' => $technician, 'email' => null, 'role' => 'technician'];
         }
 
         return $recipients;
@@ -437,6 +482,17 @@ class ScheduleService
             return $own->enabled ? ($own->offsets ?: []) : [];
         }
 
+        return $this->defaultOffsets($role);
+    }
+
+    /**
+     * Los momentos globales de un rol. Para destinatarios sin usuario (correos de
+     * notificacion sueltos), que no tienen preferencias propias.
+     *
+     * @return array<int, array{days_before: int, time: string}>
+     */
+    private function defaultOffsets(string $role): array
+    {
         return ScheduleSetting::get(
             $role === 'technician' ? 'default_technician_offsets' : 'default_admin_offsets'
         ) ?: [];

@@ -26,6 +26,11 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
 
     public function via(object $notifiable): array
     {
+        // Un correo de notificación suelto (sin login/teléfono) solo recibe mail.
+        if ($notifiable instanceof \Illuminate\Notifications\AnonymousNotifiable) {
+            return ['mail'];
+        }
+
         $channels = ['database', 'mail'];
 
         if ($notifiable->phone) {

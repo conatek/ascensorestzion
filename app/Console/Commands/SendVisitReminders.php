@@ -7,6 +7,7 @@ use App\Models\VisitReminder;
 use App\Notifications\VisitReminderNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Despacha los recordatorios vencidos. Corre cada cinco minutos, asi que la hora
@@ -43,7 +44,13 @@ class SendVisitReminders extends Command
                 continue;
             }
 
-            if (! $reminder->user) {
+            // El destinatario es un usuario con login o un correo de notificación
+            // suelto (sin usuario). Si la fila no resuelve a ninguno, es obsoleta.
+            $notifiable = $reminder->user_id
+                ? $reminder->user
+                : ($reminder->email ? Notification::route('mail', $reminder->email) : null);
+
+            if (! $notifiable) {
                 $reminder->update(['status' => 'obsoleto']);
                 $obsolete++;
 
@@ -65,7 +72,7 @@ class SendVisitReminders extends Command
             }
 
             try {
-                $reminder->user->notify(new VisitReminderNotification($reminder));
+                $notifiable->notify(new VisitReminderNotification($reminder));
 
                 // "enviado" es despachado: las notificaciones van por cola y el
                 // correo sale en el worker. Si la entrega acaba fallando,

@@ -93,9 +93,12 @@
                             <i class="fa fa-user"></i>
                             <span>{{ client.contact_name }}</span>
                         </div>
-                        <div v-if="client.contact_email" class="info-item">
+                        <div v-if="notificationEmails.length" class="info-item info-item-emails">
                             <i class="fa fa-envelope"></i>
-                            <a :href="'mailto:' + client.contact_email">{{ client.contact_email }}</a>
+                            <div class="emails-list">
+                                <span class="emails-label">Correos de notificación</span>
+                                <a v-for="(email, i) in notificationEmails" :key="i" :href="'mailto:' + email">{{ email }}</a>
+                            </div>
                         </div>
                         <div v-if="client.contact_phone" class="info-item">
                             <i class="fa fa-phone"></i>
@@ -195,11 +198,16 @@ export default {
     },
 
     computed: {
+        notificationEmails() {
+            return Array.isArray(this.client.notification_emails)
+                ? this.client.notification_emails.filter(Boolean)
+                : [];
+        },
         hasGeneralInfo() {
             return this.client.address || this.client.city || this.client.department;
         },
         hasContactInfo() {
-            return this.client.contact_name || this.client.contact_email || this.client.contact_phone;
+            return this.client.contact_name || this.notificationEmails.length || this.client.contact_phone;
         },
         totalEquipment() {
             if (!this.client.sites) return 0;
@@ -393,6 +401,28 @@ export default {
     color: #94a3b8;
     width: 16px;
     text-align: center;
+}
+
+.info-item-emails {
+    align-items: flex-start;
+}
+
+.info-item-emails i {
+    margin-top: 0.35rem;
+}
+
+.emails-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.emails-label {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
 }
 
 .info-item a {

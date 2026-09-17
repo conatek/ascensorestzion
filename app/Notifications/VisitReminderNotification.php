@@ -34,7 +34,7 @@ class VisitReminderNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $visit = $this->visitWithRelations($this->reminder->scheduledVisit);
-        $isTechnician = $notifiable->hasRole('technician');
+        $isTechnician = $this->isTechnician($notifiable);
 
         $equipment = $visit->equipment?->internal_code ?? '—';
         $site = $visit->site?->name ?? '—';

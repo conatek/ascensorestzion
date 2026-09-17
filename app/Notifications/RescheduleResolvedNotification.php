@@ -26,14 +26,14 @@ class RescheduleResolvedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->scheduleChannels($notifiable);
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         $request = $this->request->fresh(['scheduledVisit']) ?? $this->request;
         $visit = $this->visitWithRelations($request->scheduledVisit);
-        $isTechnician = $notifiable->hasRole('technician');
+        $isTechnician = $this->isTechnician($notifiable);
 
         $mail = $request->status === RescheduleRequest::APROBADA
             ? $this->approvedMail($request, $visit, $isTechnician)

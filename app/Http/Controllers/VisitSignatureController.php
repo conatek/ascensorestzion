@@ -157,9 +157,10 @@ class VisitSignatureController extends Controller
             $first->technician->notify(new VisitReportsCompletedNotification($reportIds, 'technician'));
         }
 
-        $clientAdmins = User::where('client_id', $first->client_id)->get();
-        if ($clientAdmins->isNotEmpty()) {
-            Notification::send($clientAdmins, new VisitReportsCompletedNotification($reportIds, 'client'));
+        // Cliente: sus usuarios con acceso + sus correos de notificación.
+        $clientTargets = $first->client?->notificationTargets() ?? [];
+        if ($clientTargets !== []) {
+            Notification::send($clientTargets, new VisitReportsCompletedNotification($reportIds, 'client'));
         }
     }
 }
