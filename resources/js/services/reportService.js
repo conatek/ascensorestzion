@@ -35,8 +35,9 @@ export default {
     getCatalogs(scope, category) {
         return api.get('/catalogs', { params: { scope, category } });
     },
-    sendEmail(id, data) {
-        return api.post(`${resource}/${id}/send-email`, data);
+    sendEmail(id) {
+        // Se envía al correo del usuario logueado; sin cuerpo.
+        return api.post(`${resource}/${id}/send-email`, {});
     },
     exportCsv(params = {}) {
         return api.get('/service-reports-export', { params, responseType: 'blob' });

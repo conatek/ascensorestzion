@@ -40,8 +40,8 @@
                         <button class="btn-action btn-pdf" @click="downloadPdf">
                             <i class="fa fa-file-pdf me-1"></i> Descargar PDF
                         </button>
-                        <button class="btn-action btn-email" @click="showEmailModal = true">
-                            <i class="fa fa-envelope me-1"></i> Enviar por Email
+                        <button class="btn-action btn-email" @click="sendEmail" :disabled="sendingEmail">
+                            <i class="fa fa-envelope me-1"></i> {{ sendingEmail ? 'Enviando…' : 'Enviar por Email' }}
                         </button>
                     </div>
                 </div>
@@ -569,42 +569,6 @@
             </div>
         </template>
 
-        <!-- Modal Enviar por Email -->
-        <div v-if="showEmailModal" class="modal-overlay" @click.self="closeEmailModal">
-            <div class="modal-container">
-                <div class="modal-icon-wrapper">
-                    <div class="modal-icon modal-icon-email">
-                        <i class="fa fa-envelope"></i>
-                    </div>
-                </div>
-                <h4 class="modal-title">Enviar Reporte por Email</h4>
-                <p class="modal-message">
-                    Ingresa el correo electronico del destinatario para enviar el reporte.
-                </p>
-                <div class="email-input-wrapper">
-                    <input
-                        v-model="emailTo"
-                        type="email"
-                        class="email-input"
-                        placeholder="correo@ejemplo.com"
-                        :disabled="sendingEmail"
-                    />
-                </div>
-                <div v-if="emailSent" class="email-success-msg">
-                    <i class="fa fa-check-circle me-1"></i> Reporte enviado exitosamente
-                </div>
-                <div class="modal-actions">
-                    <button class="modal-btn modal-btn-cancel" @click="closeEmailModal" :disabled="sendingEmail">
-                        Cancelar
-                    </button>
-                    <button class="modal-btn modal-btn-send" @click="sendEmail" :disabled="sendingEmail || !emailTo">
-                        <span v-if="sendingEmail" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ sendingEmail ? 'Enviando...' : 'Enviar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Lightbox de fotos -->
         <Teleport to="body">
             <div v-if="lightboxPhoto" class="lightbox-overlay" @click.self="closeLightbox">
@@ -628,10 +592,7 @@ export default {
         return {
             report: {},
             loading: true,
-            showEmailModal: false,
-            emailTo: '',
             sendingEmail: false,
-            emailSent: false,
             lightboxIndex: null,
 
             statusLabels: {
@@ -953,26 +914,37 @@ export default {
         },
 
         async sendEmail() {
+            const confirm = await this.$swal.fire({
+                icon: 'question',
+                title: 'Enviar reporte por correo',
+                text: 'El reporte se enviará a tu correo (el del usuario con el que iniciaste sesión).',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#30ab0a',
+            });
+            if (!confirm.isConfirmed) return;
+
             this.sendingEmail = true;
-            this.emailSent = false;
             try {
-                await reportService.sendEmail(this.$route.params.id, { email: this.emailTo });
-                this.emailSent = true;
-                setTimeout(() => {
-                    this.closeEmailModal();
-                }, 1500);
+                const { data } = await reportService.sendEmail(this.$route.params.id);
+                await this.$swal.fire({
+                    icon: 'success',
+                    title: 'Reporte enviado',
+                    text: data.message || 'Te enviamos el reporte a tu correo.',
+                    timer: 2500,
+                    showConfirmButton: false,
+                });
             } catch (error) {
                 console.error('Error enviando email:', error);
-                alert('Error al enviar el reporte por email.');
+                this.$swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo enviar',
+                    text: 'Ocurrió un error al enviar el reporte por correo. Inténtalo de nuevo.',
+                });
             } finally {
                 this.sendingEmail = false;
             }
-        },
-
-        closeEmailModal() {
-            this.showEmailModal = false;
-            this.emailTo = '';
-            this.emailSent = false;
         },
     },
 };

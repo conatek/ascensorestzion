@@ -4,18 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Events\ReportCompleted;
 use App\Http\Requests\StoreServiceReportRequest;
-use App\Mail\ServiceReportMail;
 use App\Models\Equipment;
 use App\Models\ServiceReport;
 use App\Models\ServiceReportAuditLog;
 use App\Models\User;
 use App\Notifications\ReportCompletedNotification;
+use App\Notifications\ServiceReportReadyNotification;
 use App\Services\ServiceReportNumberingService;
 use App\Services\ServiceReportPdfService;
 use App\Services\ServiceReportSigningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
@@ -439,10 +438,6 @@ class ServiceReportController extends Controller
         $user = $request->user();
         abort_if(! $user->can('export_report_pdf'), 403, 'No autorizado.');
 
-        $request->validate([
-            'email' => ['required', 'email'],
-        ]);
-
         $serviceReport->load(['equipment.site.client', 'technician', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks', 'attachments']);
 
         $view = 'pdf.'.strtolower($serviceReport->report_type);
@@ -450,9 +445,13 @@ class ServiceReportController extends Controller
 
         $pdf = $this->generatePdf($html);
 
-        Mail::to($request->email)->send(new ServiceReportMail($serviceReport, $pdf));
+        // Se envía al correo del usuario logueado (no a un destinatario arbitrario).
+        $user->notify(new ServiceReportReadyNotification($serviceReport, $pdf));
 
-        return response()->json(['message' => 'Correo enviado correctamente.']);
+        return response()->json([
+            'message' => "Te enviamos el reporte a {$user->email}.",
+            'email' => $user->email,
+        ]);
     }
 
     public function export(Request $request)
