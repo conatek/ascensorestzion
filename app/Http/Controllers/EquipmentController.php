@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEquipmentRequest;
 use App\Models\Equipment;
+use App\Services\BrowsershotFactory;
 use App\Services\CloudinaryService;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
@@ -224,15 +225,7 @@ class EquipmentController extends Controller
             ->showBackground()
             ->noSandbox();
 
-        $chromePath = env('BROWSERSHOT_CHROME_PATH');
-        $nodePath = env('BROWSERSHOT_NODE_PATH');
-
-        if ($chromePath) {
-            $browsershot->setChromePath($chromePath);
-        }
-        if ($nodePath) {
-            $browsershot->setNodeBinary($nodePath);
-        }
+        BrowsershotFactory::configure($browsershot);
 
         return $browsershot->pdf();
     }

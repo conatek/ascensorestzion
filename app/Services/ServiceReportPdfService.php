@@ -42,15 +42,7 @@ class ServiceReportPdfService
             ->waitUntilNetworkIdle() // esperar imágenes remotas (anexo Cloudinary)
             ->noSandbox();
 
-        $chromePath = env('BROWSERSHOT_CHROME_PATH');
-        $nodePath = env('BROWSERSHOT_NODE_PATH');
-
-        if ($chromePath) {
-            $browsershot->setChromePath($chromePath);
-        }
-        if ($nodePath) {
-            $browsershot->setNodeBinary($nodePath);
-        }
+        BrowsershotFactory::configure($browsershot);
 
         return $browsershot->pdf();
     }
