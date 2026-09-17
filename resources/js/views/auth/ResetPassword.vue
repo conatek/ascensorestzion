@@ -3,9 +3,11 @@
         <div class="pw-card">
             <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" class="pw-logo" />
 
-            <h1 class="pw-title">Nueva contraseña</h1>
+            <h1 class="pw-title">{{ isInvite ? 'Establecer contraseña' : 'Nueva contraseña' }}</h1>
             <p class="pw-subtitle">
-                <span v-if="email">Para <strong>{{ email }}</strong></span>
+                <span v-if="isInvite && email">Te damos acceso a la plataforma. Define la contraseña para <strong>{{ email }}</strong>.</span>
+                <span v-else-if="isInvite">Define la contraseña para activar tu acceso.</span>
+                <span v-else-if="email">Para <strong>{{ email }}</strong></span>
                 <span v-else>Define una nueva contraseña para tu cuenta.</span>
             </p>
 
@@ -36,7 +38,7 @@
 
                 <button type="submit" class="pw-btn" :disabled="loading">
                     <span v-if="loading" class="pw-spinner"></span>
-                    {{ loading ? 'Guardando…' : 'Restablecer contraseña' }}
+                    {{ loading ? 'Guardando…' : (isInvite ? 'Establecer contraseña' : 'Restablecer contraseña') }}
                 </button>
             </form>
 
@@ -69,6 +71,10 @@ export default {
         email() {
             return this.$route.query.email || '';
         },
+        // Enlace del correo de invitación (/activar/:token) vs. restablecimiento normal.
+        isInvite() {
+            return this.$route.meta.mode === 'invite';
+        },
     },
 
     methods: {
@@ -77,15 +83,18 @@ export default {
             this.errors = {};
             this.generalError = '';
             try {
-                const { data } = await passwordService.reset({
+                const payload = {
                     token: this.token,
                     email: this.email,
                     password: this.form.password,
                     password_confirmation: this.form.password_confirmation,
-                });
+                };
+                const { data } = this.isInvite
+                    ? await passwordService.setPassword(payload)
+                    : await passwordService.reset(payload);
                 await this.$swal.fire({
                     icon: 'success',
-                    title: 'Contraseña restablecida',
+                    title: this.isInvite ? 'Contraseña establecida' : 'Contraseña restablecida',
                     text: data.message,
                     confirmButtonText: 'Iniciar sesión',
                 });

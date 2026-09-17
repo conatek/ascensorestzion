@@ -115,6 +115,13 @@ const routes = [
         component: () => import('../js/views/auth/ResetPassword.vue'),
         meta: { guest: true },
     },
+    {
+        // Enlace del correo de invitación: mismo componente, modo "establecer".
+        path: '/activar/:token',
+        name: 'password.set',
+        component: () => import('../js/views/auth/ResetPassword.vue'),
+        meta: { guest: true, mode: 'invite' },
+    },
 
     // --- Panel ---
     {

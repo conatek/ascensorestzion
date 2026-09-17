@@ -231,10 +231,9 @@
                                 <input v-model="form.email" type="email" class="form-input" :class="{ 'has-error': formErrors.email }" />
                                 <span v-if="formErrors.email" class="error-text">{{ formErrors.email[0] }}</span>
                             </div>
-                            <div class="form-group">
+                            <div v-if="editingId" class="form-group">
                                 <label class="form-label">
-                                    Contraseña <span v-if="!editingId" class="req">*</span>
-                                    <span v-else class="optional">(dejar vacío para no cambiar)</span>
+                                    Contraseña <span class="optional">(dejar vacío para no cambiar)</span>
                                 </label>
                                 <input v-model="form.password" type="password" class="form-input" :class="{ 'has-error': formErrors.password }" autocomplete="new-password" />
                                 <span v-if="formErrors.password" class="error-text">{{ formErrors.password[0] }}</span>
@@ -276,6 +275,13 @@
                                     </select>
                                     <input v-model="form.document_number" type="text" class="form-input" placeholder="Número" />
                                 </div>
+                            </div>
+
+                            <div v-if="!editingId" class="form-group form-group-full">
+                                <p class="create-hint">
+                                    <i class="fa fa-envelope me-1"></i>
+                                    El usuario recibirá un correo para establecer su contraseña y activar su acceso. No necesitas asignar una aquí.
+                                </p>
                             </div>
 
                             <div v-if="editingId" class="form-group form-group-full">
@@ -977,6 +983,17 @@ export default {
     border-radius: 8px;
     color: #dc2626;
     font-size: 0.85rem;
+}
+
+.create-hint {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    background: #eef7ea;
+    border: 1px solid #cde7c2;
+    border-radius: 8px;
+    color: #2f6b1a;
+    font-size: 0.83rem;
+    line-height: 1.4;
 }
 
 .modal-footer-actions {

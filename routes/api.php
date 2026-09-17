@@ -39,6 +39,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 // Recuperación de contraseña (pública)
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
+Route::post('/set-password', [PasswordResetController::class, 'setPassword'])->middleware('throttle:5,1');
 
 // Formulario de contacto (público)
 Route::post('/contact', [ContactController::class, 'send'])->middleware('throttle:5,1');

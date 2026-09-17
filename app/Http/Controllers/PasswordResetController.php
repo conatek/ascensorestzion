@@ -59,4 +59,41 @@ class PasswordResetController extends Controller
             'errors' => ['email' => [$reason]],
         ], 422);
     }
+
+    /**
+     * Establece la contraseña de un usuario recién invitado con el token del
+     * correo de bienvenida. Usa el broker 'invitations' (vigencia larga); el
+     * flujo de restablecimiento normal sigue en 60 minutos.
+     */
+    public function setPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::broker('invitations')->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Contraseña establecida. Ya puedes iniciar sesión.',
+            ]);
+        }
+
+        $reason = $status === Password::INVALID_USER
+            ? 'No encontramos una cuenta con ese correo.'
+            : 'El enlace es inválido o expiró. Pide al administrador que te reenvíe la invitación.';
+
+        return response()->json([
+            'message' => $reason,
+            'errors' => ['email' => [$reason]],
+        ], 422);
+    }
 }

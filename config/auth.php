@@ -93,6 +93,17 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Broker aparte para la invitación de un usuario recién creado: el mismo
+        // almacén que el reset, pero con vigencia larga (7 días) para que el correo
+        // de bienvenida no caduque antes de que la persona lo abra. El reset normal
+        // sigue en 60 minutos.
+        'invitations' => [
+            'provider' => 'users',
+            'table' => 'password_resets',
+            'expire' => 10080,
+            'throttle' => 0,
+        ],
     ],
 
     /*

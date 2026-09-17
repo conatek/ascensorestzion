@@ -7,12 +7,15 @@ use App\Models\ScheduledVisit;
 use App\Models\ServiceReport;
 use App\Models\TechnicianCheckin;
 use App\Models\User;
+use App\Notifications\UserInvitationNotification;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class UserAdminController extends Controller
 {
@@ -58,7 +61,6 @@ class UserAdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:8',
             'role' => 'required|in:master,super,coordinator,technician,admin',
             'phone' => 'nullable|string|max:20',
             'document_type' => 'nullable|in:CC,CE,NIT,PP',
@@ -70,7 +72,9 @@ class UserAdminController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            // Contraseña aleatoria e inservible: la persona define la suya con el
+            // enlace del correo de invitación. Nunca viaja una contraseña por correo.
+            'password' => Hash::make(Str::random(40)),
             'phone' => $data['phone'] ?? null,
             'document_type' => $data['document_type'] ?? null,
             'document_number' => $data['document_number'] ?? null,
@@ -80,6 +84,11 @@ class UserAdminController extends Controller
         ]);
 
         $user->assignRole($data['role']);
+
+        // Enlace de invitación con vigencia larga (broker 'invitations') + correo de
+        // bienvenida para que la persona establezca su contraseña y active su acceso.
+        $token = Password::broker('invitations')->createToken($user);
+        $user->notify(new UserInvitationNotification($token));
 
         return response()->json($user->load(['roles:id,name', 'client:id,business_name']), 201);
     }

@@ -8,4 +8,8 @@ export default {
         // payload: { token, email, password, password_confirmation }
         return api.post('/reset-password', payload);
     },
+    setPassword(payload) {
+        // Invitación de un usuario nuevo. payload: { token, email, password, password_confirmation }
+        return api.post('/set-password', payload);
+    },
 };
