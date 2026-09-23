@@ -5,9 +5,6 @@
             <div class="tech-header__left">
                 <img :src="'/images/logo/logo-atzion.svg'" alt="Tzion" class="tech-header__logo" />
             </div>
-            <div class="tech-header__center">
-                <span class="tech-header__name">{{ userName }}</span>
-            </div>
             <div class="tech-header__right">
                 <NotificationBell />
                 <ConnectionStatus to="tech.pending" persistent />
@@ -93,10 +90,6 @@ export default {
         };
     },
     computed: {
-        userName() {
-            const auth = useAuth();
-            return auth.state.user?.name || 'Técnico';
-        },
         offlineState() {
             return offlineManager.state;
         },
@@ -169,24 +162,6 @@ export default {
 .tech-header__logo {
     height: 36px;
     width: auto;
-}
-
-.tech-header__center {
-    flex: 1;
-    /* min-width: 0 para que el nombre pueda encogerse: sin conexión la píldora de
-       estado ocupa más y el nombre se partía en tres líneas. */
-    min-width: 0;
-    text-align: center;
-}
-
-.tech-header__name {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #1e293b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .tech-header__right {

@@ -1033,17 +1033,20 @@ export default {
                 const { data } = await reportService.get(this.$route.params.id);
                 const report = data;
 
-                // Basic info
-                this.form.type = report.type || 'RSTP';
+                // Basic info. Los escalares llegan con los nombres de columna del
+                // backend (report_type, customer_order_ref, equipment_functional,
+                // generates_quotation, requires_parts_change, time_in/time_out);
+                // antes se leían con otros nombres y volvían siempre vacíos al editar.
+                this.form.type = report.report_type || 'RSTP';
                 this.form.equipment_id = report.equipment_id || '';
                 this.form.service_date = report.service_date || '';
-                this.form.customer_request = report.customer_request || '';
-                this.form.equipment_operational = report.equipment_operational ?? true;
-                this.form.generates_quote = report.generates_quote ?? false;
-                this.form.requires_parts = report.requires_parts ?? false;
+                this.form.customer_request = report.customer_order_ref || '';
+                this.form.equipment_operational = report.equipment_functional ?? true;
+                this.form.generates_quote = report.generates_quotation ?? false;
+                this.form.requires_parts = report.requires_parts_change ?? false;
                 this.form.conclusion_notes = report.conclusion_notes || '';
-                this.form.entry_time = report.entry_time || '';
-                this.form.exit_time = report.exit_time || '';
+                this.form.entry_time = report.time_in || '';
+                this.form.exit_time = report.time_out || '';
 
                 // Cascading selects
                 if (report.equipment && report.equipment.site) {
@@ -1117,8 +1120,8 @@ export default {
                 if (report.customer_signer_name) {
                     this.customerSigner.name = report.customer_signer_name;
                 }
-                if (report.customer_signer_cc) {
-                    this.customerSigner.cc = report.customer_signer_cc;
+                if (report.customer_signer_document) {
+                    this.customerSigner.cc = report.customer_signer_document;
                 }
             } catch (err) {
                 this.generalError = 'Error al cargar el informe.';
@@ -1169,26 +1172,36 @@ export default {
         // --- Submit ---
 
         buildPayload() {
+            // Los nombres de campo deben coincidir con StoreServiceReportRequest /
+            // el controlador: report_type (no 'type'), equipment_functional,
+            // generates_quotation, requires_parts_change, customer_order_ref y
+            // time_in/time_out. Antes se enviaban con otros nombres y el backend los
+            // ignoraba (o rechazaba con 422 en report_type).
             const payload = {
-                type: this.form.type,
+                report_type: this.form.type,
                 equipment_id: this.form.equipment_id,
                 service_date: this.form.service_date,
-                customer_request: this.form.customer_request,
-                equipment_operational: this.form.equipment_operational,
-                generates_quote: this.form.generates_quote,
-                requires_parts: this.form.requires_parts,
+                customer_order_ref: this.form.customer_request,
+                equipment_functional: this.form.equipment_operational,
+                generates_quotation: this.form.generates_quote,
+                requires_parts_change: this.form.requires_parts,
                 conclusion_notes: this.form.conclusion_notes,
-                entry_time: this.form.entry_time,
-                exit_time: this.form.exit_time,
-                initial_conditions: this.initialConditions.map(c => ({
-                    condition_key: c.condition_key,
-                    value: c.value,
-                    observation: c.observation,
-                })),
+                time_in: this.form.entry_time,
+                time_out: this.form.exit_time,
+                // Solo las condiciones respondidas: el backend exige value (si|no|na)
+                // en cada condición presente, así que las vacías se omiten.
+                initial_conditions: this.initialConditions
+                    .filter(c => c.value)
+                    .map(c => ({
+                        condition_key: c.condition_key,
+                        value: c.value,
+                        observation: c.observation,
+                    })),
             };
 
             if (this.reportType === 'RSTP') {
                 payload.rstp_activities = this.rstpActivities.map(a => ({
+                    group_key: a.group_key,
                     activity_key: a.activity_key,
                     is_ok: a.is_ok,
                     observation: a.observation,
@@ -1208,6 +1221,7 @@ export default {
 
             if (this.reportType === 'RSTE') {
                 payload.rste_works = this.rsteWorks.map(w => ({
+                    group_key: w.group_key,
                     work_key: w.work_key,
                     is_ok: w.is_ok,
                     observation: w.observation,
@@ -1274,13 +1288,14 @@ export default {
                     });
                 }
 
-                // Sign customer
+                // Sign customer. El backend exige signer_name/signer_document
+                // (antes se enviaban como name/cc y la firma fallaba con 422).
                 const custSig = this.$refs.customerSignature?.toDataURL();
                 if (custSig) {
                     await reportService.signCustomer(reportId, {
                         signature: custSig,
-                        name: this.customerSigner.name,
-                        cc: this.customerSigner.cc,
+                        signer_name: this.customerSigner.name,
+                        signer_document: this.customerSigner.cc,
                     });
                 }
 

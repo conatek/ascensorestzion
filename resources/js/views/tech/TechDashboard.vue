@@ -56,7 +56,7 @@
                 <router-link
                     v-for="report in recentReports"
                     :key="report.id"
-                    :to="{ name: 'reports.show', params: { id: report.id } }"
+                    :to="reportTarget(report)"
                     class="dash-report-item"
                 >
                     <div class="dash-report-item__type" :class="'type-' + report.report_type">
@@ -71,6 +71,8 @@
                     <div class="dash-report-item__status" :class="'status-' + report.status">
                         {{ statusLabel(report.status) }}
                     </div>
+                    <!-- Un borrador se reabre en el editor: lápiz para dejarlo claro. -->
+                    <i v-if="report.status === 'borrador'" class="fa fa-pen dash-report-item__resume" title="Continuar"></i>
                 </router-link>
             </div>
         </div>
@@ -175,6 +177,18 @@ export default {
                 anulado: 'Anulado',
             };
             return labels[status] || status;
+        },
+
+        // Un borrador se reabre en el wizard para seguir editándolo; el resto va
+        // a la vista de detalle (solo lectura).
+        reportTarget(report) {
+            if (report.status === 'borrador') {
+                return {
+                    name: 'tech.report.create',
+                    query: { report_id: report.id, type: report.report_type },
+                };
+            }
+            return { name: 'reports.show', params: { id: report.id } };
         },
     },
 };
@@ -389,6 +403,14 @@ export default {
 }
 
 .status-borrador { background: #f1f5f9; color: #64748b; }
+
+.dash-report-item__resume {
+    flex-shrink: 0;
+    margin-left: 0.25rem;
+    color: #30ab0a;
+    font-size: 0.8rem;
+}
+
 .status-firmado_tecnico { background: #dbeafe; color: #2563eb; }
 .status-firmado_cliente { background: #e8f5e4; color: #279208; }
 .status-cerrado { background: #e8f5e4; color: #279208; }

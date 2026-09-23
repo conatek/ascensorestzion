@@ -515,14 +515,12 @@ export default {
             return this.siteEquipmentCount > 1 && !!this.siteId;
         },
         canAdvance() {
-            if (this.currentStep === 0) {
-                return this.conditionsAnswered === this.conditions.length;
-            }
-            if (this.currentStep === 1) {
-                if (this.reportType === 'RSTP') return this.activitiesAnswered === this.allActivities.length;
-                if (this.reportType === 'RSTE') return this.rsteWorksAnswered === this.allRsteWorks.length;
-                return true; // RSTC no requiere validacion de toggles
-            }
+            // Pasos 0 (Condicion Inicial) y 1 (Actividades/Trabajos/Falla): los
+            // formularios de mantenimiento son OPCIONALES, a criterio del tecnico.
+            // "Siguiente" queda siempre habilitado aunque haya campos sin responder;
+            // un reporte con campos vacios es valido (los sin responder viajan como
+            // 'na'/false en buildPayload). Solo la Conclusion (paso 2) sigue exigida
+            // porque sus 3 toggles alimentan los indicadores del tablero.
             if (this.currentStep === 2) {
                 return this.conclusion.equipment_functional !== null
                     && this.conclusion.generates_quotation !== null
@@ -648,6 +646,8 @@ export default {
                         if (data.time_in) this.timeIn = data.time_in;
                         // Para habilitar la firma diferida
                         this.setSiteInfo(data.equipment?.site, data.site_id ?? data.equipment?.site_id);
+                        // Volcar las respuestas ya guardadas para poder seguir el borrador.
+                        this.hydrateFromReport(data);
                     } catch {}
                 }
             } catch (err) {
@@ -659,6 +659,70 @@ export default {
             // Sin catálogos el formulario no tiene nada que marcar. Antes esto
             // pasaba en silencio y parecía que la app estaba rota.
             this.catalogsMissing = ! this.conditions.length;
+        },
+
+        // Vuelca sobre el formulario (ya montado con el catálogo) las respuestas
+        // guardadas de un borrador para poder seguir editándolo. Sin esto, reabrir
+        // un borrador mostraba todo en blanco aunque el servidor sí tuviera los datos.
+        hydrateFromReport(data) {
+            // Paso 1 — condiciones iniciales (value 'si' | 'no' | 'na')
+            // Las relaciones se serializan en snake_case ($snakeAttributes de Eloquent).
+            if (Array.isArray(data.initial_conditions)) {
+                const byKey = Object.fromEntries(data.initial_conditions.map(c => [c.condition_key, c]));
+                this.conditions.forEach(c => {
+                    const saved = byKey[c.key];
+                    if (saved) {
+                        c.value = saved.value ?? null;
+                        c.observation = saved.observation || '';
+                    }
+                });
+            }
+
+            // Paso 2 — RSTP: actividades (is_ok booleano) + mes del mantenimiento
+            if (this.reportType === 'RSTP') {
+                if (Array.isArray(data.rstp_activities)) {
+                    const byKey = Object.fromEntries(data.rstp_activities.map(a => [a.activity_key, a]));
+                    this.activityGroups.forEach(g => g.items.forEach(item => {
+                        const saved = byKey[item.key];
+                        if (saved) {
+                            item.value = saved.is_ok;
+                            item.observation = saved.observation || '';
+                        }
+                    }));
+                }
+                if (data.rstp_month) {
+                    this.rstpMonth = {
+                        year: data.rstp_month.year ?? this.rstpMonth.year,
+                        month: data.rstp_month.month ?? this.rstpMonth.month,
+                    };
+                }
+            }
+
+            // Paso 2 — RSTC: detalles de la falla
+            if (this.reportType === 'RSTC' && data.rstc_details) {
+                Object.keys(this.rstcDetails).forEach(k => {
+                    const v = data.rstc_details[k];
+                    if (v !== undefined && v !== null) this.rstcDetails[k] = v;
+                });
+            }
+
+            // Paso 2 — RSTE: trabajos especiales (is_ok booleano)
+            if (this.reportType === 'RSTE' && Array.isArray(data.rste_works)) {
+                const byKey = Object.fromEntries(data.rste_works.map(w => [w.work_key, w]));
+                this.rsteWorkGroups.forEach(g => g.items.forEach(item => {
+                    const saved = byKey[item.key];
+                    if (saved) {
+                        item.value = saved.is_ok;
+                        item.observation = saved.observation || '';
+                    }
+                }));
+            }
+
+            // Paso 3 — conclusión (booleanos que pueden quedar en null si nunca se marcaron)
+            if (data.equipment_functional !== undefined) this.conclusion.equipment_functional = data.equipment_functional;
+            if (data.generates_quotation !== undefined) this.conclusion.generates_quotation = data.generates_quotation;
+            if (data.requires_parts_change !== undefined) this.conclusion.requires_parts = data.requires_parts_change;
+            if (data.conclusion_notes) this.conclusion.notes = data.conclusion_notes;
         },
 
         groupAnswered(group) {
