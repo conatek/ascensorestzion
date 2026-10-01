@@ -16,8 +16,8 @@
             </div>
 
             <div class="visit-modal-body">
-                <!-- Errores del backend: la validacion real de jornada y solapes vive
-                     alli, asi que se muestran tal cual llegan. -->
+                <!-- Errores del backend (solapes, rango invalido): la validacion real
+                     vive alli, asi que se muestran tal cual llegan. -->
                 <div v-if="errors.length" class="visit-alert visit-alert-error">
                     <i class="fa fa-exclamation-triangle me-2"></i>
                     <ul>
@@ -59,11 +59,12 @@
                             <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
                         </select>
                         <span v-if="technicianWindow" class="visit-hint">
-                            Jornada: {{ technicianWindow.start }}–{{ technicianWindow.end }}
+                            Jornada habitual: {{ technicianWindow.start }}–{{ technicianWindow.end }}
                             <template v-if="technicianWindow.break_start">
                                 · descanso {{ technicianWindow.break_start }}–{{ technicianWindow.break_end }}
                             </template>
                             · {{ dayNames(technicianWindow.days) }}
+                            · se puede agendar fuera de ella (urgencias)
                         </span>
                     </div>
 
@@ -306,7 +307,7 @@ export default {
             }
         },
 
-        /** Aplana errors de 422 (jornada, descanso, solapes) en una lista plana. */
+        /** Aplana errors de 422 (solapes, rango invalido) en una lista plana. */
         collectErrors(err) {
             const bag = err?.response?.data?.errors;
             if (bag) return Object.values(bag).flat();

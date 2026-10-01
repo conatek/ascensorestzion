@@ -51,15 +51,11 @@
         <div class="filter-bar">
             <div class="filter-row">
                 <div class="filter-group">
-                    <label class="filter-label">Agrupar por</label>
-                    <div class="group-toggle">
-                        <button :class="{ active: groupBy === 'technician' }" @click="setGroupBy('technician')">
-                            <i class="fa fa-user-cog me-1"></i> Técnico
-                        </button>
-                        <button :class="{ active: groupBy === 'equipment' }" @click="setGroupBy('equipment')">
-                            <i class="fa fa-arrows-alt-v me-1"></i> Equipo
-                        </button>
-                    </div>
+                    <label class="filter-label">Técnico</label>
+                    <select v-model="filters.technician_id" class="filter-select" @change="onTechnicianChange">
+                        <option value="">Todos (resumen del mes)</option>
+                        <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
+                    </select>
                 </div>
                 <div class="filter-group">
                     <label class="filter-label">Cliente</label>
@@ -73,13 +69,6 @@
                     <select v-model="filters.site_id" class="filter-select" :disabled="!filters.client_id" @change="load">
                         <option value="">Todas</option>
                         <option v-for="s in filteredSites" :key="s.id" :value="s.id">{{ s.name }}</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Técnico</label>
-                    <select v-model="filters.technician_id" class="filter-select" @change="load">
-                        <option value="">Todos</option>
-                        <option v-for="t in technicians" :key="t.id" :value="t.id">{{ t.name }}</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -111,7 +100,31 @@
                 <span class="legend-item"><i class="legend-ring ring-encurso"></i> En curso</span>
                 <span class="legend-item"><i class="legend-ring ring-reprog"></i> Reprogramación solicitada</span>
                 <span class="legend-item"><i class="legend-dot dot-cerrada"></i> Completada o cancelada</span>
-                <span class="legend-item"><i class="legend-dot dot-break"></i> No agendable (descanso o día no laborable)</span>
+                <span v-if="hasTechnician" class="legend-item"><i class="legend-dot dot-break"></i> Fuera de jornada o descanso (se puede agendar igual)</span>
+            </div>
+
+            <!-- Sin técnico elegido solo hay mes: el resumen de todos. Cada visita
+                 lleva la insignia de su técnico; las fichas de abajo dicen de quién
+                 es cada color y sirven de atajo para abrir su semana. -->
+            <div v-if="!hasTechnician && !loading" class="tech-overview">
+                <span class="tech-overview__hint">
+                    <i class="fa fa-info-circle me-1"></i>
+                    Resumen del mes con todos los técnicos. Elige uno para ver su semana o su día.
+                </span>
+                <div class="tech-overview__chips">
+                    <button
+                        v-for="t in overviewTechnicians"
+                        :key="t.id"
+                        type="button"
+                        class="tech-chip"
+                        :disabled="t.inactive"
+                        :title="t.inactive ? `${t.name} ya no está activo` : `Ver la agenda de ${t.name}`"
+                        @click="selectTechnician(t.id)"
+                    >
+                        <span class="tech-badge" :style="{ background: technicianColor(t.id) }">{{ initials(t.name) }}</span>
+                        {{ t.name }}<span v-if="t.inactive" class="tech-chip__note">(inactivo)</span>
+                    </button>
+                </div>
             </div>
 
             <div v-show="!loading">
@@ -119,16 +132,13 @@
                     ref="cal"
                     class="tz-schedule"
                     locale="es"
-                    :time-from="timeFrom"
-                    :time-to="timeTo"
+                    :time-from="0"
+                    :time-to="24 * 60"
                     :time-step="30"
                     :time-cell-height="30"
-                    :disable-views="['years', 'year']"
+                    :disable-views="disabledViews"
                     :active-view="view"
                     :selected-date="selectedDate"
-                    :split-days="splits"
-                    :sticky-split-labels="useSplits"
-                    :min-split-width="minSplitWidth"
                     :special-hours="specialHours"
                     :events="events"
                     :editable-events="editableEvents"
@@ -145,15 +155,15 @@
                         <!-- En el mes cada celda es un día entero: el bloque de
                              varias líneas desbordaba la casilla y deformaba la
                              rejilla, así que ahí va en una sola línea. -->
-                        <div v-if="evView === 'month'" class="tz-event tz-event-compact">
+                        <div v-if="evView === 'month'" class="tz-event tz-event-compact" :title="event.tooltip">
+                            <!-- En el resumen general el técnico va en la insignia;
+                                 con uno elegido sobra, ya se sabe de quién es. -->
+                            <span v-if="!hasTechnician" class="tech-badge tech-badge--sm" :style="{ background: event.technicianColor }">{{ event.technicianInitials }}</span>
                             {{ event.startTimeLabel }} · {{ event.equipmentCode }}
                         </div>
                         <div v-else class="tz-event">
                             <strong class="tz-event-code">{{ event.equipmentCode }}</strong>
                             <span class="tz-event-time">{{ event.timeLabel }}</span>
-                            <!-- Con columnas por técnico el nombre ya está en la
-                                 cabecera; sin ellas hay que decir de quién es. -->
-                            <span v-if="!useSplits" class="tz-event-meta">{{ event.technicianName }}</span>
                             <span class="tz-event-meta">{{ event.siteName }}</span>
                         </div>
                     </template>
@@ -209,6 +219,12 @@ import RescheduleInbox from '@/components/schedule/RescheduleInbox.vue';
 import HolidaysModal from '@/components/schedule/HolidaysModal.vue';
 import { STATUS_LABELS } from '@/utils/visitLabels.js';
 
+/**
+ * Colores de técnico para el resumen del mes. Distintos de los del tipo de visita
+ * (verde, rojo, azul) porque el fondo del evento sigue diciendo el tipo.
+ */
+const TECHNICIAN_PALETTE = ['#7c3aed', '#ea580c', '#0891b2', '#db2777', '#4d7c0f', '#b45309', '#4f46e5', '#0f766e', '#9333ea', '#be123c'];
+
 /** Estados que no se pueden arrastrar: la visita ya está cerrada. */
 const LOCKED_STATUSES = ['completada', 'cancelada'];
 
@@ -218,10 +234,9 @@ export default {
     data() {
         return {
             loading: true,
-            // En un teléfono la semana con columnas por técnico obliga a barrer
-            // de lado para ver cualquier cosa; el día entra completo.
-            view: window.innerWidth < 768 ? 'day' : 'week',
-            groupBy: 'technician',
+            // Sin técnico elegido solo existe el mes (resumen de todos); semana y
+            // día se abren al elegir uno.
+            view: 'month',
             visits: [],
             technicians: [],
             defaults: {},
@@ -250,72 +265,77 @@ export default {
             // Fecha a la que salta el calendario al pulsar "Ver en calendario".
             selectedDate: null,
             showHolidays: false,
+            scrollTimer: null,
         };
     },
     computed: {
-        /** Los splits por técnico solo tienen sentido en día y semana. */
-        useSplits() {
-            return this.groupBy === 'technician' && ['day', 'week'].includes(this.view);
+        hasTechnician() {
+            return !!this.filters.technician_id;
         },
-        splits() {
-            if (!this.useSplits) return [];
-            return this.visibleTechnicians.map(t => ({
-                id: t.id,
-                label: t.name,
-                class: `tz-split-${t.id}`,
-            }));
-        },
-        visibleTechnicians() {
-            if (!this.filters.technician_id) return this.technicians;
-            return this.technicians.filter(t => String(t.id) === String(this.filters.technician_id));
+        selectedTechnician() {
+            return this.technicians.find(t => String(t.id) === String(this.filters.technician_id)) || null;
         },
         /**
-         * vue-cal usa un único time-from/time-to para todo el grid, así que se toma
-         * el mínimo y el máximo de las jornadas visibles; las franjas fuera de la
-         * jornada de cada técnico se marcan como muertas vía special-hours.
+         * Semana y día son por técnico: con todos a la vez las columnas no cabían
+         * (en la semana solo se veían lunes y martes). Sin técnico, solo el mes.
          */
-        timeFrom() {
-            const mins = this.visibleTechnicians
-                .map(t => this.toMinutes(t.working_window?.start))
-                .filter(m => m !== null);
-            if (!mins.length) return this.toMinutes(this.defaults.working_hours?.start) ?? 8 * 60;
-            return Math.min(...mins);
-        },
-        timeTo() {
-            const mins = this.visibleTechnicians
-                .map(t => this.toMinutes(t.working_window?.end))
-                .filter(m => m !== null);
-            if (!mins.length) return this.toMinutes(this.defaults.working_hours?.end) ?? 18 * 60;
-            return Math.max(...mins);
+        disabledViews() {
+            return this.hasTechnician ? ['years', 'year'] : ['years', 'year', 'week', 'day'];
         },
         /**
-         * Franjas no agendables: el descanso y, cuando se ve un solo técnico, las
-         * horas fuera de su jornada. Con varios técnicos a la vez se pinta solo el
-         * descanso global, que es lo común a todos.
+         * La rejilla va de 00:00 a 24:00: coordinación agenda a cualquier hora
+         * (urgencias). La jornada del técnico se sigue pintando, rayada, como
+         * referencia de lo que es su horario habitual, pero no bloquea nada.
          */
         specialHours() {
-            const window = this.visibleTechnicians.length === 1
-                ? this.visibleTechnicians[0].working_window
-                : {
-                    days: this.defaults.working_days || [1, 2, 3, 4, 5],
-                    break_start: this.defaults.working_break?.start,
-                    break_end: this.defaults.working_break?.end,
-                };
+            const window = this.selectedTechnician?.working_window;
+            if (!window) return {};
 
+            const start = this.toMinutes(window.start) ?? 0;
+            const end = this.toMinutes(window.end) ?? 24 * 60;
             const hours = {};
             for (let day = 1; day <= 7; day++) {
-                if (!window?.days?.includes(day)) {
-                    // Día no laborable: todo el día muerto.
-                    hours[day] = { from: this.timeFrom, to: this.timeTo, class: 'tz-closed' };
-                } else if (window.break_start && window.break_end) {
-                    hours[day] = {
+                if (!window.days?.includes(day)) {
+                    hours[day] = { from: 0, to: 24 * 60, class: 'tz-closed' };
+                    continue;
+                }
+                const ranges = [];
+                if (start > 0) ranges.push({ from: 0, to: start, class: 'tz-closed' });
+                if (window.break_start && window.break_end) {
+                    ranges.push({
                         from: this.toMinutes(window.break_start),
                         to: this.toMinutes(window.break_end),
                         class: 'tz-break',
-                    };
+                    });
                 }
+                if (end < 24 * 60) ranges.push({ from: end, to: 24 * 60, class: 'tz-closed' });
+                hours[day] = ranges;
             }
             return hours;
+        },
+        /**
+         * Técnicos del resumen del mes: los activos más los que tengan visitas en
+         * pantalla aunque ya no estén activos (si no, sus visitas saldrían con una
+         * insignia que nadie explica).
+         */
+        overviewTechnicians() {
+            const list = [...this.technicians];
+            const known = new Set(list.map(t => String(t.id)));
+            this.visits.forEach(v => {
+                if (v.technician && !known.has(String(v.technician.id))) {
+                    known.add(String(v.technician.id));
+                    list.push({ id: v.technician.id, name: v.technician.name, inactive: true });
+                }
+            });
+            return list;
+        },
+        /** Color fijo por técnico (según su posición en la lista) para el resumen del mes. */
+        technicianColors() {
+            const map = {};
+            this.overviewTechnicians.forEach((t, i) => {
+                map[t.id] = TECHNICIAN_PALETTE[i % TECHNICIAN_PALETTE.length];
+            });
+            return map;
         },
         events() {
             return this.visits.map(v => {
@@ -327,13 +347,20 @@ export default {
                     end: end.format('YYYY-MM-DD HH:mm'),
                     title: v.equipment?.internal_code || 'Visita',
                     class: `tz-ev tz-ev-${v.visit_type} tz-ev-status-${v.status}`,
-                    split: this.useSplits ? v.technician_id : undefined,
                     draggable: !LOCKED_STATUSES.includes(v.status),
                     resizable: !LOCKED_STATUSES.includes(v.status),
                     // Datos propios para el slot del evento y el drawer
                     equipmentCode: v.equipment?.internal_code || '—',
                     siteName: v.site?.name || '',
                     technicianName: v.technician?.name || '',
+                    technicianInitials: this.initials(v.technician?.name),
+                    technicianColor: this.technicianColor(v.technician_id),
+                    tooltip: [
+                        `${start.format('HH:mm')}–${end.format('HH:mm')}`,
+                        v.equipment?.internal_code,
+                        v.technician?.name || 'Sin técnico',
+                        v.site?.name,
+                    ].filter(Boolean).join(' · '),
                     timeLabel: `${start.format('HH:mm')}–${end.format('HH:mm')}`,
                     startTimeLabel: start.format('HH:mm'),
                     raw: v,
@@ -343,15 +370,6 @@ export default {
         editableEvents() {
             return { title: false, drag: true, resize: true, delete: false, create: false };
         },
-        /**
-         * Ancho mínimo de cada columna de técnico. En la semana son 7 días × N
-         * técnicos: se deja estrecho y el contenedor hace scroll horizontal, que
-         * es preferible a espachurrar las columnas hasta que no se lea nada.
-         */
-        minSplitWidth() {
-            if (!this.useSplits) return 0;
-            return this.view === 'day' ? 0 : 130;
-        },
         filteredSites() {
             if (!this.filters.client_id) return [];
             return this.sites.filter(s => String(s.client_id) === String(this.filters.client_id));
@@ -359,6 +377,9 @@ export default {
         hasFilters() {
             return Object.values(this.filters).some(Boolean);
         },
+    },
+    beforeUnmount() {
+        clearTimeout(this.scrollTimer);
     },
     async created() {
         // El enlace del correo de solicitud trae ?solicitudes=1: quien viene de
@@ -368,6 +389,16 @@ export default {
         await Promise.all([this.loadCatalogs(), this.loadRequests()]);
     },
     methods: {
+        technicianColor(id) {
+            return this.technicianColors[id] || '#64748b';
+        },
+
+        initials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(/\s+/);
+            return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+        },
+
         toMinutes(hhmm) {
             if (!hhmm) return null;
             const [h, m] = hhmm.split(':');
@@ -431,6 +462,46 @@ export default {
             };
             this.view = event.view || this.view;
             this.load();
+            this.scrollToWorkingHours();
+        },
+
+        /**
+         * La rejilla tiene las 24 horas; al abrir semana o día se baja hasta el
+         * inicio de la jornada para no aterrizar en la madrugada.
+         */
+        scrollToWorkingHours() {
+            if (this.view === 'month') return;
+            const start = this.toMinutes(this.selectedTechnician?.working_window?.start)
+                ?? this.toMinutes(this.defaults.working_hours?.start)
+                ?? 8 * 60;
+            // vue-cal anima el cambio de vista y durante la transición conviven la
+            // rejilla vieja y la nueva: hay que esperar a que acabe y tomar la que queda.
+            clearTimeout(this.scrollTimer);
+            this.scrollTimer = setTimeout(() => {
+                const grids = this.$refs.cal?.$el?.querySelectorAll('.vuecal__bg');
+                const bg = grids?.[grids.length - 1];
+                // 30px por celda de 30 min; media hora de margen por encima.
+                if (bg) bg.scrollTop = Math.max(0, start - 30);
+            }, 400);
+        },
+
+        /**
+         * Elegir técnico abre su semana (su día en el teléfono); quitarlo vuelve
+         * al resumen del mes, que es la única vista con todos.
+         */
+        onTechnicianChange() {
+            if (!this.hasTechnician) {
+                this.view = 'month';
+            } else if (this.view === 'month') {
+                this.view = window.innerWidth < 768 ? 'day' : 'week';
+            }
+            this.load();
+            this.scrollToWorkingHours();
+        },
+
+        selectTechnician(id) {
+            this.filters.technician_id = id;
+            this.onTechnicianChange();
         },
 
         async load() {
@@ -461,10 +532,6 @@ export default {
             );
         },
 
-        setGroupBy(mode) {
-            this.groupBy = mode;
-        },
-
         onClientFilter() {
             this.filters.site_id = '';
             this.load();
@@ -472,6 +539,7 @@ export default {
 
         clearFilters() {
             this.filters = { client_id: '', site_id: '', technician_id: '', status: '' };
+            this.view = 'month';
             this.load();
         },
 
@@ -490,7 +558,7 @@ export default {
 
             this.prefill = {
                 start: dayjs(date).format('YYYY-MM-DD HH:mm'),
-                technician_id: this.useSplits ? payload?.split : null,
+                technician_id: this.filters.technician_id || null,
             };
             this.editingVisit = null;
             this.showForm = true;
@@ -547,7 +615,7 @@ export default {
             const visit = event.raw;
             const start = dayjs(event.start).format('YYYY-MM-DD HH:mm');
             const end = dayjs(event.end).format('YYYY-MM-DD HH:mm');
-            const technicianId = event.split || visit.technician_id;
+            const technicianId = visit.technician_id;
 
             const confirmed = await this.$swal.fire({
                 icon: 'question',
@@ -767,7 +835,10 @@ export default {
         /** Salta al día propuesto para ver el hueco en contexto. */
         locateRequest(request) {
             this.showRequests = false;
-            this.view = 'day';
+            // El día es por técnico: se abre el del técnico de esa visita.
+            const technicianId = request.scheduled_visit?.technician?.id || request.scheduled_visit?.technician_id;
+            if (technicianId) this.filters.technician_id = technicianId;
+            this.view = technicianId ? 'day' : 'month';
             this.selectedDate = dayjs(request.proposed_start).toDate();
         },
     },
@@ -987,29 +1058,52 @@ export default {
     );
 }
 
-.group-toggle {
-    display: inline-flex;
-    background: #eef2f6;
-    border-radius: 10px;
-    padding: 3px;
-    gap: 3px;
+.tech-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.25rem 0.85rem;
 }
 
-.group-toggle button {
-    border: 0;
-    background: transparent;
-    color: #64748b;
-    font-size: 0.82rem;
+.tech-overview__hint {
+    font-size: 0.8rem;
+    color: #475569;
+}
+
+.tech-overview__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tech-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem 0.2rem 0.25rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    padding: 0.4rem 0.75rem;
-    border-radius: 8px;
+    color: #334155;
     cursor: pointer;
 }
 
-.group-toggle button.active {
-    background: #fff;
+.tech-chip:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.tech-chip__note {
+    font-weight: 400;
+    color: #94a3b8;
+    margin-left: 0.25rem;
+}
+
+.tech-chip:not(:disabled):hover {
+    border-color: #30ab0a;
     color: #227a0c;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
 }
 
 .btn-clear {
@@ -1045,6 +1139,31 @@ export default {
     text-overflow: ellipsis;
 }
 
+.tech-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Dentro del evento del mes: blanco alrededor para que se despegue del fondo
+   del tipo de visita. */
+.tech-badge--sm {
+    min-width: 18px;
+    height: 16px;
+    font-size: 0.6rem;
+    margin-right: 3px;
+    box-shadow: 0 0 0 1.5px #fff;
+    vertical-align: 1px;
+}
+
 .tz-event-compact {
     display: block;
     font-size: 0.7rem;
@@ -1060,10 +1179,9 @@ export default {
 /* Sin scope: vue-cal renderiza su propio árbol y los estilos scoped no lo alcanzan.
    Todo va prefijado con .tz-schedule para no filtrarse a otras vistas. */
 .tz-schedule {
-    /* Una jornada de 08:00 a 18:00 en pasos de 30 min son 20 filas. Con celdas de
-       30px son 600px de rejilla, así que con esta altura el día entra entero y no
-       hay que hacer scroll dentro del calendario para ver la tarde (antes se
-       cortaba a mediodía). Quien scrollea es la página, que es lo esperable. */
+    /* La rejilla tiene las 24 horas (48 filas de 30px): no cabe entera, así que
+       el calendario scrollea por dentro y al abrir se coloca en el inicio de la
+       jornada (scrollToWorkingHours). Con esta altura se ven unas 10 horas. */
     height: 730px;
     font-family: inherit;
 }
@@ -1127,7 +1245,7 @@ export default {
     margin-bottom: 2px;
 }
 
-/* Franjas no agendables */
+/* Fuera de jornada y descanso (orientativo, no bloquea) */
 .tz-schedule .vuecal__cell-split .tz-break,
 .tz-schedule .tz-break {
     background: repeating-linear-gradient(
@@ -1139,8 +1257,8 @@ export default {
     );
 }
 
-/* Mismo rayado que el descanso: en la leyenda es una sola entrada, y para quien
-   agenda ambas cosas significan lo mismo (aquí no se puede poner una visita). */
+/* Mismo rayado que el descanso: en la leyenda es una sola entrada. Es solo
+   referencia de la jornada habitual; se puede agendar encima (urgencias). */
 .tz-schedule .tz-closed {
     background: repeating-linear-gradient(
         45deg,
@@ -1192,24 +1310,7 @@ export default {
     box-shadow: 0 0 0 2px #f59e0b;
 }
 
-/* Los nombres largos ("Andrés Felipe Cardona") se salían de su columna y pisaban
-   la de al lado. Sin el contenedor .vuecal__split-days-headers delante, porque ese
-   solo existe en la vista de día con etiquetas fijas: en la semana las cabeceras
-   de técnico cuelgan de la cabecera del día. */
-.tz-schedule .day-split-header {
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: #475569;
-    padding: 0.35rem 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    max-width: 100%;
-}
-
-/* Cabecera de día. Sin tocarle la altura: con columnas por técnico vue-cal mete
-   los nombres dentro y fijársela los recortaba por abajo. */
+/* Cabecera de día. */
 .tz-schedule .vuecal__heading {
     font-size: 0.82rem;
 }

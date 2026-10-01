@@ -56,6 +56,9 @@
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 
+/** Lado mayor de la foto guardada: de sobra para leer una placa o ver un desgaste. */
+const MAX_SIDE = 1600;
+
 export default {
     name: 'PhotoCapture',
     components: { Cropper },
@@ -95,32 +98,56 @@ export default {
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.cropperSrc = e.target.result;
-                this.showCropper = true;
-            };
-            reader.readAsDataURL(file);
+            // Object URL y no data URL: una foto de cámara en base64 son decenas de
+            // MB de texto en memoria, y en móviles modestos eso tumba la pestaña.
+            this.cropperSrc = URL.createObjectURL(file);
+            this.showCropper = true;
         },
 
-        confirmCrop() {
+        async confirmCrop() {
             const { canvas } = this.$refs.cropper.getResult();
             if (!canvas) return;
 
-            canvas.toBlob(
-                (blob) => {
-                    this.preview = URL.createObjectURL(blob);
-                    this.showCropper = false;
-                    this.cropperSrc = null;
-                    this.$emit('update:modelValue', blob);
-                },
-                'image/jpeg',
-                0.8,
-            );
+            const blob = await this.compress(canvas);
+            if (!blob) return;
+
+            this.preview = URL.createObjectURL(blob);
+            this.showCropper = false;
+            this.releaseSource();
+            this.$emit('update:modelValue', blob);
+        },
+
+        /**
+         * El recorte sale a la resolución de la cámara (12 MP o más: varios MB por
+         * foto), y un reporte lleva muchas. Se reduce el lado mayor a MAX_SIDE y se
+         * baja la calidad hasta entrar en maxSizeKb; si ni con la más baja cabe,
+         * se queda con esa, que ya es pequeña.
+         */
+        async compress(source) {
+            const scale = Math.min(1, MAX_SIDE / Math.max(source.width, source.height));
+            let canvas = source;
+            if (scale < 1) {
+                canvas = document.createElement('canvas');
+                canvas.width = Math.round(source.width * scale);
+                canvas.height = Math.round(source.height * scale);
+                canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+            }
+
+            let blob = null;
+            for (const quality of [0.82, 0.72, 0.6, 0.5]) {
+                blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+                if (blob && blob.size <= this.maxSizeKb * 1024) break;
+            }
+            return blob;
         },
 
         cancelCrop() {
+            this.releaseSource();
             this.showCropper = false;
+        },
+
+        releaseSource() {
+            if (this.cropperSrc) URL.revokeObjectURL(this.cropperSrc);
             this.cropperSrc = null;
         },
 

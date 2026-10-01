@@ -856,7 +856,13 @@ export default {
                 if (att.activity_key) fd.append('activity_key', att.activity_key);
                 if (att.group_key) fd.append('group_key', att.group_key);
 
-                await reportService.uploadAttachment(reportId, fd);
+                try {
+                    await reportService.uploadAttachment(reportId, fd);
+                } catch (err) {
+                    // Para que el aviso pueda decir qué archivo falló.
+                    err.attachment = att;
+                    throw err;
+                }
                 // Liberar el Blob al subir con éxito (evita re-subir si una firma falla).
                 if (att._video) this.conclusion.video = null;
                 else if (att._item) att._item.photo = null;
@@ -1021,12 +1027,27 @@ export default {
                 this.$swal.fire({
                     icon: 'error',
                     title: 'Error al finalizar',
-                    text: err.response?.data?.message || err.message,
+                    text: this.finalizeErrorMessage(err),
                     confirmButtonText: 'Aceptar',
                 });
             } finally {
                 this.saving = false;
             }
+        },
+
+        /**
+         * 413 = el archivo no entra en el límite del servidor. Laravel lo explica en
+         * inglés ("The POST data is too large"), que al técnico no le dice qué
+         * hacer. Lo ya subido no se repite al reintentar (uploadAttachmentsOnline
+         * libera cada Blob al subirlo).
+         */
+        finalizeErrorMessage(err) {
+            if (err.response?.status === 413) {
+                return err.attachment?.media_type === 'video'
+                    ? 'El video es demasiado grande para enviarlo. Quítalo o graba uno más corto en el paso Conclusión y vuelve a finalizar.'
+                    : 'Una foto es demasiado grande para enviarla. Vuelve a tomarla y finaliza de nuevo.';
+            }
+            return err.response?.data?.message || err.message;
         },
 
         // ── Signature canvas ──

@@ -150,7 +150,7 @@ class ScheduleService
         $start = CarbonImmutable::parse($data['scheduled_start']);
         $end = CarbonImmutable::parse($data['scheduled_end']);
 
-        $this->assertSlotIsFree($technician, $start, $end);
+        $this->assertSlotIsFree($technician, $start, $end, enforceWorkingHours: false);
 
         $visit = DB::transaction(function () use ($equipment, $technician, $start, $end, $data, $actor) {
             $visit = ScheduledVisit::create([
@@ -183,7 +183,7 @@ class ScheduleService
 
     /**
      * Mueve una visita (edicion del modal o drag & drop del calendario). Revalida
-     * siempre: arrastrar tambien puede dejarla en el descanso o en sabado.
+     * siempre los solapes: arrastrar puede dejarla encima de otra visita.
      *
      * @param  bool  $force  aprobar sobre un conflicto conocido; manda coordinacion
      * @param  bool  $notify  false cuando quien llama manda su propio aviso del cambio
@@ -201,9 +201,11 @@ class ScheduleService
         $technician ??= $visit->technician;
 
         // El unico caso que salta la validacion es una aprobacion forzada desde la
-        // bandeja, y ahi la advertencia ya se dio en la interfaz.
+        // bandeja, y ahi la advertencia ya se dio en la interfaz. La jornada no se
+        // mira: mover es cosa de coordinacion, que agenda a cualquier hora. Una
+        // propuesta del cliente ya paso por la jornada antes de llegar aqui.
         if (! $force) {
-            $this->assertSlotIsFree($technician, $start, $end, $visit->id);
+            $this->assertSlotIsFree($technician, $start, $end, $visit->id, enforceWorkingHours: false);
         }
 
         $previousStart = CarbonImmutable::parse($visit->scheduled_start);
@@ -630,10 +632,15 @@ class ScheduleService
     }
 
     /**
-     * Valida que la cita quepa: dentro de la jornada del tecnico, en dia laborable,
-     * sin pisar el descanso y sin solaparse con otra visita suya.
+     * Valida que la cita quepa: sin solaparse con otra visita del tecnico y, si
+     * se pide, dentro de su jornada, en dia laborable y sin pisar el descanso.
+     *
+     * Coordinacion agenda a cualquier hora (urgencias, visitas fuera de horario),
+     * asi que crear y mover desde el cronograma no aplica la jornada. Lo que
+     * propone el cliente desde el portal si la respeta.
      *
      * @param  int|null  $ignoreVisitId  visita que se esta editando (no cuenta como solape)
+     * @param  bool  $enforceWorkingHours  false para coordinacion: solo solapes y rango valido
      *
      * @throws ValidationException
      */
@@ -642,11 +649,16 @@ class ScheduleService
         CarbonImmutable $start,
         CarbonImmutable $end,
         ?int $ignoreVisitId = null,
+        bool $enforceWorkingHours = true,
     ): void {
-        $errors = array_merge(
-            $this->workingHoursErrors($technician, $start, $end),
-            $this->overlapErrors($technician, $start, $end, $ignoreVisitId),
-        );
+        $errors = $this->rangeErrors($start, $end);
+
+        if (! $errors) {
+            $errors = array_merge(
+                $enforceWorkingHours ? $this->workingHoursErrors($technician, $start, $end) : [],
+                $this->overlapErrors($technician, $start, $end, $ignoreVisitId),
+            );
+        }
 
         if ($errors) {
             throw ValidationException::withMessages(['scheduled_start' => $errors]);
@@ -656,18 +668,26 @@ class ScheduleService
     /**
      * @return string[]
      */
-    private function workingHoursErrors(User $technician, CarbonImmutable $start, CarbonImmutable $end): array
+    private function rangeErrors(CarbonImmutable $start, CarbonImmutable $end): array
     {
         if ($end <= $start) {
             return ['La hora de fin debe ser posterior a la de inicio.'];
         }
 
-        // Una visita que cruza la medianoche no cabe en ninguna jornada; ademas
-        // romperia las comparaciones de hora de abajo, que asumen un mismo dia.
+        // Una visita que cruza la medianoche romperia el calendario (que pinta
+        // cada evento dentro de un dia) y las comparaciones de hora de la jornada.
         if (! $start->isSameDay($end)) {
             return ['La visita debe empezar y terminar el mismo dia.'];
         }
 
+        return [];
+    }
+
+    /**
+     * @return string[]
+     */
+    private function workingHoursErrors(User $technician, CarbonImmutable $start, CarbonImmutable $end): array
+    {
         // Con la fecha: si ese dia tiene excepcion (festivo, vacaciones, un sabado
         // habilitado) manda la excepcion, no la jornada habitual.
         $window = $this->workingWindowFor($technician, $start);

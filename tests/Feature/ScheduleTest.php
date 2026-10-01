@@ -8,10 +8,13 @@ use App\Models\ScheduledVisit;
 use App\Models\Site;
 use App\Models\TechnicianSchedule;
 use App\Models\User;
+use App\Services\ScheduleService;
+use Carbon\CarbonImmutable;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\ScheduleSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -100,35 +103,81 @@ class ScheduleTest extends TestCase
         $this->assertNotNull($visit->uuid);
     }
 
-    public function test_rechaza_una_visita_antes_de_que_abra_la_jornada(): void
+    /**
+     * La jornada ya no limita a coordinacion (urgencias, visitas fuera de
+     * horario), pero sigue siendo la regla de lo que propone el cliente desde
+     * el portal. Esto la consulta como lo hace ese flujo: con la validacion
+     * por defecto.
+     *
+     * @return string[] errores; vacio si el hueco cabe en la jornada
+     */
+    private function workingHoursErrors(string $date, string $start, string $end): array
     {
-        $this->schedule(self::MONDAY, '07:00', '08:30')
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('scheduled_start');
+        try {
+            app(ScheduleService::class)->assertSlotIsFree(
+                $this->technician,
+                CarbonImmutable::parse("$date $start"),
+                CarbonImmutable::parse("$date $end"),
+            );
+
+            return [];
+        } catch (ValidationException $e) {
+            return $e->errors()['scheduled_start'];
+        }
     }
 
-    public function test_rechaza_una_visita_que_termina_despues_del_cierre(): void
+    /** Urgencias: coordinacion agenda antes de abrir, despues de cerrar y de madrugada. */
+    public function test_coordinacion_agenda_fuera_de_la_jornada(): void
     {
-        $this->schedule(self::MONDAY, '17:00', '18:30')->assertStatus(422);
+        $this->schedule(self::MONDAY, '06:00', '07:30')->assertCreated();
+        $this->schedule(self::MONDAY, '18:30', '20:00')->assertCreated();
+        $this->schedule(self::MONDAY, '23:00', '23:59')->assertCreated();
     }
 
-    public function test_rechaza_una_visita_que_pisa_el_descanso(): void
+    public function test_coordinacion_agenda_en_el_descanso_y_en_dia_no_laborable(): void
     {
-        $response = $this->schedule(self::MONDAY, '12:30', '14:00')->assertStatus(422);
+        $this->schedule(self::MONDAY, '12:30', '14:00')->assertCreated();
+        $this->schedule(self::SATURDAY, '09:00', '10:30')->assertCreated();
+    }
+
+    /** Lo que si se sigue exigiendo siempre: un rango valido dentro de un mismo dia. */
+    public function test_rechaza_una_visita_que_cruza_la_medianoche(): void
+    {
+        Sanctum::actingAs($this->coordinator);
+
+        $response = $this->postJson('/api/schedule/visits', [
+            'equipment_id' => $this->equipment->id,
+            'technician_id' => $this->technician->id,
+            'scheduled_start' => self::MONDAY.' 23:00',
+            'scheduled_end' => '2026-08-04 01:00',
+        ])->assertStatus(422);
 
         $this->assertStringContainsString(
-            'descanso',
+            'mismo dia',
             implode(' ', $response->json('errors.scheduled_start')),
         );
     }
 
-    public function test_rechaza_una_visita_en_dia_no_laborable(): void
+    public function test_la_jornada_rechaza_antes_de_abrir_y_despues_de_cerrar(): void
     {
-        $response = $this->schedule(self::SATURDAY, '09:00', '10:30')->assertStatus(422);
+        $this->assertNotEmpty($this->workingHoursErrors(self::MONDAY, '07:00', '08:30'));
+        $this->assertNotEmpty($this->workingHoursErrors(self::MONDAY, '17:00', '18:30'));
+        $this->assertEmpty($this->workingHoursErrors(self::MONDAY, '09:00', '10:30'));
+    }
 
+    public function test_la_jornada_rechaza_el_descanso(): void
+    {
+        $this->assertStringContainsString(
+            'descanso',
+            implode(' ', $this->workingHoursErrors(self::MONDAY, '12:30', '14:00')),
+        );
+    }
+
+    public function test_la_jornada_rechaza_el_dia_no_laborable(): void
+    {
         $this->assertStringContainsString(
             'no es un dia laborable',
-            implode(' ', $response->json('errors.scheduled_start')),
+            implode(' ', $this->workingHoursErrors(self::SATURDAY, '09:00', '10:30')),
         );
     }
 
@@ -168,7 +217,7 @@ class ScheduleTest extends TestCase
 
     public function test_una_jornada_propia_habilita_el_sabado(): void
     {
-        $this->schedule(self::SATURDAY, '09:00', '10:30')->assertStatus(422);
+        $this->assertNotEmpty($this->workingHoursErrors(self::SATURDAY, '09:00', '10:30'));
 
         TechnicianSchedule::create([
             'user_id' => $this->technician->id,
@@ -177,7 +226,7 @@ class ScheduleTest extends TestCase
             'working_hours' => ['start' => '08:00', 'end' => '18:00'],
         ]);
 
-        $this->schedule(self::SATURDAY, '09:00', '10:30')->assertCreated();
+        $this->assertEmpty($this->workingHoursErrors(self::SATURDAY, '09:00', '10:30'));
     }
 
     /** Una fila sin descanso significa "sin descanso", no "hereda el global". */
@@ -190,7 +239,7 @@ class ScheduleTest extends TestCase
             'break_end' => null,
         ]);
 
-        $this->schedule(self::MONDAY, '13:15', '13:45')->assertCreated();
+        $this->assertEmpty($this->workingHoursErrors(self::MONDAY, '13:15', '13:45'));
     }
 
     public function test_la_duracion_sale_del_equipo_si_lo_tiene_configurado(): void
@@ -208,7 +257,8 @@ class ScheduleTest extends TestCase
             ->assertJson(['duration_minutes' => 120, 'is_custom' => true]);
     }
 
-    public function test_mover_una_visita_al_descanso_se_rechaza(): void
+    /** Mover tambien es de coordinacion: el descanso ya no lo impide. */
+    public function test_mover_una_visita_al_descanso_se_permite(): void
     {
         $this->schedule(self::MONDAY, '09:00', '10:30')->assertCreated();
         $visit = ScheduledVisit::first();
@@ -218,9 +268,25 @@ class ScheduleTest extends TestCase
         $this->putJson("/api/schedule/visits/{$visit->id}", [
             'scheduled_start' => self::MONDAY.' 13:00',
             'scheduled_end' => self::MONDAY.' 14:30',
+        ])->assertOk();
+
+        $this->assertSame('13:00', $visit->fresh()->scheduled_start->format('H:i'));
+    }
+
+    /** Lo que no se permite al mover es pisar otra visita del mismo tecnico. */
+    public function test_mover_una_visita_encima_de_otra_se_rechaza(): void
+    {
+        $this->schedule(self::MONDAY, '09:00', '10:30')->assertCreated();
+        $this->schedule(self::MONDAY, '11:00', '12:00')->assertCreated();
+        $visit = ScheduledVisit::orderBy('id')->first();
+
+        Sanctum::actingAs($this->coordinator);
+
+        $this->putJson("/api/schedule/visits/{$visit->id}", [
+            'scheduled_start' => self::MONDAY.' 11:30',
+            'scheduled_end' => self::MONDAY.' 12:30',
         ])->assertStatus(422);
 
-        // La visita no se movio
         $this->assertSame('09:00', $visit->fresh()->scheduled_start->format('H:i'));
     }
 

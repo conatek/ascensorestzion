@@ -211,23 +211,45 @@ class ScheduleExceptionTest extends TestCase
 
     // ── Validación al programar ──
 
-    public function test_no_se_puede_programar_en_un_festivo(): void
+    /** Errores de jornada tal como los ve una propuesta del cliente (validacion por defecto). */
+    private function workingHoursErrors(string $date, string $start, string $end): array
+    {
+        try {
+            $this->schedule->assertSlotIsFree(
+                $this->technician,
+                CarbonImmutable::parse("$date $start"),
+                CarbonImmutable::parse("$date $end"),
+            );
+
+            return [];
+        } catch (ValidationException $e) {
+            return $e->errors()['scheduled_start'];
+        }
+    }
+
+    public function test_la_jornada_no_ofrece_un_festivo(): void
     {
         $this->closeDay(self::MONDAY, null, 'Festivo');
 
-        $response = $this->scheduleVisit(self::MONDAY)->assertStatus(422);
-
         $this->assertStringContainsString(
             'no se trabaja (Festivo)',
-            implode(' ', $response->json('errors.scheduled_start')),
+            implode(' ', $this->workingHoursErrors(self::MONDAY, '09:00', '10:30')),
         );
     }
 
-    public function test_no_se_puede_programar_en_las_vacaciones_del_tecnico(): void
+    public function test_la_jornada_no_ofrece_las_vacaciones_del_tecnico(): void
     {
         $this->closeDay(self::MONDAY, $this->technician->id, 'Vacaciones');
 
-        $this->scheduleVisit(self::MONDAY)->assertStatus(422);
+        $this->assertNotEmpty($this->workingHoursErrors(self::MONDAY, '09:00', '10:30'));
+    }
+
+    /** Urgencias: coordinacion puede programar en un festivo aunque la jornada lo cierre. */
+    public function test_coordinacion_programa_en_un_festivo(): void
+    {
+        $this->closeDay(self::MONDAY, null, 'Festivo');
+
+        $this->scheduleVisit(self::MONDAY)->assertCreated();
     }
 
     public function test_si_se_puede_programar_un_sabado_habilitado_por_excepcion(): void
@@ -250,8 +272,8 @@ class ScheduleExceptionTest extends TestCase
         ]);
 
         // 14:00 cae dentro de la jornada normal pero fuera de la del día.
-        $this->scheduleVisit(self::MONDAY, '14:00', '15:30')->assertStatus(422);
-        $this->scheduleVisit(self::MONDAY, '08:00', '09:30')->assertCreated();
+        $this->assertNotEmpty($this->workingHoursErrors(self::MONDAY, '14:00', '15:30'));
+        $this->assertEmpty($this->workingHoursErrors(self::MONDAY, '08:00', '09:30'));
     }
 
     public function test_un_dia_normal_sigue_aceptando_visitas(): void

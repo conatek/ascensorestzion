@@ -7,7 +7,7 @@
  *
  * Clasificación de errores:
  *   - 401            → detiene el ciclo (token revocado); la cola se conserva.
- *   - 404 / 409 / 422 → error permanente: se marca y NO se reintenta en automático
+ *   - 404 / 409 / 413 / 422 → error permanente: se marca y NO se reintenta en automático
  *                       (el usuario puede forzar reintento).
  *   - red / 5xx / 408 / 429 → transitorio: se reintenta con backoff exponencial.
  *
@@ -27,7 +27,8 @@ function backoffMs(attempts) {
 }
 
 function isPermanent(statusCode) {
-    return statusCode === 404 || statusCode === 409 || statusCode === 422;
+    // 413: el archivo excede el límite del servidor; reintentarlo no cambia nada.
+    return statusCode === 404 || statusCode === 409 || statusCode === 413 || statusCode === 422;
 }
 
 function buildCheckinPayload(item) {

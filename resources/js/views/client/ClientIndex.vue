@@ -106,6 +106,7 @@
                             <th>Contacto</th>
                             <th>Ciudad</th>
                             <th class="text-center">Sedes</th>
+                            <th class="text-center">Equipos</th>
                             <th class="text-center">Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
@@ -121,6 +122,9 @@
                             <td data-label="Ciudad">{{ client.city || '—' }}</td>
                             <td class="text-center" data-label="Sedes">
                                 <span class="count-badge">{{ client.sites_count ?? 0 }}</span>
+                            </td>
+                            <td class="text-center" data-label="Equipos">
+                                <span class="count-badge">{{ client.equipment_count ?? 0 }}</span>
                             </td>
                             <td class="text-center" data-label="Estado">
                                 <span class="status-badge" :class="client.active ? 'status-active' : 'status-inactive'">

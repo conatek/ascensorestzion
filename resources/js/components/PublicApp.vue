@@ -26,10 +26,10 @@
                 <img :src="'/images/logo/logo-atzion.svg'" alt="Ascensores Tzion" class="portal-header-logo" />
             </div>
             <div class="portal-header-right">
-                <div class="portal-user-info">
+                <router-link to="/portal/perfil" class="portal-user-info" title="Mi perfil">
                     <span class="portal-client-name">{{ portalClientName }}</span>
                     <span class="portal-user-name">{{ portalUserName }}</span>
-                </div>
+                </router-link>
                 <button class="portal-logout-btn" @click="handlePortalLogout">
                     <i class="fa fa-sign-out-alt"></i> Salir
                 </button>
@@ -68,6 +68,12 @@
                         <router-link to="/portal/cronograma" class="portal-sb-link" :class="{ active: $route.path.startsWith('/portal/cronograma') }" @click="portalMobileOpen = false">
                             <span class="portal-sb-icon"><i class="fa fa-calendar-alt"></i></span>
                             <span class="portal-sb-text">Cronograma</span>
+                        </router-link>
+                        <!-- En móvil también está en "Más" de la barra inferior; en
+                             escritorio este era el único camino al cambio de contraseña. -->
+                        <router-link to="/portal/perfil" class="portal-sb-link" :class="{ active: $route.path.startsWith('/portal/perfil') }" @click="portalMobileOpen = false">
+                            <span class="portal-sb-icon"><i class="fa fa-user"></i></span>
+                            <span class="portal-sb-text">Mi Perfil</span>
                         </router-link>
                     </nav>
 
@@ -656,7 +662,8 @@ export default {
 .portal-header-left { display: flex; align-items: center; gap: 1rem; }
 .portal-header-logo { height: 60px; width: auto; }
 .portal-header-right { display: flex; align-items: center; gap: 1.25rem; }
-.portal-user-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.portal-user-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; text-decoration: none; border-radius: 8px; padding: 0.2rem 0.4rem; }
+.portal-user-info:hover { background: #f1f5f9; }
 .portal-client-name { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
 .portal-user-name { font-size: 0.75rem; color: #64748b; }
 
