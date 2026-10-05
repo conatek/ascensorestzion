@@ -34,7 +34,7 @@ use App\Http\Controllers\VisitSignatureController;
 use Illuminate\Support\Facades\Route;
 
 // Autenticación pública
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware(['throttle:5,1', 'app.access']);
 
 // Recuperación de contraseña (pública)
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
@@ -63,7 +63,7 @@ Route::get('/report-confirmation/{token}/pdf', [ReportConfirmationController::cl
     ->middleware('throttle:10,1');
 
 // Rutas protegidas con Sanctum
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
 
     // Auth
     Route::get('/me', [AuthController::class, 'me']);

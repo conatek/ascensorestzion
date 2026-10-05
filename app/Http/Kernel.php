@@ -72,5 +72,6 @@ class Kernel extends HttpKernel
 
         // Custom
         'company.access' => \App\Http\Middleware\EnsureCompanyAccess::class,
+        'app.access' => \App\Http\Middleware\EnsureAppAccessEnabled::class,
     ];
 }

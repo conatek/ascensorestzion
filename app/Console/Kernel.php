@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Http\Middleware\EnsureAppAccessEnabled;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -30,6 +31,12 @@ class Kernel extends ConsoleKernel
         // cuando la cache de ficheros estaba rota, su excepcion abortaba el
         // schedule:run ENTERO, tambien mark-overdue.
         $schedule->command('visits:send-reminders')->everyFiveMinutes();
+
+        // Con APP_ACCESS_ENABLED=false el middleware solo revoca tokens cuando
+        // llega una peticion; esto cierra las sesiones aunque nadie entre.
+        $schedule->call(fn () => EnsureAppAccessEnabled::revokeAllTokens())
+            ->everyMinute()
+            ->when(fn () => ! config('app.access_enabled'));
     }
 
     /**

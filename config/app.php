@@ -30,6 +30,10 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // Interruptor de acceso: false bloquea el login y cierra la sesion de todos
+    // (middleware app.access + tarea programada). Ver EnsureAppAccessEnabled.
+    'access_enabled' => (bool) env('APP_ACCESS_ENABLED', true),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
