@@ -81,10 +81,18 @@ export default {
     },
 
     watch: {
-        modelValue(val) {
-            if (!val && this.preview) {
-                this.preview = null;
-            }
+        // immediate: una foto recuperada del borrador llega como valor inicial,
+        // sin pasar por la cámara, y también necesita su vista previa.
+        modelValue: {
+            immediate: true,
+            handler(val) {
+                if (!val && this.preview) {
+                    URL.revokeObjectURL(this.preview);
+                    this.preview = null;
+                } else if (val && !this.preview) {
+                    this.preview = URL.createObjectURL(val);
+                }
+            },
         },
     },
 

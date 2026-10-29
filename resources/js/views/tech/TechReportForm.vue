@@ -121,7 +121,7 @@
                         :photo="cond.photo"
                         @update:value="cond.value = $event"
                         @update:observation="cond.observation = $event"
-                        @update:photo="cond.photo = $event"
+                        @update:photo="setPhoto('cond', cond, $event)"
                     />
                 </div>
             </div>
@@ -157,7 +157,7 @@
                                 :photo="item.photo"
                                 @update:value="item.value = $event"
                                 @update:observation="item.observation = $event"
-                                @update:photo="item.photo = $event"
+                                @update:photo="setPhoto('act', item, $event)"
                             />
                         </div>
                     </div>
@@ -230,7 +230,7 @@
                                 :photo="item.photo"
                                 @update:value="item.value = $event"
                                 @update:observation="item.observation = $event"
-                                @update:photo="item.photo = $event"
+                                @update:photo="setPhoto('rste', item, $event)"
                             />
                         </div>
                     </div>
@@ -267,7 +267,7 @@
 
                 <div class="conclusion-video">
                     <label class="field-label">Video (opcional)</label>
-                    <VideoCapture v-model="conclusion.video" />
+                    <VideoCapture :modelValue="conclusion.video" @update:modelValue="setVideo" />
                 </div>
             </div>
 
@@ -472,13 +472,22 @@ export default {
             isDrawing: false,
             currentSignTarget: null,
 
-            // Autosave
+            // Autosave: las respuestas se guardan unos segundos después del último
+            // cambio (dirty), al cambiar de paso y al pasar la app a segundo plano.
             lastSaved: null,
             autosaveTimer: null,
+            dirty: false,
+            finalized: false,
         };
     },
 
     computed: {
+        // Las respuestas del borrador tal como viajan al servidor (sin la hora de
+        // salida, que cambia sola). Si cambia, hay algo nuevo que guardar.
+        draftSnapshot() {
+            const { exit_time, ...rest } = this.buildPayload({ draft: true });
+            return JSON.stringify(rest);
+        },
         timeOut() {
             return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
         },
@@ -543,7 +552,13 @@ export default {
                 if (eq) this.setSiteInfo(eq.site, eq.site_id);
             } catch {}
         }
+        // Fotos, video y firmas del borrador guardados en este dispositivo.
+        this._signatures = { tech: null, customer: null };
+        offlineManager.pruneDraftMedia().catch(() => {});
+
         await this.loadCatalogs();
+        this._savedSnapshot = this.draftSnapshot;
+        await this.restoreDraftMedia();
 
         // Leer time_in del checkin
         try {
@@ -553,8 +568,14 @@ export default {
             }
         } catch {}
 
-        // Autosave cada 30s
-        this.autosaveTimer = setInterval(() => this.autosave(), 30000);
+        // Red de seguridad por si falló un guardado: cada 30 s, solo si hay cambios.
+        this.autosaveTimer = setInterval(() => { if (this.dirty) this.autosave(); }, 30000);
+
+        // Llamada, cambio de app, pantalla apagada: guardar ya. Es el momento en
+        // que el sistema puede cerrar la pestaña sin avisar.
+        this._onHide = () => { if (document.visibilityState === 'hidden') this.flushAutosave(); };
+        document.addEventListener('visibilitychange', this._onHide);
+        window.addEventListener('pagehide', this._onHide);
     },
 
     mounted() {
@@ -565,6 +586,21 @@ export default {
     },
 
     watch: {
+        draftSnapshot(snapshot) {
+            // Durante la carga el formulario se llena solo (catálogo + borrador);
+            // el watcher llega tarde, así que se compara con lo último guardado.
+            if (this.loading || snapshot === this._savedSnapshot) return;
+            this.dirty = true;
+            clearTimeout(this._autosaveDebounce);
+            this._autosaveDebounce = setTimeout(() => this.autosave(), 3000);
+        },
+        customerSigner: {
+            deep: true,
+            handler(signer) {
+                const empty = !signer.name.trim() && !signer.document.trim();
+                this.saveMedia('signer', empty ? null : { ...signer });
+            },
+        },
         currentStep() {
             this.$nextTick(() => this.updateStickySpacerHeight());
         },
@@ -575,6 +611,10 @@ export default {
 
     beforeUnmount() {
         if (this.autosaveTimer) clearInterval(this.autosaveTimer);
+        document.removeEventListener('visibilitychange', this._onHide);
+        window.removeEventListener('pagehide', this._onHide);
+        // Salir del formulario (atrás, otra pestaña del menú) también guarda.
+        this.flushAutosave();
         this.removeSignListeners();
     },
 
@@ -766,12 +806,20 @@ export default {
             });
         },
 
-        buildPayload() {
+        /**
+         * @param {boolean} draft  Borrador: solo los ítems respondidos (o con
+         *   observación). Las columnas no admiten vacío (value 'na', is_ok false
+         *   por defecto), así que mandar los pendientes los guardaba como N/A o
+         *   "No" y al retomar el borrador salían como respondidos. El informe
+         *   final sí los manda todos: un formulario incompleto es válido.
+         */
+        buildPayload({ draft = false } = {}) {
+            const keep = item => !draft || item.value !== null || !!item.observation;
             const payload = {
                 report_type: this.reportType,
                 equipment_id: this.equipmentId,
                 service_date: this.serviceDate || new Date().toISOString().split('T')[0],
-                initial_conditions: this.conditions.map(c => ({
+                initial_conditions: this.conditions.filter(keep).map(c => ({
                     condition_key: c.key,
                     value: c.value || 'na',
                     observation: c.observation || null,
@@ -784,7 +832,7 @@ export default {
             };
 
             if (this.reportType === 'RSTP') {
-                payload.rstp_activities = this.allActivities.map(a => ({
+                payload.rstp_activities = this.allActivities.filter(keep).map(a => ({
                     group_key: a.group_key,
                     activity_key: a.key,
                     is_ok: a.value ?? false,
@@ -798,7 +846,7 @@ export default {
             }
 
             if (this.reportType === 'RSTE') {
-                payload.rste_works = this.allRsteWorks.map(w => ({
+                payload.rste_works = this.allRsteWorks.filter(keep).map(w => ({
                     group_key: w.group_key,
                     work_key: w.key,
                     is_ok: w.value ?? false,
@@ -814,22 +862,22 @@ export default {
         // el tipo de reporte. `_item` permite limpiar el Blob al subirlo online.
         collectAttachments() {
             const list = [];
-            const push = (item, ctx) => {
+            const push = (kind, item, ctx) => {
                 if (item.photo instanceof Blob) {
-                    list.push({ blob: item.photo, media_type: 'foto', _item: item, ...ctx });
+                    list.push({ blob: item.photo, media_type: 'foto', _item: item, _slot: this.photoSlot(kind, item), ...ctx });
                 }
             };
-            this.conditions.forEach(c => push(c, { condition_key: c.key }));
+            this.conditions.forEach(c => push('cond', c, { condition_key: c.key }));
             if (this.reportType === 'RSTP') {
-                this.allActivities.forEach(a => push(a, { group_key: a.group_key, activity_key: a.key }));
+                this.allActivities.forEach(a => push('act', a, { group_key: a.group_key, activity_key: a.key }));
             }
             if (this.reportType === 'RSTE') {
-                this.allRsteWorks.forEach(w => push(w, { group_key: w.group_key, activity_key: w.key }));
+                this.allRsteWorks.forEach(w => push('rste', w, { group_key: w.group_key, activity_key: w.key }));
             }
             // Video del servicio (paso Conclusión). El backend detecta el tipo real
             // en Cloudinary; aquí marcamos media_type para nombrar el archivo.
             if (this.conclusion.video instanceof Blob) {
-                list.push({ blob: this.conclusion.video, media_type: 'video', _video: true });
+                list.push({ blob: this.conclusion.video, media_type: 'video', _video: true, _slot: 'video' });
             }
             return list;
         },
@@ -864,8 +912,11 @@ export default {
                     throw err;
                 }
                 // Liberar el Blob al subir con éxito (evita re-subir si una firma falla).
+                // También la copia del dispositivo: al retomar el borrador no debe
+                // volver a subirse una foto que el servidor ya tiene.
                 if (att._video) this.conclusion.video = null;
                 else if (att._item) att._item.photo = null;
+                this.saveMedia(att._slot, null);
             }
         },
 
@@ -888,15 +939,83 @@ export default {
         },
 
         async autosave() {
-            if (!this.reportId || this.saving) return;
+            clearTimeout(this._autosaveDebounce);
+            if (!this.reportId || this.saving || this.finalized) return;
+            this.dirty = false;
+            const snapshot = this.draftSnapshot;
             try {
                 if (this.isOffline) {
                     // Sin servidor: guardar el borrador en el dispositivo
-                    await offlineManager.saveDraftReport(this.reportId, this.buildPayload());
+                    await offlineManager.saveDraftReport(this.reportId, this.buildPayload({ draft: true }));
                 } else {
-                    await reportService.update(this.reportId, this.buildPayload());
+                    await reportService.update(this.reportId, this.buildPayload({ draft: true }));
                 }
+                this._savedSnapshot = snapshot;
                 this.lastSaved = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch {
+                // Se reintenta en el siguiente ciclo de 30 s.
+                this.dirty = true;
+            }
+        },
+
+        flushAutosave() {
+            if (this.dirty) this.autosave();
+        },
+
+        // ── Fotos, video y firmas del borrador (en este dispositivo) ──
+        // El borrador del servidor solo lleva las respuestas: lo capturado vive en
+        // memoria hasta finalizar. Se copia a IndexedDB en cuanto cambia para que,
+        // si la app se cierra o el técnico sale, al retomar siga ahí.
+
+        photoSlot(kind, item) {
+            return kind === 'cond' ? `cond:${item.key}` : `${kind}:${item.group_key}:${item.key}`;
+        },
+
+        saveMedia(slot, value) {
+            if (!this.reportId || this.finalized) return;
+            offlineManager.saveDraftMedia(this.reportId, slot, value).catch(err => {
+                console.warn('No se pudo guardar en el dispositivo:', slot, err);
+            });
+        },
+
+        setPhoto(kind, item, blob) {
+            item.photo = blob;
+            this.saveMedia(this.photoSlot(kind, item), blob);
+        },
+
+        setVideo(file) {
+            this.conclusion.video = file;
+            this.saveMedia('video', file);
+        },
+
+        async restoreDraftMedia() {
+            if (!this.reportId) return;
+            let media;
+            try {
+                media = await offlineManager.getDraftMedia(this.reportId);
+            } catch {
+                return;
+            }
+            const restorePhotos = (kind, items) => items.forEach(item => {
+                const blob = media[this.photoSlot(kind, item)];
+                if (blob instanceof Blob) item.photo = blob;
+            });
+            restorePhotos('cond', this.conditions);
+            restorePhotos('act', this.allActivities);
+            restorePhotos('rste', this.allRsteWorks);
+            if (media.video instanceof Blob) this.conclusion.video = media.video;
+            if (media['sig:tech'] instanceof Blob) this._signatures.tech = media['sig:tech'];
+            if (media['sig:customer'] instanceof Blob) this._signatures.customer = media['sig:customer'];
+            if (media.signer) this.customerSigner = { ...this.customerSigner, ...media.signer };
+            // Si el paso de firma ya está a la vista, pintarlas ahora.
+            this.$nextTick(() => { this.drawStoredSignature('tech'); this.drawStoredSignature('customer'); });
+        },
+
+        async clearDraftMediaAfterFinalize() {
+            this.finalized = true;
+            this.dirty = false;
+            try {
+                await offlineManager.clearDraftMedia(this.reportId);
             } catch {}
         },
 
@@ -973,6 +1092,7 @@ export default {
                         });
                     }
                     await offlineManager.removeDraftReport(this.reportId);
+                    await this.clearDraftMediaAfterFinalize();
                     sessionStorage.removeItem('current_checkin');
                     this.$router.push({ name: 'tech.dashboard' });
                     this.$swal.fire({
@@ -1008,7 +1128,8 @@ export default {
                     });
                 }
 
-                // Limpiar session
+                // Limpiar session y lo guardado del borrador en el dispositivo
+                await this.clearDraftMediaAfterFinalize();
                 sessionStorage.removeItem('current_checkin');
 
                 // Navegar a confirmacion
@@ -1052,6 +1173,9 @@ export default {
 
         // ── Signature canvas ──
         initSignatureCanvases() {
+            // Se llama cada vez que se entra al paso de firma: sin esto los
+            // listeners globales se acumulaban.
+            this.removeSignListeners();
             ['techSignature', 'customerSignature'].forEach(ref => {
                 const canvas = this.$refs[ref];
                 if (!canvas) return;
@@ -1066,6 +1190,11 @@ export default {
                 if (ref === 'techSignature') this.techSignCtx = ctx;
                 else this.customerSignCtx = ctx;
             });
+
+            // Fijar el ancho borra el lienzo: volver a pintar lo ya firmado (al
+            // regresar de otro paso o al retomar el borrador).
+            this.drawStoredSignature('tech');
+            this.drawStoredSignature('customer');
 
             // Global listeners for drawing
             this._onMove = this.drawSign.bind(this);
@@ -1108,8 +1237,44 @@ export default {
         },
 
         endSign() {
+            const target = this.isDrawing ? this.currentSignTarget : null;
             this.isDrawing = false;
             this.currentSignTarget = null;
+            if (target) this.storeSignature(target);
+        },
+
+        /** Copia la firma del lienzo para recuperarla si el formulario se interrumpe. */
+        storeSignature(target) {
+            const canvas = this.$refs[target === 'tech' ? 'techSignature' : 'customerSignature'];
+            if (!canvas) return;
+            canvas.toBlob(blob => {
+                if (!blob) return;
+                this._signatures[target] = blob;
+                this.saveMedia(`sig:${target}`, blob);
+            }, 'image/png');
+        },
+
+        async drawStoredSignature(target) {
+            const blob = this._signatures?.[target];
+            const canvas = this.$refs[target === 'tech' ? 'techSignature' : 'customerSignature'];
+            if (!blob || !canvas || !canvas.width) return;
+            const url = URL.createObjectURL(blob);
+            try {
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = url;
+                });
+                // Si el lienzo es más angosto que cuando se firmó (giro de pantalla),
+                // reducir la firma para que quepa entera.
+                const scale = Math.min(1, canvas.width / img.width, canvas.height / img.height);
+                canvas.getContext('2d').drawImage(img, 0, 0, img.width * scale, img.height * scale);
+            } catch {
+                // Imagen ilegible: el lienzo queda en blanco y se vuelve a firmar.
+            } finally {
+                URL.revokeObjectURL(url);
+            }
         },
 
         getCanvasPos(e, target) {
@@ -1130,6 +1295,8 @@ export default {
             if (ctx && canvas) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
+            this._signatures[target] = null;
+            this.saveMedia(`sig:${target}`, null);
         },
 
         hasSignature(target) {

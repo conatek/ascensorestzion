@@ -3,7 +3,8 @@ import { reactive, readonly } from 'vue';
 
 const DB_NAME = 'tzion-offline';
 // v2: cola de firmas de visita en lote (firma diferida)
-const DB_VERSION = 2;
+// v3: fotos, video y firmas de los borradores (draft-media)
+const DB_VERSION = 3;
 
 const STORES = {
     CATALOGS: 'catalogs',
@@ -13,6 +14,7 @@ const STORES = {
     REPORTS_PENDING_SYNC: 'reports-pending-sync',
     ATTACHMENTS_PENDING: 'attachments-pending',
     VISIT_SIGNATURES_PENDING: 'visit-signatures-pending',
+    DRAFT_MEDIA: 'draft-media',
 };
 
 let dbInstance = null;
@@ -75,6 +77,15 @@ async function getDb() {
                     autoIncrement: true,
                 });
                 store.createIndex('by-visit', 'visit_uuid', { unique: true });
+            }
+
+            // Fotos, video y firmas de un reporte a medio llenar. El borrador del
+            // servidor solo guarda las respuestas; esto permite retomarlo en el
+            // mismo dispositivo sin perder lo capturado. Una fila por "hueco":
+            // id = `${reportId}:${slot}`.
+            if (!db.objectStoreNames.contains(STORES.DRAFT_MEDIA)) {
+                const store = db.createObjectStore(STORES.DRAFT_MEDIA, { keyPath: 'id' });
+                store.createIndex('by-report', 'reportId');
             }
         },
     });
@@ -257,6 +268,64 @@ async function removeDraftReport(localId) {
 
 async function getAllDraftReports() {
     return getAll(STORES.REPORTS_DRAFT);
+}
+
+// --- Fotos, video y firmas del borrador ---
+
+/**
+ * Guarda (o borra, si value es null) el contenido de un hueco del borrador.
+ * value: Blob (foto, video, firma) u objeto plano (datos del firmante).
+ */
+async function saveDraftMedia(reportId, slot, value) {
+    // Directo a la base: put()/remove() recalculan el contador de pendientes de
+    // sync, y esto no es una cola de subida.
+    const db = await getDb();
+    const id = `${reportId}:${slot}`;
+    if (value === null || value === undefined) {
+        await db.delete(STORES.DRAFT_MEDIA, id);
+        return;
+    }
+    await db.put(STORES.DRAFT_MEDIA, {
+        id,
+        reportId: String(reportId),
+        slot,
+        value,
+        savedAt: Date.now(),
+    });
+}
+
+/** Todo lo guardado de un borrador, como { slot: value }. */
+async function getDraftMedia(reportId) {
+    const db = await getDb();
+    const rows = await db.getAllFromIndex(STORES.DRAFT_MEDIA, 'by-report', String(reportId));
+    return Object.fromEntries(rows.map(r => [r.slot, r.value]));
+}
+
+async function clearDraftMedia(reportId) {
+    const db = await getDb();
+    const tx = db.transaction(STORES.DRAFT_MEDIA, 'readwrite');
+    let cursor = await tx.store.index('by-report').openCursor(String(reportId));
+    while (cursor) {
+        await cursor.delete();
+        cursor = await cursor.continue();
+    }
+    await tx.done;
+}
+
+/**
+ * Borra lo de borradores abandonados (finalizados en otro dispositivo,
+ * eliminados por un admin…) para que no ocupen espacio para siempre.
+ */
+async function pruneDraftMedia(maxAgeDays = 30) {
+    const limit = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+    const db = await getDb();
+    const tx = db.transaction(STORES.DRAFT_MEDIA, 'readwrite');
+    let cursor = await tx.store.openCursor();
+    while (cursor) {
+        if ((cursor.value.savedAt || 0) < limit) await cursor.delete();
+        cursor = await cursor.continue();
+    }
+    await tx.done;
 }
 
 // --- Reportes pendientes de sync ---
@@ -487,6 +556,12 @@ export default {
     getDraftReport,
     removeDraftReport,
     getAllDraftReports,
+
+    // Fotos, video y firmas del borrador
+    saveDraftMedia,
+    getDraftMedia,
+    clearDraftMedia,
+    pruneDraftMedia,
 
     // Reportes pendientes
     queueReportForSync,

@@ -54,6 +54,24 @@ export default {
         };
     },
 
+    watch: {
+        // immediate: el video recuperado del borrador llega como valor inicial.
+        // Al subirse, el formulario lo deja en null y se quita la vista previa.
+        modelValue: {
+            immediate: true,
+            handler(val) {
+                if (!val && this.videoUrl) {
+                    URL.revokeObjectURL(this.videoUrl);
+                    this.videoUrl = null;
+                    this.fileSize = 0;
+                } else if (val && !this.videoUrl) {
+                    this.videoUrl = URL.createObjectURL(val);
+                    this.fileSize = val.size;
+                }
+            },
+        },
+    },
+
     computed: {
         fileSizeLabel() {
             if (this.fileSize < 1024 * 1024) {

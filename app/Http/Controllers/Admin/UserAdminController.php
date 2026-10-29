@@ -105,7 +105,17 @@ class UserAdminController extends Controller
             'company_id' => 'sometimes|nullable|exists:companies,id',
             'client_id' => 'sometimes|nullable|exists:clients,id',
             'active' => 'sometimes|boolean',
+            'password' => 'nullable|string|min:8',
         ]);
+
+        // Contraseña fijada por el master. Vacía = no se cambia. Al cambiarla se
+        // cierran las sesiones del usuario, como en el restablecimiento por correo.
+        $passwordChanged = ! empty($data['password']);
+        if ($passwordChanged) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
 
         if (isset($data['role'])) {
             $user->syncRoles([$data['role']]);
@@ -119,7 +129,7 @@ class UserAdminController extends Controller
 
         $user->update($data);
 
-        if ($deactivating) {
+        if ($deactivating || $passwordChanged) {
             $user->tokens()->delete();
         }
 
