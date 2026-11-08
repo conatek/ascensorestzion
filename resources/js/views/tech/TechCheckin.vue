@@ -81,6 +81,18 @@
         </div>
 
         <!-- Error -->
+        <!-- Bloqueo de llegada (preventivos: solo desde la hora programada) -->
+        <div v-if="locked && !checkinResult" class="checkin-locked">
+            <i class="fa fa-lock checkin-locked__icon"></i>
+            <div>
+                <strong class="checkin-locked__title">Ingreso bloqueado</strong>
+                <p class="checkin-locked__text">{{ locked.message }}</p>
+                <p class="checkin-locked__hint">
+                    Si necesitas empezar antes, pide al master que desbloquee el equipo y vuelve a registrar la llegada.
+                </p>
+            </div>
+        </div>
+
         <div v-if="error" class="checkin-error">
             <i class="fa fa-exclamation-circle"></i>
             {{ error }}
@@ -115,6 +127,11 @@
                 Tiempo de respuesta: <strong>{{ checkinResult.checkin.response_time_minutes }} min</strong>
             </div>
 
+            <div v-if="unverified" class="unverified-badge">
+                <i class="fa fa-exclamation-triangle"></i>
+                <span>Registrado sin verificar: el teléfono no tenía la agenda de hoy. El master lo revisará.</span>
+            </div>
+
             <!-- Botón continuar -->
             <router-link
                 :to="{ name: 'tech.equipment', params: { id: checkinResult.equipment.id } }"
@@ -131,6 +148,7 @@ import QrScanner from '@/components/tech/QrScanner.vue';
 import checkinService from '@/services/checkinService.js';
 import { getCurrentPosition } from '@/utils/useGeolocation.js';
 import offlineManager from '@/utils/offlineManager.js';
+import { refreshAccessAgenda, getCachedAccessAgenda, evaluateAccess } from '@/utils/accessAgenda.js';
 
 export default {
     name: 'TechCheckin',
@@ -145,6 +163,8 @@ export default {
             loading: false,
             error: null,
             checkinResult: null,
+            locked: null,
+            unverified: false,
             geoStatus: null,
             geoStatusClass: '',
             geoIcon: 'fa fa-spinner fa-spin',
@@ -153,6 +173,9 @@ export default {
     },
 
     async created() {
+        // Agenda del día para poder aplicar el bloqueo si luego se pierde la señal.
+        refreshAccessAgenda();
+
         // Obtener la ubicacion ANTES de cualquier check-in para que el QR
         // (que auto-registra al llegar) incluya las coordenadas y se valide la proximidad.
         await this.requestGeolocation();
@@ -200,6 +223,8 @@ export default {
         async doCheckin(code, method) {
             this.loading = true;
             this.error = null;
+            this.locked = null;
+            this.unverified = false;
 
             const payload = {
                 equipment_code: code,
@@ -211,16 +236,48 @@ export default {
                 call_received_at: this.callReceivedAt || null,
             };
 
-            // Si estamos offline, encolar y navegar con datos cacheados
+            // Si estamos offline: aplicar el bloqueo con la agenda guardada, encolar
+            // y navegar con datos cacheados.
             if (!offlineManager.state.isOnline) {
-                await offlineManager.queueCheckin(payload);
+                const now = new Date();
+                const agenda = await getCachedAccessAgenda();
+                let offlineCheck = 'sin_agenda';
+                if (agenda) {
+                    const access = evaluateAccess(agenda, code, now, this.isEmergency);
+                    if (!access.allowed) {
+                        this.locked = { message: access.message, status: access.status };
+                        this.loading = false;
+                        return;
+                    }
+                    offlineCheck = 'permitido';
+                }
+                // Sin agenda del día se deja pasar, pero el registro queda marcado
+                // para que el master lo revise.
+                this.unverified = offlineCheck === 'sin_agenda';
+
+                const checkedInAt = now.toISOString();
+                const clientUuid = await offlineManager.queueCheckin({
+                    ...payload,
+                    checked_in_at: checkedInAt,
+                    offline_check: offlineCheck,
+                });
                 const cached = await offlineManager.getCachedEquipmentByCode(code);
                 if (cached) {
                     this.checkinResult = {
-                        checkin: { ...payload, checked_in_at: new Date().toISOString() },
+                        checkin: { ...payload, checked_in_at: checkedInAt },
                         equipment: cached,
                         proximity: null,
                     };
+                    // Igual que online: el reporte toma de aquí la hora de entrada
+                    // y se enlaza al check-in por su client_uuid al sincronizar.
+                    sessionStorage.setItem('current_checkin', JSON.stringify({
+                        checkin_id: null,
+                        client_uuid: clientUuid,
+                        equipment_id: cached.id,
+                        checked_in_at: checkedInAt,
+                        is_emergency: this.isEmergency,
+                        call_received_at: this.callReceivedAt || null,
+                    }));
                 } else {
                     this.error = 'Sin conexión y equipo no encontrado en caché. Se procesará al reconectar.';
                 }
@@ -246,7 +303,12 @@ export default {
                     response_time_minutes: data.checkin.response_time_minutes,
                 }));
             } catch (err) {
-                if (err.response?.status === 404) {
+                if (err.response?.status === 423) {
+                    this.locked = {
+                        message: err.response.data?.message || 'Todavía no puedes registrar la llegada a este equipo.',
+                        status: err.response.data?.reason,
+                    };
+                } else if (err.response?.status === 404) {
                     this.error = 'Equipo no encontrado. Verifique el código.';
                 } else if (err.response?.status === 422) {
                     this.error = err.response.data.message || 'Datos inválidos.';
@@ -480,6 +542,49 @@ export default {
 }
 
 /* Error */
+.checkin-locked {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #7c2d12;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+.checkin-locked__icon {
+    font-size: 1.4rem;
+    color: #ba2831;
+    margin-top: 0.1rem;
+}
+.checkin-locked__title {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+.checkin-locked__text {
+    margin: 0 0 0.4rem;
+    font-size: 0.88rem;
+}
+.checkin-locked__hint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #9a3412;
+}
+.unverified-badge {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    margin: 0.75rem 0;
+    text-align: left;
+}
 .checkin-error {
     background: #fef2f2;
     color: #ba2831;

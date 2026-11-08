@@ -140,6 +140,12 @@ export default {
                 return;
             }
 
+            // Técnico bloqueado en sitio: al equipo, donde está "Desbloquear ingreso hoy".
+            if (type === 'equipment_access_blocked' && notif.data?.equipment_id) {
+                this.$router.push(`/equipos/${notif.data.equipment_id}`);
+                return;
+            }
+
             // Las del cronograma llevan a la pantalla del rol de quien mira: el
             // cliente al portal, el técnico a su agenda, coordinación al tablero.
             if (VISIT_TYPES.includes(type)) {
@@ -171,6 +177,10 @@ export default {
                 .listen('.report.completed', () => {
                     this.unreadCount++;
                     if (this.showDropdown) this.fetchNotifications();
+                })
+                .listen('.equipment.access-blocked', () => {
+                    this.unreadCount++;
+                    if (this.showDropdown) this.fetchNotifications();
                 });
         },
 
@@ -188,6 +198,7 @@ export default {
                 return notif.data?.is_emergency ? 'icon--emergency' : 'icon--checkin';
             }
             if (type === 'report_completed') return 'icon--report';
+            if (type === 'equipment_access_blocked') return 'icon--emergency';
             if (type === 'report_reception_confirmed') return 'icon--confirmed';
             if (type === 'visit_cancelled') return 'icon--emergency';
             // Una solicitud sin resolver es lo unico del cronograma que pide una
@@ -200,6 +211,7 @@ export default {
         iconName(notif) {
             const type = notif.data?.type;
             if (type === 'technician_checked_in') return 'fa fa-map-marker-alt';
+            if (type === 'equipment_access_blocked') return 'fa fa-lock';
             if (type === 'report_completed') return 'fa fa-clipboard-check';
             if (type === 'report_reception_confirmed') return 'fa fa-check-double';
             if (type === 'visit_reminder') return 'fa fa-bell';

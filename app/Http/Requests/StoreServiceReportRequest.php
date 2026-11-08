@@ -21,8 +21,13 @@ class StoreServiceReportRequest extends FormRequest
             'equipment_id' => ['required', 'exists:equipment,id'],
             'service_date' => ['required', 'date'],
             'customer_order_ref' => ['nullable', 'string', 'max:100'],
-            'time_in' => ['nullable', 'date_format:H:i'],
-            'time_out' => ['nullable', 'date_format:H:i'],
+            // H:i desde los formularios; H:i:s es como vuelve de la base al reabrir
+            'time_in' => ['nullable', 'date_format:H:i,H:i:s'],
+            'time_out' => ['nullable', 'date_format:H:i,H:i:s'],
+            // Check-in del que sale el reporte: da la hora de entrada y, en
+            // correctivos, la de la llamada. El uuid es el de la cola sin conexion.
+            'checkin_id' => ['nullable', 'integer'],
+            'checkin_client_uuid' => ['nullable', 'uuid'],
             'secondary_technician_id' => ['nullable', 'exists:users,id'],
 
             // Condiciones iniciales

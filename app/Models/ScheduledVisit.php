@@ -28,6 +28,7 @@ class ScheduledVisit extends Model
         'scheduled_start',
         'scheduled_end',
         'visit_type',
+        'call_received_at',
         'status',
         'visit_uuid',
         'notes',
@@ -40,6 +41,7 @@ class ScheduledVisit extends Model
         'scheduled_start' => 'datetime',
         'scheduled_end' => 'datetime',
         'cancelled_at' => 'datetime',
+        'call_received_at' => 'datetime',
     ];
 
     /**
@@ -78,6 +80,11 @@ class ScheduledVisit extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function checkins()
+    {
+        return $this->hasMany(TechnicianCheckin::class);
     }
 
     public function reminders()

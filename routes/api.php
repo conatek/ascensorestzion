@@ -10,6 +10,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\EquipmentAccessUnlockController;
 use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordResetController;
@@ -104,6 +105,12 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
         ->middleware('role:master|super|coordinator');
     Route::apiResource('equipment', EquipmentController::class);
     Route::get('equipment/{equipment}/history', [EquipmentController::class, 'history']);
+    // Desbloqueo del ingreso de hoy (bloqueo de llegada en preventivos): solo master
+    Route::middleware('role:master')->group(function () {
+        Route::get('equipment/{equipment}/access-unlock', [EquipmentAccessUnlockController::class, 'show']);
+        Route::post('equipment/{equipment}/access-unlock', [EquipmentAccessUnlockController::class, 'store']);
+        Route::delete('equipment/{equipment}/access-unlock', [EquipmentAccessUnlockController::class, 'destroy']);
+    });
     Route::post('equipment/{equipment}/attachments', [EquipmentController::class, 'uploadAttachment']);
     Route::delete('equipment/{equipment}/attachments/{attachment}', [EquipmentController::class, 'deleteAttachment']);
     Route::post('equipment/{equipment}/generate-qr', [EquipmentController::class, 'generateQr'])
@@ -112,6 +119,7 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
     // Check-in de técnicos
     Route::prefix('tech')->group(function () {
         Route::post('checkin', [TechnicianCheckinController::class, 'store']);
+        Route::get('access-agenda', [TechnicianCheckinController::class, 'accessAgenda']);
         Route::get('checkins', [TechnicianCheckinController::class, 'index']);
         Route::get('checkins/{checkin}', [TechnicianCheckinController::class, 'show']);
 

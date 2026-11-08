@@ -71,6 +71,16 @@
                             </li>
                         </ul>
                     </div>
+                    <!-- Bloqueo de llegada: solo el master habilita el ingreso de hoy
+                         fuera de la visita programada. -->
+                    <button v-if="auth.isMaster() && !accessUnlock" class="btn-action btn-unlock" :disabled="unlocking" @click="unlockAccess"
+                            title="Permite que un técnico registre la llegada hoy aunque no sea la hora de la visita o no haya visita programada">
+                        <i class="fa fa-lock-open me-1"></i> Desbloquear ingreso hoy
+                    </button>
+                    <button v-else-if="auth.isMaster() && accessUnlock" class="btn-action btn-unlocked" :disabled="unlocking" @click="relockAccess"
+                            :title="`Desbloqueado por ${accessUnlock.unlocker?.name || 'master'}. Clic para volver a bloquear.`">
+                        <i class="fa fa-lock-open me-1"></i> Ingreso desbloqueado hoy · Bloquear
+                    </button>
                     <router-link v-if="auth.isInternal()" :to="{ name: 'equipment.edit', params: { id: equipment.id } }" class="btn-action btn-edit-action">
                         <i class="fa fa-edit me-1"></i> Editar
                     </router-link>
@@ -609,6 +619,7 @@
 
 <script>
 import equipmentService from '@/services/equipmentService.js';
+import accessUnlockService from '@/services/accessUnlockService.js';
 import { useAuth } from '@/stores/auth';
 
 export default {
@@ -617,6 +628,8 @@ export default {
     data() {
         return {
             equipment: null,
+            accessUnlock: null,
+            unlocking: false,
             loading: true,
             activeTab: 'ficha',
             history: [],
@@ -805,6 +818,45 @@ export default {
                 this.equipment = data;
             } finally {
                 this.loading = false;
+            }
+            this.loadAccessUnlock();
+        },
+
+        // Rutas solo de master: con otro rol no se llaman (el 403 saca de la pantalla).
+        async loadAccessUnlock() {
+            if (!this.auth.isMaster() || !this.equipment) return;
+            try {
+                const { data } = await accessUnlockService.get(this.equipment.id);
+                this.accessUnlock = data.unlock;
+            } catch {}
+        },
+        async unlockAccess() {
+            const { isConfirmed } = await this.$swal.fire({
+                icon: 'question',
+                title: 'Desbloquear ingreso',
+                text: `Cualquier técnico podrá registrar la llegada al equipo ${this.equipment.internal_code} durante el día de hoy, sin importar la hora de la visita.`,
+                showCancelButton: true,
+                confirmButtonText: 'Desbloquear',
+                cancelButtonText: 'Cancelar',
+            });
+            if (!isConfirmed) return;
+            this.unlocking = true;
+            try {
+                const { data } = await accessUnlockService.unlock(this.equipment.id);
+                this.accessUnlock = data.unlock;
+            } catch {
+                this.$swal.fire({ icon: 'error', title: 'No se pudo desbloquear', confirmButtonText: 'Aceptar' });
+            } finally {
+                this.unlocking = false;
+            }
+        },
+        async relockAccess() {
+            this.unlocking = true;
+            try {
+                await accessUnlockService.relock(this.equipment.id);
+                this.accessUnlock = null;
+            } catch {} finally {
+                this.unlocking = false;
             }
         },
 
@@ -1090,6 +1142,17 @@ export default {
     cursor: pointer;
 }
 
+.btn-unlock {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fdba74;
+}
+.btn-unlock:hover { background: #ffedd5; }
+.btn-unlocked {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+}
 .btn-back {
     background: #f1f5f9;
     color: #475569;

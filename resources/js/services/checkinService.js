@@ -5,6 +5,11 @@ export default {
         return api.post('/tech/checkin', data);
     },
 
+    /** Agenda del día para decidir el bloqueo de llegada sin conexión. */
+    accessAgenda() {
+        return api.get('/tech/access-agenda');
+    },
+
     index(params = {}) {
         return api.get('/tech/checkins', { params });
     },

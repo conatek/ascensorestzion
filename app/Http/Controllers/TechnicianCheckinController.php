@@ -2,22 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\EquipmentAccessBlocked;
 use App\Events\TechnicianCheckedIn;
 use App\Models\Equipment;
 use App\Models\TechnicianCheckin;
 use App\Models\User;
+use App\Notifications\EquipmentAccessBlockedNotification;
 use App\Notifications\TechnicianCheckedInNotification;
+use App\Services\EquipmentAccessService;
 use App\Services\ScheduleService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 
 class TechnicianCheckinController extends Controller
 {
     public function __construct(
         private ScheduleService $schedule,
+        private EquipmentAccessService $access,
     ) {}
+
+    /**
+     * Agenda del dia para decidir el bloqueo sin conexion. El telefono la guarda
+     * cada vez que la app abre con senal.
+     */
+    public function accessAgenda(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_if(! $user->can('checkin_equipment'), 403, 'No autorizado.');
+
+        return response()->json($this->access->agendaFor($user, now()));
+    }
 
     public function store(Request $request): JsonResponse
     {
@@ -34,6 +51,8 @@ class TechnicianCheckinController extends Controller
             'call_received_at' => ['nullable', 'date'],
             'client_uuid' => ['nullable', 'uuid'],
             'checked_in_at' => ['nullable', 'date'],
+            // Lo que decidio el telefono al registrar sin conexion
+            'offline_check' => ['nullable', 'in:permitido,sin_agenda'],
         ]);
 
         // Idempotencia: si ya existe un check-in con este client_uuid (sync reintentado),
@@ -63,18 +82,49 @@ class TechnicianCheckinController extends Controller
         }
 
         $now = now();
-        // Para check-ins sincronizados offline, usar la hora real del dispositivo
+        // Un check-in con hora propia viene de la cola sin conexion: ya ocurrio en
+        // sitio, asi que no se rechaza; se verifica y, si no cuadra, se marca.
+        $isDeferred = ! empty($validated['checked_in_at']) || ! empty($validated['client_uuid']);
+        // El telefono manda ISO en UTC ("...Z"): sin pasarlo a la zona de la app,
+        // Eloquent guardaba la hora UTC como si fuera local (5 h de mas).
         $checkedInAt = ! empty($validated['checked_in_at'])
-            ? \Carbon\Carbon::parse($validated['checked_in_at'])
+            ? \Carbon\Carbon::parse($validated['checked_in_at'])->setTimezone(config('app.timezone'))
             : $now;
 
-        // Calcular tiempo de respuesta si es emergencia
-        $responseTimeMinutes = null;
-        if ($validated['is_emergency'] ?? false) {
-            $callTime = $validated['call_received_at'] ?? null;
-            if ($callTime) {
-                $responseTimeMinutes = (int) $checkedInAt->diffInMinutes($callTime);
+        $isEmergency = (bool) ($validated['is_emergency'] ?? false);
+        $access = $this->access->evaluate($equipment, $user, $checkedInAt, $isEmergency);
+
+        if (! $access['allowed'] && ! $isDeferred) {
+            $this->notifyBlocked($equipment, $user, $access);
+
+            return response()->json([
+                'code' => 'access_locked',
+                'reason' => $access['status'],
+                'message' => $access['message'],
+                'scheduled_start' => $access['visit']?->scheduled_start?->toIso8601String(),
+            ], 423);
+        }
+
+        $accessStatus = $access['status'];
+        $needsReview = false;
+        if ($isDeferred) {
+            // Hora del telefono por delante del servidor: el reloj se toco.
+            if ($checkedInAt->gt($now->copy()->addMinutes(5))) {
+                $accessStatus = EquipmentAccessService::RELOJ_INCONSISTENTE;
+                $needsReview = true;
             }
+            if (! $access['allowed'] || ($validated['offline_check'] ?? null) === 'sin_agenda') {
+                $needsReview = true;
+            }
+        }
+
+        // Hora de la llamada: la que digito el tecnico o, si no, la que anoto
+        // coordinacion al programar el correctivo.
+        $callTime = $validated['call_received_at'] ?? $access['visit']?->call_received_at;
+
+        $responseTimeMinutes = null;
+        if ($callTime) {
+            $responseTimeMinutes = (int) \Carbon\Carbon::parse($callTime)->diffInMinutes($checkedInAt);
         }
 
         // Calcular proximidad respecto a la sede del equipo (advertir y registrar)
@@ -97,6 +147,7 @@ class TechnicianCheckinController extends Controller
 
         $checkin = TechnicianCheckin::create([
             'equipment_id' => $equipment->id,
+            'scheduled_visit_id' => $access['visit']?->id,
             'technician_id' => $user->id,
             'client_uuid' => $validated['client_uuid'] ?? null,
             'checked_in_at' => $checkedInAt,
@@ -106,8 +157,11 @@ class TechnicianCheckinController extends Controller
             'distance_meters' => $proximity['distance_meters'] ?? null,
             'within_radius' => $proximity['within_radius'] ?? null,
             'method' => $validated['method'],
-            'is_emergency' => $validated['is_emergency'] ?? false,
-            'call_received_at' => $validated['call_received_at'] ?? null,
+            'access_status' => $accessStatus,
+            'offline_check' => $isDeferred ? ($validated['offline_check'] ?? null) : null,
+            'needs_review' => $needsReview,
+            'is_emergency' => $isEmergency || (bool) $access['visit']?->call_received_at,
+            'call_received_at' => $callTime,
             'response_time_minutes' => $responseTimeMinutes,
         ]);
 
@@ -215,6 +269,35 @@ class TechnicianCheckinController extends Controller
         ]);
 
         return response()->json($checkin);
+    }
+
+    /**
+     * Avisa a los masters (los unicos que pueden desbloquear) de que un tecnico
+     * esta en sitio sin poder empezar. Un aviso por tecnico y equipo cada 10
+     * minutos: reintentar el escaneo no debe llenar la campana.
+     */
+    private function notifyBlocked(Equipment $equipment, User $technician, array $access): void
+    {
+        $key = "access-blocked:{$technician->id}:{$equipment->id}";
+        if (! Cache::add($key, true, now()->addMinutes(10))) {
+            return;
+        }
+
+        $masters = User::role('master')->where('active', true)->get();
+        if ($masters->isEmpty()) {
+            return;
+        }
+
+        $payload = [
+            'equipment_id' => $equipment->id,
+            'equipment_code' => $equipment->internal_code,
+            'technician_name' => $technician->name,
+            'reason' => $access['status'],
+            'scheduled_start' => $access['visit']?->scheduled_start?->toIso8601String(),
+        ];
+
+        Notification::send($masters, new EquipmentAccessBlockedNotification($payload));
+        EquipmentAccessBlocked::dispatch($payload, $masters->pluck('id')->all());
     }
 
     private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float

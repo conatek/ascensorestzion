@@ -8,6 +8,7 @@ class TechnicianCheckin extends Model
 {
     protected $fillable = [
         'equipment_id',
+        'scheduled_visit_id',
         'technician_id',
         'client_uuid',
         'checked_in_at',
@@ -17,6 +18,9 @@ class TechnicianCheckin extends Model
         'distance_meters',
         'within_radius',
         'method',
+        'access_status',
+        'offline_check',
+        'needs_review',
         'is_emergency',
         'call_received_at',
         'response_time_minutes',
@@ -27,6 +31,7 @@ class TechnicianCheckin extends Model
         'checked_in_at' => 'datetime',
         'call_received_at' => 'datetime',
         'is_emergency' => 'boolean',
+        'needs_review' => 'boolean',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'accuracy' => 'decimal:2',
@@ -43,6 +48,11 @@ class TechnicianCheckin extends Model
     public function technician()
     {
         return $this->belongsTo(User::class, 'technician_id');
+    }
+
+    public function scheduledVisit()
+    {
+        return $this->belongsTo(ScheduledVisit::class);
     }
 
     public function serviceReport()

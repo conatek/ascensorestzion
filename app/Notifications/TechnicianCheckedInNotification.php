@@ -59,6 +59,10 @@ class TechnicianCheckedInNotification extends Notification implements ShouldQueu
             $mail->line("**Tiempo de respuesta:** {$checkin->response_time_minutes} minutos");
         }
 
+        if ($checkin->needs_review) {
+            $mail->line('**⚠ Por revisar:** '.$this->reviewReason($checkin));
+        }
+
         return $mail;
     }
 
@@ -84,10 +88,26 @@ class TechnicianCheckedInNotification extends Notification implements ShouldQueu
             'checked_in_at' => $checkin->checked_in_at->toIso8601String(),
             'is_emergency' => $checkin->is_emergency,
             'response_time_minutes' => $checkin->response_time_minutes,
-            'message' => $checkin->is_emergency
-                ? "⚠ {$techName} llegó al equipo {$equipCode} (emergencia)"
-                : "{$techName} llegó al equipo {$equipCode}",
+            'needs_review' => $checkin->needs_review,
+            'access_status' => $checkin->access_status,
+            'message' => match (true) {
+                $checkin->needs_review => "⚠ Por revisar: {$techName} llegó al equipo {$equipCode} sin conexión — ".$this->reviewReason($checkin),
+                $checkin->is_emergency => "⚠ {$techName} llegó al equipo {$equipCode} (emergencia)",
+                default => "{$techName} llegó al equipo {$equipCode}",
+            },
         ];
+    }
+
+    /** Por que un check-in sin conexion necesita que el master lo mire. */
+    private function reviewReason(TechnicianCheckin $checkin): string
+    {
+        return match (true) {
+            $checkin->access_status === 'reloj_inconsistente' => 'la hora del teléfono no coincide con la del servidor',
+            $checkin->access_status === 'anticipado' => 'se registró antes de la hora de la visita',
+            $checkin->access_status === 'sin_programar' => 'no había visita programada para ese equipo',
+            $checkin->offline_check === 'sin_agenda' => 'el teléfono no tenía la agenda del día para verificar la hora',
+            default => 'registro sin verificar',
+        };
     }
 
     public function toWhatsApp(object $notifiable): array

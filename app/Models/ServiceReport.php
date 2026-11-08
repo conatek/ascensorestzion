@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -53,6 +54,23 @@ class ServiceReport extends Model
         'customer_signed_at' => 'datetime',
         'reception_confirmed_at' => 'datetime',
     ];
+
+    /**
+     * Hora para mostrar en vista y PDF ("08:30 AM"). Acepta "08:30", "08:30:00"
+     * o un datetime; vacio da null.
+     */
+    public static function timeLabel($value, bool $withDate = false): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->format($withDate ? 'd/m/Y h:i A' : 'h:i A');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
+    }
 
     public function equipment()
     {

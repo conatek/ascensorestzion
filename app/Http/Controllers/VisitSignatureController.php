@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\VisitReportsCompletedNotification;
 use App\Services\ScheduleService;
 use App\Services\ServiceReportSigningService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +85,9 @@ class VisitSignatureController extends Controller
             'signature' => ['required', 'string'],
             'signer_name' => ['required', 'string', 'max:255'],
             'signer_document' => ['required', 'string', 'max:50'],
+            // Hora del telefono al firmar: si la firma sube despues desde la cola
+            // sin conexion, la salida no debe quedar con la hora de la subida.
+            'signed_at' => ['nullable', 'date'],
         ]);
 
         $query = ServiceReport::where('visit_uuid', $data['visit_uuid']);
@@ -116,8 +120,19 @@ class VisitSignatureController extends Controller
                 $request
             );
 
+            // La firma del cliente en lote es la salida del tecnico de la sede.
+            $signedAt = ! empty($data['signed_at'])
+                ? Carbon::parse($data['signed_at'])->setTimezone(config('app.timezone'))
+                : now();
+            if ($signedAt->isFuture()) {
+                $signedAt = now();
+            }
+
             foreach ($pending as $report) {
-                $report->update(['reception_token' => Str::random(64)]);
+                $report->update([
+                    'reception_token' => Str::random(64),
+                    'time_out' => $signedAt->format('H:i'),
+                ]);
             }
         });
 

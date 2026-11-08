@@ -421,11 +421,11 @@
                     <div class="detail-grid mt-3" v-if="report.time_in || report.time_out">
                         <div class="detail-item" v-if="report.time_in">
                             <span class="detail-label">Hora entrada</span>
-                            <span class="detail-value">{{ report.time_in }}</span>
+                            <span class="detail-value">{{ formatTime(report.time_in) }}</span>
                         </div>
                         <div class="detail-item" v-if="report.time_out">
                             <span class="detail-label">Hora salida</span>
-                            <span class="detail-value">{{ report.time_out }}</span>
+                            <span class="detail-value">{{ formatTime(report.time_out) }}</span>
                         </div>
                     </div>
 
@@ -889,6 +889,14 @@ export default {
             });
         },
 
+        // "08:30:00" de la base -> "08:30 a. m."
+        formatTime(value) {
+            if (!value) return '-';
+            const [h, m] = String(value).split(':');
+            const d = new Date();
+            d.setHours(Number(h), Number(m || 0), 0, 0);
+            return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        },
         formatDateTime(dateStr) {
             if (!dateStr) return '-';
             const date = new Date(dateStr);

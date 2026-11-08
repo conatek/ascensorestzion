@@ -23,6 +23,8 @@ class UpdateScheduledVisitRequest extends FormRequest
             'scheduled_start' => ['sometimes', 'date', 'required_with:scheduled_end'],
             'scheduled_end' => ['sometimes', 'date', 'after:scheduled_start', 'required_with:scheduled_start'],
             'visit_type' => ['sometimes', Rule::in(['preventivo', 'correctivo', 'especial'])],
+            // Hora en que se recibio la llamada del cliente (correctivos)
+            'call_received_at' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ];
     }

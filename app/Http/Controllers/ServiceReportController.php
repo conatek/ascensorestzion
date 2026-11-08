@@ -7,6 +7,7 @@ use App\Http\Requests\StoreServiceReportRequest;
 use App\Models\Equipment;
 use App\Models\ServiceReport;
 use App\Models\ServiceReportAuditLog;
+use App\Models\TechnicianCheckin;
 use App\Models\User;
 use App\Notifications\ReportCompletedNotification;
 use App\Notifications\ServiceReportReadyNotification;
@@ -102,6 +103,8 @@ class ServiceReportController extends Controller
 
         $equipment = Equipment::with('site.client')->findOrFail($data['equipment_id']);
 
+        $checkin = $this->resolveCheckin($data, $user->id, $equipment->id);
+
         // Crear reporte base
         $report = ServiceReport::create([
             'report_number' => $this->numbering->generate($data['report_type']),
@@ -113,7 +116,8 @@ class ServiceReportController extends Controller
             'site_id' => $equipment->site_id,
             'customer_order_ref' => $data['customer_order_ref'] ?? null,
             'service_date' => $data['service_date'],
-            'time_in' => $data['time_in'] ?? null,
+            // La entrada es la hora del registro con QR o codigo del equipo
+            'time_in' => $checkin?->checked_in_at?->format('H:i') ?? $data['time_in'] ?? null,
             'time_out' => $data['time_out'] ?? null,
             'technician_id' => $user->id,
             'secondary_technician_id' => $data['secondary_technician_id'] ?? null,
@@ -144,9 +148,16 @@ class ServiceReportController extends Controller
             $report->rstpMonth()->create($data['rstp_month']);
         }
 
-        // RSTC: detalles de análisis
-        if ($data['report_type'] === 'RSTC' && ! empty($data['rstc_details'])) {
-            $report->rstcDetails()->create($data['rstc_details']);
+        // RSTC: detalles de análisis + tiempos de la llamada desde el check-in
+        if ($data['report_type'] === 'RSTC') {
+            $details = $this->withCheckinTimes($data['rstc_details'] ?? [], $checkin);
+            if ($details !== []) {
+                $report->rstcDetails()->create($details);
+            }
+        }
+
+        if ($checkin && ! $checkin->service_report_id) {
+            $checkin->update(['service_report_id' => $report->id]);
         }
 
         // RSTC/RSTE: códigos de falla
@@ -270,10 +281,21 @@ class ServiceReportController extends Controller
             $serviceReport->rstpMonth()->create($data['rstp_month']);
         }
 
-        // Sincronizar detalles RSTC
+        // Sincronizar detalles RSTC. El formulario del tecnico no manda los tiempos
+        // (llamada, entrada, salida, respuesta): se conservan los guardados. Antes
+        // se borraban en cada guardado y la hora de la llamada se perdia.
         if ($serviceReport->report_type === 'RSTC' && isset($data['rstc_details'])) {
+            $previous = $serviceReport->rstcDetails()->first();
+            $details = $data['rstc_details'];
+            if ($previous) {
+                foreach (self::RSTC_TIME_FIELDS as $field) {
+                    if (! array_key_exists($field, $details)) {
+                        $details[$field] = $previous->getRawOriginal($field);
+                    }
+                }
+            }
             $serviceReport->rstcDetails()->delete();
-            $serviceReport->rstcDetails()->create($data['rstc_details']);
+            $serviceReport->rstcDetails()->create($details);
         }
 
         // Sincronizar códigos de falla (RSTC/RSTE)
@@ -305,6 +327,46 @@ class ServiceReportController extends Controller
             'equipment.site.client', 'initialConditions', 'rstpActivities', 'rstpMonth',
             'rstcDetails', 'faultCodes', 'rsteWorks', 'technician',
         ]));
+    }
+
+    private const RSTC_TIME_FIELDS = ['call_time', 'entry_time', 'exit_time', 'response_time_hh', 'response_time_mm'];
+
+    /**
+     * El check-in del que sale el reporte, solo si es del mismo tecnico y equipo.
+     */
+    private function resolveCheckin(array $data, int $technicianId, int $equipmentId): ?TechnicianCheckin
+    {
+        $query = TechnicianCheckin::where('technician_id', $technicianId)->where('equipment_id', $equipmentId);
+
+        if (! empty($data['checkin_id'])) {
+            return $query->whereKey($data['checkin_id'])->first();
+        }
+        if (! empty($data['checkin_client_uuid'])) {
+            return $query->where('client_uuid', $data['checkin_client_uuid'])->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Completa los tiempos del correctivo con el check-in: hora de la llamada,
+     * de entrada y el tiempo de respuesta. Lo digitado a mano manda.
+     */
+    private function withCheckinTimes(array $details, ?TechnicianCheckin $checkin): array
+    {
+        if (! $checkin) {
+            return $details;
+        }
+
+        $details['entry_time'] = ($details['entry_time'] ?? null) ?: $checkin->checked_in_at;
+        $details['call_time'] = ($details['call_time'] ?? null) ?: $checkin->call_received_at;
+
+        if ($checkin->response_time_minutes !== null && ($details['response_time_hh'] ?? null) === null) {
+            $details['response_time_hh'] = intdiv($checkin->response_time_minutes, 60);
+            $details['response_time_mm'] = $checkin->response_time_minutes % 60;
+        }
+
+        return array_filter($details, fn ($v) => $v !== null && $v !== '');
     }
 
     public function destroy(Request $request, ServiceReport $serviceReport): JsonResponse

@@ -19,6 +19,40 @@
                     <h5 class="drawer-block-title">Cuándo</h5>
                     <p class="drawer-when">{{ whenLabel }}</p>
                     <p class="drawer-duration">{{ durationLabel }}</p>
+                    <p v-if="visit.call_received_at" class="drawer-duration">
+                        <i class="fa fa-phone-alt me-1"></i> Llamada del cliente: {{ dateTime(visit.call_received_at) }}
+                    </p>
+                </section>
+
+                <!-- Llegada del técnico y bloqueo de ingreso (preventivos) -->
+                <section v-if="checkins.length || canUnlock || unlock" class="drawer-block">
+                    <h5 class="drawer-block-title">Llegada del técnico</h5>
+                    <ul v-if="checkins.length" class="drawer-checkins">
+                        <li v-for="c in checkins" :key="c.id" :class="{ 'needs-review': c.needs_review }">
+                            <span class="drawer-checkin-when">{{ dateTime(c.checked_in_at) }}</span>
+                            <span class="drawer-checkin-how">
+                                {{ c.method === 'qr' ? 'QR' : 'Código' }}<template v-if="c.offline_check"> · sin conexión</template>
+                                <template v-if="c.access_status"> · {{ accessLabel(c.access_status) }}</template>
+                            </span>
+                            <span v-if="c.response_time_minutes != null" class="drawer-checkin-how">
+                                Tiempo de respuesta: {{ c.response_time_minutes }} min
+                            </span>
+                            <span v-if="c.needs_review" class="drawer-checkin-review">
+                                <i class="fa fa-exclamation-triangle me-1"></i>
+                                Por revisar: {{ c.offline_check === 'sin_agenda' ? 'el teléfono no tenía la agenda del día' : accessLabel(c.access_status) }}
+                            </span>
+                        </li>
+                    </ul>
+                    <p v-else-if="!unlock" class="drawer-notes">El ingreso se habilita a la hora de inicio.</p>
+
+                    <p v-if="unlock" class="drawer-unlocked">
+                        <i class="fa fa-lock-open me-1"></i>
+                        Ingreso desbloqueado hoy por {{ unlock.unlocker?.name || 'master' }}
+                        <button v-if="isMaster" class="drawer-link-btn" :disabled="unlocking" @click="relock">Volver a bloquear</button>
+                    </p>
+                    <button v-else-if="canUnlock" class="drawer-btn drawer-btn-ghost drawer-unlock-btn" :disabled="unlocking" @click="doUnlock">
+                        <i class="fa fa-lock-open me-2"></i> Desbloquear ingreso ahora
+                    </button>
                 </section>
 
                 <section class="drawer-block">
@@ -115,7 +149,9 @@
 
 <script>
 import dayjs from '@/utils/dayjs.js';
-import { STATUS_LABELS, TYPE_LABELS } from '@/utils/visitLabels.js';
+import { STATUS_LABELS, TYPE_LABELS, ACCESS_LABELS } from '@/utils/visitLabels.js';
+import accessUnlockService from '@/services/accessUnlockService.js';
+import { useAuth } from '@/stores/auth';
 
 export default {
     name: 'VisitDrawer',
@@ -123,7 +159,30 @@ export default {
         visit: { type: Object, required: true },
     },
     emits: ['close', 'edit', 'cancel', 'approve-reschedule', 'reject-reschedule'],
+    data() {
+        return {
+            unlock: null,
+            unlocking: false,
+        };
+    },
     computed: {
+        isMaster() {
+            return useAuth().isMaster();
+        },
+        isToday() {
+            return dayjs(this.visit.scheduled_start).isSame(dayjs(), 'day');
+        },
+        checkins() {
+            return this.visit.checkins || [];
+        },
+        /** Solo el master, y solo cuando el bloqueo aplica: preventivo de hoy aún sin empezar. */
+        canUnlock() {
+            return this.isMaster
+                && this.isToday
+                && this.visit.visit_type === 'preventivo'
+                && ['programada', 'reprogramacion_solicitada'].includes(this.visit.status)
+                && dayjs().isBefore(dayjs(this.visit.scheduled_start));
+        },
         statusLabel() {
             return STATUS_LABELS[this.visit.status] || this.visit.status;
         },
@@ -161,7 +220,45 @@ export default {
             return this.rescheduleRequests.find(r => r.status === 'pendiente') || null;
         },
     },
+    watch: {
+        'visit.id': { immediate: true, handler() { this.loadUnlock(); } },
+    },
     methods: {
+        async loadUnlock() {
+            this.unlock = null;
+            // La ruta es solo de master: con otro rol el 403 sacaría de la pantalla.
+            if (!this.isMaster || !this.isToday || !this.visit.equipment_id) return;
+            try {
+                const { data } = await accessUnlockService.get(this.visit.equipment_id);
+                this.unlock = data.unlock;
+            } catch {}
+        },
+        async doUnlock() {
+            this.unlocking = true;
+            try {
+                const { data } = await accessUnlockService.unlock(this.visit.equipment_id);
+                this.unlock = data.unlock;
+            } catch {
+                this.$swal?.fire?.({ icon: 'error', title: 'No se pudo desbloquear', confirmButtonText: 'Aceptar' });
+            } finally {
+                this.unlocking = false;
+            }
+        },
+        async relock() {
+            this.unlocking = true;
+            try {
+                await accessUnlockService.relock(this.visit.equipment_id);
+                this.unlock = null;
+            } catch {} finally {
+                this.unlocking = false;
+            }
+        },
+        accessLabel(status) {
+            return ACCESS_LABELS[status] || status || '—';
+        },
+        dateTime(value) {
+            return dayjs(value).format('D MMM · HH:mm');
+        },
         capitalize(s) {
             return s.charAt(0).toUpperCase() + s.slice(1);
         },
@@ -198,6 +295,45 @@ export default {
 </script>
 
 <style scoped>
+.drawer-checkins {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.drawer-checkins li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+.drawer-checkins li.needs-review {
+    border-color: #fbbf24;
+    background: #fffbeb;
+}
+.drawer-checkin-when { font-weight: 600; color: #1e293b; }
+.drawer-checkin-how { color: #64748b; font-size: 0.8rem; }
+.drawer-checkin-review { color: #92400e; font-size: 0.8rem; font-weight: 600; }
+.drawer-unlocked {
+    font-size: 0.85rem;
+    color: #166534;
+    margin: 0.25rem 0 0;
+}
+.drawer-link-btn {
+    background: none;
+    border: none;
+    color: #ba2831;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    padding: 0 0 0 0.5rem;
+    cursor: pointer;
+}
+.drawer-unlock-btn { width: 100%; margin-top: 0.25rem; }
 .drawer-backdrop {
     position: fixed;
     inset: 0;

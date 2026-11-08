@@ -97,6 +97,7 @@ class ScheduleLifecycleTest extends TestCase
 
     public function test_el_checkin_pone_la_visita_en_curso(): void
     {
+        $this->travelTo(now()->setTime(10, 0));
         $visit = $this->visit($this->equipment, now()->setTime(9, 0)->toDateTimeString());
 
         Sanctum::actingAs($this->technician);
@@ -112,6 +113,8 @@ class ScheduleLifecycleTest extends TestCase
     /** La visita de otro equipo de la misma sede no se arranca sola. */
     public function test_el_checkin_no_toca_la_visita_de_otro_equipo(): void
     {
+        $this->travelTo(now()->setTime(10, 0));
+        $this->visit($this->equipment, now()->setTime(9, 0)->toDateTimeString());
         $otra = $this->visit($this->secondEquipment, now()->setTime(11, 0)->toDateTimeString());
 
         Sanctum::actingAs($this->technician);
@@ -140,16 +143,18 @@ class ScheduleLifecycleTest extends TestCase
         $this->assertSame('en_curso', $visit->fresh()->status);
     }
 
-    public function test_un_checkin_sin_visita_programada_no_rompe_nada(): void
+    /** Desde el bloqueo de llegada (2026-11-08) sin visita no se entra: ver EquipmentAccessTest. */
+    public function test_un_checkin_sin_visita_programada_se_bloquea_sin_crear_nada(): void
     {
         Sanctum::actingAs($this->technician);
 
         $this->postJson('/api/tech/checkin', [
             'equipment_code' => $this->equipment->internal_code,
             'method' => 'manual',
-        ])->assertCreated();
+        ])->assertStatus(423);
 
         $this->assertSame(0, ScheduledVisit::count());
+        $this->assertDatabaseCount('technician_checkins', 0);
     }
 
     // ── Firma del cliente → completada ──

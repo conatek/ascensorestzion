@@ -261,6 +261,11 @@
                 </div>
 
                 <div class="conclusion-notes">
+                    <label class="field-label">N.º de pedido del cliente (opcional)</label>
+                    <input v-model="customerOrderRef" class="field-input" maxlength="100" inputmode="text" autocomplete="off" placeholder="Ej.: OC-1234" />
+                </div>
+
+                <div class="conclusion-notes">
                     <label class="field-label">Notas de conclusión</label>
                     <textarea v-model="conclusion.notes" class="field-textarea" rows="4" spellcheck="true" lang="es" placeholder="Escriba las notas de conclusión..."></textarea>
                 </div>
@@ -380,6 +385,7 @@ import reportService from '@/services/reportService.js';
 import { currentVisitUuid } from '@/services/visitService.js';
 import offlineManager from '@/utils/offlineManager.js';
 import { loadCatalog } from '@/utils/catalogCache.js';
+import { localDate } from '@/utils/localDate.js';
 
 const GROUP_LABELS = {
     cuarto_maquinas: 'Cuarto de Máquinas',
@@ -408,6 +414,12 @@ export default {
             equipmentId: null,
             serviceDate: null,
             timeIn: '',
+            // HH:mm en 24 h para el servidor (timeIn es solo para mostrar)
+            timeInValue: '',
+            customerOrderRef: '',
+            // Check-in del que sale el reporte: el servidor toma de ahí la hora de
+            // entrada y, en correctivos, la de la llamada.
+            checkinRef: {},
 
             // Firma diferida (solo si la sede tiene mas de un equipo)
             siteId: null,
@@ -485,7 +497,7 @@ export default {
         // Las respuestas del borrador tal como viajan al servidor (sin la hora de
         // salida, que cambia sola). Si cambia, hay algo nuevo que guardar.
         draftSnapshot() {
-            const { exit_time, ...rest } = this.buildPayload({ draft: true });
+            const { time_out, ...rest } = this.buildPayload({ draft: true });
             return JSON.stringify(rest);
         },
         timeOut() {
@@ -563,8 +575,16 @@ export default {
         // Leer time_in del checkin
         try {
             const checkin = JSON.parse(sessionStorage.getItem('current_checkin') || '{}');
-            if (checkin.checked_in_at) {
-                this.timeIn = new Date(checkin.checked_in_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            if (checkin.checked_in_at && !this.timeInValue) {
+                const at = new Date(checkin.checked_in_at);
+                this.timeIn = at.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+                this.timeInValue = at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            }
+            if (String(checkin.equipment_id) === String(this.equipmentId || this.$route.query.equipment_id)) {
+                this.checkinRef = {
+                    checkin_id: checkin.checkin_id || null,
+                    checkin_client_uuid: checkin.client_uuid || null,
+                };
             }
         } catch {}
 
@@ -683,7 +703,14 @@ export default {
                         this.reportNumber = data.report_number;
                         this.equipmentId = data.equipment_id;
                         this.serviceDate = data.service_date;
-                        if (data.time_in) this.timeIn = data.time_in;
+                        if (data.time_in) {
+                            this.timeInValue = String(data.time_in).slice(0, 5);
+                            const [h, m] = this.timeInValue.split(':');
+                            const at = new Date();
+                            at.setHours(Number(h), Number(m), 0, 0);
+                            this.timeIn = at.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+                        }
+                        this.customerOrderRef = data.customer_order_ref || '';
                         // Para habilitar la firma diferida
                         this.setSiteInfo(data.equipment?.site, data.site_id ?? data.equipment?.site_id);
                         // Volcar las respuestas ya guardadas para poder seguir el borrador.
@@ -818,7 +845,11 @@ export default {
             const payload = {
                 report_type: this.reportType,
                 equipment_id: this.equipmentId,
-                service_date: this.serviceDate || new Date().toISOString().split('T')[0],
+                // Fecha local: toISOString() es UTC y después de las 7 p. m. daba mañana.
+                service_date: this.serviceDate || localDate(),
+                customer_order_ref: this.customerOrderRef.trim() || null,
+                time_in: this.timeInValue || null,
+                ...this.checkinRef,
                 initial_conditions: this.conditions.filter(keep).map(c => ({
                     condition_key: c.key,
                     value: c.value || 'na',
@@ -828,8 +859,11 @@ export default {
                 generates_quotation: this.conclusion.generates_quotation,
                 requires_parts_change: this.conclusion.requires_parts,
                 conclusion_notes: this.conclusion.notes || null,
-                exit_time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
             };
+            // La salida se fija en el guardado final, no en cada autoguardado.
+            if (!draft) {
+                payload.time_out = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            }
 
             if (this.reportType === 'RSTP') {
                 payload.rstp_activities = this.allActivities.filter(keep).map(a => ({

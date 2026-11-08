@@ -96,6 +96,13 @@
                         <span class="visit-hint">Duración: {{ durationLabel }}</span>
                     </div>
 
+                    <!-- Llamada del cliente: con ella se mide el tiempo de respuesta -->
+                    <div v-if="form.visit_type === 'correctivo'" class="visit-field visit-field-wide">
+                        <label class="visit-label">Hora de la llamada del cliente (opcional)</label>
+                        <input v-model="form.call_received_at" type="datetime-local" class="visit-input" />
+                        <span class="visit-hint">Cuando el técnico registre la llegada se calcula el tiempo de respuesta.</span>
+                    </div>
+
                     <div class="visit-field visit-field-wide">
                         <label class="visit-label">Notas</label>
                         <textarea v-model="form.notes" class="visit-input" rows="3"
@@ -159,6 +166,7 @@ export default {
                 start_time: '09:00',
                 end_time: '10:30',
                 visit_type: 'preventivo',
+                call_received_at: '',
                 notes: '',
             },
         };
@@ -232,6 +240,7 @@ export default {
                 start_time: start.format('HH:mm'),
                 end_time: end.format('HH:mm'),
                 visit_type: v.visit_type,
+                call_received_at: v.call_received_at ? dayjs(v.call_received_at).format('YYYY-MM-DDTHH:mm') : '',
                 notes: v.notes || '',
             };
         },
@@ -292,6 +301,9 @@ export default {
                 scheduled_start: `${this.form.date} ${this.form.start_time}`,
                 scheduled_end: `${this.form.date} ${this.form.end_time}`,
                 visit_type: this.form.visit_type,
+                call_received_at: this.form.visit_type === 'correctivo' && this.form.call_received_at
+                    ? this.form.call_received_at.replace('T', ' ')
+                    : null,
                 notes: this.form.notes || null,
             };
 

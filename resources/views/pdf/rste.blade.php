@@ -186,8 +186,8 @@
         <td style="width:33%; vertical-align:top; border:1px solid #999; padding:5px;">
             <strong style="font-size:8px;">TIEMPO DE EJECUCIÓN</strong><br>
             <table style="width:100%; font-size:8px; margin-top:4px;">
-                <tr><td>Hora Entrada:</td><td><strong>{{ $report->time_in ?? '—' }}</strong></td></tr>
-                <tr><td>Hora Salida:</td><td><strong>{{ $report->time_out ?? '—' }}</strong></td></tr>
+                <tr><td>Hora Entrada:</td><td><strong>{{ \App\Models\ServiceReport::timeLabel($report->time_in) ?? '—' }}</strong></td></tr>
+                <tr><td>Hora Salida:</td><td><strong>{{ \App\Models\ServiceReport::timeLabel($report->time_out) ?? '—' }}</strong></td></tr>
             </table>
         </td>
     </tr>

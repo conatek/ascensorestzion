@@ -64,6 +64,7 @@
 <script>
 import reportService from '@/services/reportService.js';
 import offlineManager from '@/utils/offlineManager.js';
+import { localDate, localTime } from '@/utils/localDate.js';
 
 export default {
     name: 'TechReportTypeSelect',
@@ -118,23 +119,18 @@ export default {
 
             try {
                 // Crear reporte borrador con datos del check-in
+                // La hora de entrada y, en correctivos, la de la llamada las pone el
+                // servidor a partir del check-in (checkin_id).
+                const at = this.checkinData?.checked_in_at ? new Date(this.checkinData.checked_in_at) : new Date();
                 const payload = {
                     report_type: type,
                     equipment_id: this.equipmentId,
-                    service_date: new Date().toISOString().split('T')[0],
-                    entry_time: this.checkinData?.checked_in_at
-                        ? new Date(this.checkinData.checked_in_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-                        : new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                    service_date: localDate(at),
+                    time_in: localTime(at),
+                    checkin_id: this.checkinData?.checkin_id || null,
+                    checkin_client_uuid: this.checkinData?.client_uuid || null,
                     status: 'borrador',
                 };
-
-                // Para RSTC con emergencia, pasar datos de tiempo de respuesta
-                if (type === 'RSTC' && this.checkinData?.is_emergency) {
-                    payload.rstc_details = {
-                        call_time: this.checkinData.call_received_at || null,
-                        entry_time: this.checkinData.checked_in_at || null,
-                    };
-                }
 
                 const { data } = await reportService.store(payload);
 

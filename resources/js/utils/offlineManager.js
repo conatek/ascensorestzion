@@ -218,11 +218,13 @@ async function getCachedEquipmentByCode(code) {
 
 // --- Check-ins pendientes ---
 
+/** Encola el check-in y devuelve su client_uuid (enlaza el reporte que sale de él). */
 async function queueCheckin(checkinData) {
+    const clientUuid = newUuid();
     await put(STORES.CHECKINS_PENDING, {
         ...checkinData,
         // Idempotencia + hora real del registro offline
-        client_uuid: newUuid(),
+        client_uuid: clientUuid,
         checked_in_at: checkinData.checked_in_at || new Date().toISOString(),
         // Control de sincronización
         status: 'pending',
@@ -231,6 +233,7 @@ async function queueCheckin(checkinData) {
         nextAttemptAt: 0,
         queuedAt: Date.now(),
     });
+    return clientUuid;
 }
 
 async function getPendingCheckins() {

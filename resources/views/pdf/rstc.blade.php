@@ -225,9 +225,9 @@
         <td style="width:33%; vertical-align:top; border:1px solid #999; padding:5px;">
             <strong style="font-size:8px;">TIEMPO DE ATENCIÓN / EJECUCIÓN</strong><br>
             <table style="width:100%; font-size:8px; margin-top:4px;">
-                <tr><td>Hora Llamada:</td><td><strong>{{ $details->call_time ?? '—' }}</strong></td></tr>
-                <tr><td>Hora Entrada:</td><td><strong>{{ $details->entry_time ?? '—' }}</strong></td></tr>
-                <tr><td>Hora Salida:</td><td><strong>{{ $details->exit_time ?? '—' }}</strong></td></tr>
+                <tr><td>Hora Llamada:</td><td><strong>{{ \App\Models\ServiceReport::timeLabel($details->call_time ?? null, true) ?? '—' }}</strong></td></tr>
+                <tr><td>Hora Entrada:</td><td><strong>{{ \App\Models\ServiceReport::timeLabel(($details->entry_time ?? null) ?: $report->time_in) ?? '—' }}</strong></td></tr>
+                <tr><td>Hora Salida:</td><td><strong>{{ \App\Models\ServiceReport::timeLabel(($details->exit_time ?? null) ?: $report->time_out) ?? '—' }}</strong></td></tr>
                 <tr>
                     <td>Tiempo Resp:</td>
                     <td>

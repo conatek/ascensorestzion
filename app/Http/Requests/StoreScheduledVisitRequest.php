@@ -20,6 +20,8 @@ class StoreScheduledVisitRequest extends FormRequest
             'scheduled_start' => ['required', 'date'],
             'scheduled_end' => ['required', 'date', 'after:scheduled_start'],
             'visit_type' => ['nullable', Rule::in(['preventivo', 'correctivo', 'especial'])],
+            // Hora en que se recibio la llamada del cliente (correctivos)
+            'call_received_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

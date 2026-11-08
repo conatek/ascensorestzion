@@ -28,3 +28,14 @@ export function statusLabel(status) {
 export function typeLabel(type) {
     return TYPE_LABELS[type] || type;
 }
+
+/** Cómo se decidió el ingreso del técnico (bloqueo de llegada en preventivos). */
+export const ACCESS_LABELS = {
+    a_tiempo: 'A la hora',
+    emergencia: 'Emergencia',
+    desbloqueado: 'Desbloqueado por master',
+    anticipado: 'Antes de la hora',
+    sin_programar: 'Sin visita programada',
+    reloj_inconsistente: 'Reloj del teléfono inconsistente',
+    previo_bloqueo: 'Anterior al bloqueo de llegada',
+};

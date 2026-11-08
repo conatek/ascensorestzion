@@ -42,6 +42,7 @@ function buildCheckinPayload(item) {
         call_received_at: item.call_received_at ?? null,
         client_uuid: item.client_uuid,
         checked_in_at: item.checked_in_at ?? null,
+        offline_check: item.offline_check ?? null,
     };
 }
 
@@ -252,6 +253,7 @@ async function syncVisitSignatures({ force }) {
                 signature: item.signature,
                 signer_name: item.signer_name || '',
                 signer_document: item.signer_document || '',
+                signed_at: item.signed_at || null,
             });
             await offlineManager.removePendingVisitSignature(item.localId);
         } catch (err) {

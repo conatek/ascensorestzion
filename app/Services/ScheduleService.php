@@ -161,6 +161,7 @@ class ScheduleService
                 'scheduled_start' => $start,
                 'scheduled_end' => $end,
                 'visit_type' => $data['visit_type'] ?? 'preventivo',
+                'call_received_at' => $data['call_received_at'] ?? null,
                 // Explicito y no por el default de la tabla: recien creado el
                 // modelo no lleva en memoria lo que puso la base, y
                 // generateReminders mira el estado para decidir si avisa.

@@ -84,6 +84,7 @@ import { useAuth } from '@/stores/auth';
 import reportService from '@/services/reportService.js';
 import checkinService from '@/services/checkinService.js';
 import offlineManager from '@/utils/offlineManager.js';
+import { refreshAccessAgenda } from '@/utils/accessAgenda.js';
 
 export default {
     name: 'TechDashboard',
@@ -115,6 +116,9 @@ export default {
     },
 
     async created() {
+        // Guardar la agenda del día mientras hay señal: sin ella, el bloqueo de
+        // llegada no se puede aplicar en un sótano sin conexión.
+        refreshAccessAgenda();
         await this.loadData();
     },
 

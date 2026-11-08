@@ -185,6 +185,8 @@ export default {
                 signature,
                 signer_name: this.signer.name,
                 signer_document: this.signer.document,
+                // Hora real de la firma: es la salida del técnico aunque suba después.
+                signed_at: new Date().toISOString(),
             };
 
             this.signing = true;

@@ -142,7 +142,7 @@ class ScheduledVisitController extends Controller
             }
         }
 
-        $scheduledVisit->update(array_intersect_key($data, array_flip(['visit_type', 'notes'])));
+        $scheduledVisit->update(array_intersect_key($data, array_flip(['visit_type', 'call_received_at', 'notes'])));
 
         return response()->json($this->withRelations($scheduledVisit->refresh()));
     }
@@ -231,6 +231,9 @@ class ScheduledVisitController extends Controller
             // el listado del mes traeria cientos de filas para pintar un anillo que
             // ya se deduce del estado.
             'rescheduleRequests' => fn ($q) => $q->with(['requester:id,name', 'resolver:id,name'])->latest('id'),
+            // Llegadas del tecnico, con como se decidio el ingreso (bloqueo en preventivos)
+            'checkins' => fn ($q) => $q->select('id', 'scheduled_visit_id', 'technician_id', 'checked_in_at', 'method', 'access_status', 'offline_check', 'needs_review', 'is_emergency', 'call_received_at', 'response_time_minutes')
+                ->with('technician:id,name')->orderBy('checked_in_at'),
         ]);
     }
 }
