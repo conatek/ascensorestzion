@@ -248,7 +248,7 @@ class ScheduleTest extends TestCase
 
         $this->getJson("/api/schedule/equipment/{$this->equipment->id}/duration")
             ->assertOk()
-            ->assertJson(['duration_minutes' => 90, 'is_custom' => false]);
+            ->assertJson(['duration_minutes' => 60, 'is_custom' => false]);
 
         $this->equipment->update(['default_visit_duration_minutes' => 120]);
 

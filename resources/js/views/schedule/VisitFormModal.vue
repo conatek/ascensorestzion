@@ -252,7 +252,7 @@ export default {
             if (this.prefill.technician_id) {
                 this.form.technician_id = this.prefill.technician_id;
             }
-            this.applyDuration(this.defaults.default_duration_minutes || 90);
+            this.applyDuration(this.defaults.default_duration_minutes || 60);
         },
 
         onClientChange() {

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Nivel intermedio de la cascada de duracion: visita (rango explicito) -> equipo
- * (esta columna) -> global (schedule_settings.default_duration_minutes = 90).
+ * (esta columna) -> global (schedule_settings.default_duration_minutes = 60 desde 2026-11-15).
  *
  * Un montacargas de 12 paradas no se atiende en el mismo tiempo que un ascensor
  * residencial. Nullable = este equipo no tiene nada especial, usa el global.

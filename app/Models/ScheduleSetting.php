@@ -28,7 +28,7 @@ class ScheduleSetting extends Model
 
     /** Defaults de fabrica: lo que aplica si la tabla esta vacia o le falta una clave. */
     public const DEFAULTS = [
-        'default_duration_minutes' => 90,
+        'default_duration_minutes' => 60,
         'working_hours' => ['start' => '08:00', 'end' => '18:00'],
         'working_break' => ['start' => '13:00', 'end' => '14:00'],
         'working_days' => [1, 2, 3, 4, 5],   // lunes a viernes (ISO-8601)
