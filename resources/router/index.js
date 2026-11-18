@@ -14,6 +14,12 @@ import ClientCreate from '../js/views/client/ClientCreate.vue';
 import ClientShow   from '../js/views/client/ClientShow.vue';
 import ClientEdit   from '../js/views/client/ClientEdit.vue';
 
+// Proveedores (solo master). Lazy: el bundle principal roza el límite del
+// precache de la PWA y esto solo lo abre gerencia.
+const SupplierIndex = () => import('../js/views/supplier/SupplierIndex.vue');
+const SupplierForm  = () => import('../js/views/supplier/SupplierForm.vue');
+const SupplierShow  = () => import('../js/views/supplier/SupplierShow.vue');
+
 // Sedes
 import SiteCreate from '../js/views/site/SiteCreate.vue';
 import SiteEdit   from '../js/views/site/SiteEdit.vue';
@@ -190,6 +196,32 @@ const routes = [
         name: 'clients.edit',
         component: ClientEdit,
         meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator'] },
+    },
+
+    // --- Proveedores (solo master) ---
+    {
+        path: '/proveedores',
+        name: 'suppliers.index',
+        component: SupplierIndex,
+        meta: { requiresAuth: true, roles: ['master'] },
+    },
+    {
+        path: '/proveedores/crear',
+        name: 'suppliers.create',
+        component: SupplierForm,
+        meta: { requiresAuth: true, roles: ['master'] },
+    },
+    {
+        path: '/proveedores/:id',
+        name: 'suppliers.show',
+        component: SupplierShow,
+        meta: { requiresAuth: true, roles: ['master'] },
+    },
+    {
+        path: '/proveedores/:id/editar',
+        name: 'suppliers.edit',
+        component: SupplierForm,
+        meta: { requiresAuth: true, roles: ['master'] },
     },
 
     // --- Sedes ---

@@ -28,6 +28,11 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\SupplierBranchController;
+use App\Http\Controllers\SupplierContactController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierItemController;
+use App\Http\Controllers\SupplyItemController;
 use App\Http\Controllers\TechnicianCheckinController;
 use App\Http\Controllers\TechnicianScheduleController;
 use App\Http\Controllers\TechScheduleController;
@@ -115,6 +120,17 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
     Route::delete('equipment/{equipment}/attachments/{attachment}', [EquipmentController::class, 'deleteAttachment']);
     Route::post('equipment/{equipment}/generate-qr', [EquipmentController::class, 'generateQr'])
         ->middleware('role:master|coordinator');
+
+    // --- Proveedores, productos y precios (solo master) ---
+    Route::middleware('role:master')->group(function () {
+        Route::apiResource('suppliers', SupplierController::class);
+        Route::apiResource('suppliers.branches', SupplierBranchController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('suppliers.contacts', SupplierContactController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('suppliers.offers', SupplierItemController::class)->only(['store', 'update', 'destroy']);
+        Route::get('suppliers/{supplier}/offers/{offer}/history', [SupplierItemController::class, 'history']);
+        Route::get('supply-items/search', [SupplyItemController::class, 'search']);
+        Route::get('supply-items/units', [SupplyItemController::class, 'units']);
+    });
 
     // Check-in de técnicos
     Route::prefix('tech')->group(function () {

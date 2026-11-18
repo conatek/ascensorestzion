@@ -44,6 +44,13 @@
                             <span class="nav-text">{{ isAdmin ? 'Mis Reportes' : 'Reportes' }}</span>
                         </router-link>
                     </li>
+                    <li v-if="isMaster" class="nav-separator"><span class="separator-text">Compras</span></li>
+                    <li v-if="isMaster" class="nav-item" :class="{ 'active': $route.path.startsWith('/proveedores') }">
+                        <router-link to="/proveedores" class="nav-link" title="Proveedores">
+                            <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="13" height="11" rx="1"/><path d="M14 9h4l4 4v4h-8z"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/></svg></span>
+                            <span class="nav-text">Proveedores</span>
+                        </router-link>
+                    </li>
                     <li v-if="isMaster" class="nav-separator"><span class="separator-text">Administración</span></li>
                     <li v-if="isMaster" class="nav-item" :class="{ 'active': $route.path.startsWith('/admin/usuarios') }">
                         <router-link to="/admin/usuarios" class="nav-link" title="Usuarios">

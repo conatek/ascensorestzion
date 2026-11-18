@@ -97,6 +97,7 @@ export default {
             }
             const out = [];
             if (this.auth.isMaster()) {
+                out.push({ to: '/proveedores', icon: 'fa fa-truck', label: 'Proveedores' });
                 out.push({ to: '/admin/usuarios', icon: 'fa fa-users', label: 'Usuarios' });
             }
             // Tarjetas: master, super, coordinator
