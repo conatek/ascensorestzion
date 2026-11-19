@@ -239,7 +239,10 @@ async function syncVisitSignatures({ force }) {
     }
 
     for (const item of items) {
-        if (incompleteVisits.has(item.visit_uuid)) continue;
+        // Una firma de varios días espera a que esté arriba lo de todos ellos:
+        // sale una sola vez, con un solo correo al cliente.
+        const visitUuids = offlineManager.signatureVisitUuids(item);
+        if (visitUuids.some(uuid => incompleteVisits.has(uuid))) continue;
 
         if (!force) {
             if (item.status === 'error') continue;
@@ -247,9 +250,9 @@ async function syncVisitSignatures({ force }) {
         }
 
         try {
-            // Idempotente por visit_uuid: si ya se firmó, el backend responde signed=0.
+            // Idempotente por visita: si ya se firmó, el backend responde signed=0.
             await visitService.signCustomer({
-                visit_uuid: item.visit_uuid,
+                ...(visitUuids.length > 1 ? { visit_uuids: visitUuids } : { visit_uuid: visitUuids[0] }),
                 signature: item.signature,
                 signer_name: item.signer_name || '',
                 signer_document: item.signer_document || '',

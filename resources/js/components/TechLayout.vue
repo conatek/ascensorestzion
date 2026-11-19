@@ -295,8 +295,11 @@ export default {
         width: 100%;
     }
 
+    /* En escritorio la barra sigue siendo el único menú del técnico: antes se
+       ocultaba y no quedaba forma de llegar a Firmas, Agenda o Perfil. */
     .tech-bottom-nav {
-        display: none;
+        justify-content: center;
+        gap: 2.5rem;
     }
 
     .tech-header {

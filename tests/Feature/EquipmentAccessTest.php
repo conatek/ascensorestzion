@@ -10,6 +10,7 @@ use App\Models\ServiceReport;
 use App\Models\Site;
 use App\Models\TechnicianCheckin;
 use App\Models\User;
+use App\Notifications\VisitReportsCompletedNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -493,33 +494,135 @@ class EquipmentAccessTest extends TestCase
         $this->assertFalse($checkin->needs_review);
     }
 
-    public function test_la_firma_en_lote_fija_la_salida_con_la_hora_del_telefono(): void
+    private function pendingReport(string $number, string $visitUuid, string $date, ?string $timeOut, ?Equipment $equipment = null): ServiceReport
     {
-        $visitUuid = (string) Str::uuid();
-        $report = ServiceReport::create([
-            'report_number' => 'RSTP-QA-1',
+        $equipment ??= $this->equipment;
+
+        return ServiceReport::create([
+            'report_number' => $number,
             'report_type' => 'RSTP',
             'visit_uuid' => $visitUuid,
-            'equipment_id' => $this->equipment->id,
-            'client_id' => $this->equipment->site->client_id,
-            'site_id' => $this->equipment->site_id,
-            'service_date' => '2026-11-09',
+            'equipment_id' => $equipment->id,
+            'client_id' => $equipment->site->client_id,
+            'site_id' => $equipment->site_id,
+            'service_date' => $date,
             'technician_id' => $this->technician->id,
             'status' => 'firmado_tecnico',
-            'time_out' => '07:30',
+            'time_out' => $timeOut,
             'created_by' => $this->technician->id,
         ]);
+    }
 
+    private function signVisits(array $payload)
+    {
         Sanctum::actingAs($this->technician);
-        $this->postJson('/api/tech/visits/sign-customer', [
-            'visit_uuid' => $visitUuid,
+
+        return $this->postJson('/api/tech/visits/sign-customer', $payload + [
             'signature' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
             'signer_name' => 'Portería',
             'signer_document' => '123',
             'signed_at' => '2026-11-09T12:50:00.000Z', // 7:50 en Bogota
-        ])->assertOk();
+        ]);
+    }
 
-        $this->assertSame('07:50', substr($report->fresh()->time_out, 0, 5));
+    /** Decision 2026-11-18: la salida es de cada equipo y la firma no la pisa. */
+    public function test_la_firma_en_lote_respeta_la_salida_de_cada_equipo(): void
+    {
+        $visitUuid = (string) Str::uuid();
+        $first = $this->pendingReport('RSTP-QA-1', $visitUuid, '2026-11-09', '08:40');
+        $second = $this->pendingReport('RSTP-QA-1B', $visitUuid, '2026-11-09', '09:50');
+        $without = $this->pendingReport('RSTP-QA-1C', $visitUuid, '2026-11-09', null);
+
+        $this->signVisits(['visit_uuid' => $visitUuid])->assertOk()->assertJsonPath('signed', 3);
+
+        $this->assertSame('08:40', substr($first->fresh()->time_out, 0, 5));
+        $this->assertSame('09:50', substr($second->fresh()->time_out, 0, 5));
+        // Solo el que no tenia salida toma la hora de la firma.
+        $this->assertSame('07:50', substr($without->fresh()->time_out, 0, 5));
+        $this->assertSame('firmado_cliente', $first->fresh()->status);
+    }
+
+    public function test_una_sola_firma_cubre_varios_dias_y_sale_un_solo_aviso(): void
+    {
+        Notification::fake();
+
+        $monday = (string) Str::uuid();
+        $tuesday = (string) Str::uuid();
+        $a = $this->pendingReport('RSTP-QA-D1', $monday, '2026-11-09', '10:15');
+        $b = $this->pendingReport('RSTP-QA-D2', $tuesday, '2026-11-10', '15:30');
+        $other = $this->pendingReport('RSTP-QA-D3', (string) Str::uuid(), '2026-11-11', '09:00');
+
+        $this->signVisits(['visit_uuids' => [$monday, $tuesday]])
+            ->assertOk()
+            ->assertJsonPath('signed', 2);
+
+        // Cada dia conserva su hora de salida aunque la firma sea posterior.
+        $this->assertSame('10:15', substr($a->fresh()->time_out, 0, 5));
+        $this->assertSame('15:30', substr($b->fresh()->time_out, 0, 5));
+        $this->assertSame('firmado_cliente', $a->fresh()->status);
+        $this->assertSame('firmado_cliente', $b->fresh()->status);
+        $this->assertNotNull($b->fresh()->reception_token);
+        // El dia que no se eligio sigue pendiente.
+        $this->assertSame('firmado_tecnico', $other->fresh()->status);
+
+        // Una entrega para todo: un aviso al tecnico, no uno por dia.
+        Notification::assertSentToTimes($this->technician, VisitReportsCompletedNotification::class, 1);
+
+        // Repetir la firma (reintento de la cola sin conexion) no hace nada.
+        $this->signVisits(['visit_uuids' => [$monday, $tuesday]])->assertOk()->assertJsonPath('signed', 0);
+        Notification::assertSentToTimes($this->technician, VisitReportsCompletedNotification::class, 1);
+    }
+
+    public function test_el_correo_de_varios_dias_dice_el_rango_y_el_dia_de_cada_informe(): void
+    {
+        $a = $this->pendingReport('RSTP-QA-M1', (string) Str::uuid(), '2026-11-09', '10:15');
+        $b = $this->pendingReport('RSTP-QA-M2', (string) Str::uuid(), '2026-11-11', '15:30');
+
+        $mail = (new VisitReportsCompletedNotification([$a->id, $b->id], 'master'))->toMail($this->technician);
+        $text = implode("\n", $mail->introLines);
+
+        $this->assertStringContainsString('**Fecha:** 09/11/2026 al 11/11/2026', $text);
+        $this->assertStringContainsString('RSTP-QA-M1', $text);
+        $this->assertStringContainsString('· 11/11/2026', $text);
+    }
+
+    public function test_no_se_firman_juntos_informes_de_clientes_distintos(): void
+    {
+        $otherClient = Client::create(['business_name' => 'Otro Cliente', 'nit' => '900.999.999-9']);
+        $otherSite = Site::create(['client_id' => $otherClient->id, 'name' => 'Sede Otra', 'address' => 'Calle 1', 'city' => 'Bogotá']);
+        $otherEquipment = Equipment::create([
+            'site_id' => $otherSite->id, 'internal_code' => 'ASC-OTRO', 'equipment_type' => 'ascensor',
+        ]);
+
+        $mine = (string) Str::uuid();
+        $theirs = (string) Str::uuid();
+        $a = $this->pendingReport('RSTP-QA-X1', $mine, '2026-11-09', '10:15');
+        $this->pendingReport('RSTP-QA-X2', $theirs, '2026-11-09', '11:00', $otherEquipment->load('site'));
+
+        $this->signVisits(['visit_uuids' => [$mine, $theirs]])->assertStatus(422);
+        $this->assertSame('firmado_tecnico', $a->fresh()->status);
+    }
+
+    public function test_el_pdf_del_preventivo_marca_el_mes_con_el_dia_del_servicio(): void
+    {
+        $report = ServiceReport::create([
+            'report_number' => 'RSTP-QA-2',
+            'report_type' => 'RSTP',
+            'equipment_id' => $this->equipment->id,
+            'client_id' => $this->equipment->site->client_id,
+            'site_id' => $this->equipment->site_id,
+            'service_date' => '2026-11-18',
+            'technician_id' => $this->technician->id,
+            'status' => 'firmado_tecnico',
+            'created_by' => $this->technician->id,
+        ]);
+        $report->rstpMonth()->create(['year' => 2026, 'month' => 11]);
+
+        $html = view('pdf.rstp', ['report' => $report->fresh()])->render();
+
+        $this->assertMatchesRegularExpression('/colspan="12"[^>]*>Mantenimiento Preventivo — Mes/', $html);
+        $this->assertMatchesRegularExpression('/background:#30ab0a[^>]*>\s*Nov - 18\s*</', $html);
+        $this->assertSame(1, substr_count($html, ' - 18'));
     }
 
     public function test_el_comando_corrige_la_hora_utc_de_los_checkins_viejos_sin_conexion(): void

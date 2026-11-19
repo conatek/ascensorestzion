@@ -25,12 +25,8 @@ class EquipmentController extends Controller
 
         $query = Equipment::with(['site:id,name,client_id', 'site.client:id,business_name']);
 
-        // admin (externo): solo equipos de su cliente
-        if ($user->hasRole('admin') && $user->client_id) {
-            $query->whereHas('site', function ($q) use ($user) {
-                $q->where('client_id', $user->client_id);
-            });
-        }
+        // Cliente → los de su cliente; tecnico → los que atiende.
+        $query->visibleTo($user);
 
         if ($request->filled('client_id')) {
             $query->whereHas('site', fn ($q) => $q->where('client_id', $request->client_id));
@@ -85,18 +81,17 @@ class EquipmentController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('view_equipment'), 403, 'No autorizado.');
+        abort_if(! $equipment->isVisibleTo($user), 403, 'No autorizado.');
 
-        $equipment->load(['site.client', 'attachments.uploader:id,name']);
+        // El tecnico necesita saber a quien atiende, no la ficha comercial del cliente.
+        $equipment->load([
+            $user->isFieldTechnician() ? 'site.client:id,business_name,contact_name,contact_phone' : 'site.client',
+            'attachments.uploader:id,name',
+        ]);
 
         // El formulario del técnico lo usa (incluso offline, desde la caché) para
         // saber si la sede tiene varios equipos y ofrecer la firma diferida.
         $equipment->site?->loadCount('equipment');
-
-        if ($user->hasRole('admin') && $user->client_id) {
-            if ((int) $equipment->site?->client_id !== (int) $user->client_id) {
-                abort(403, 'No autorizado.');
-            }
-        }
 
         return response()->json($equipment);
     }
@@ -133,15 +128,12 @@ class EquipmentController extends Controller
         $user = $request->user();
         abort_if(! $user->can('view_equipment'), 403, 'No autorizado.');
 
-        $equipment->loadMissing('site');
+        abort_if(! $equipment->isVisibleTo($user), 403, 'No autorizado.');
 
-        if ($user->hasRole('admin') && $user->client_id) {
-            if ((int) $equipment->site?->client_id !== (int) $user->client_id) {
-                abort(403, 'No autorizado.');
-            }
-        }
-
+        // Del historial, cada quien ve los reportes a los que llega: el tecnico
+        // solo los suyos aunque el equipo lo hayan atendido otros.
         $query = $equipment->serviceReports()
+            ->visibleTo($user)
             ->with(['technician:id,name'])
             ->select(['id', 'report_number', 'report_type', 'equipment_id', 'service_date', 'status', 'technician_id', 'equipment_functional', 'conclusion_notes']);
 

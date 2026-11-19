@@ -18,17 +18,28 @@
 
             <div class="visit-head">
                 <h2>{{ selected.client_name }}</h2>
-                <p>{{ selected.site_name }} · {{ formatDate(selected.service_date) }}</p>
+                <p>{{ selected.site_name }} · {{ selectedDatesLabel }}</p>
             </div>
 
             <div class="reports-box">
                 <div class="reports-box__title">
-                    Se firmarán {{ selected.reports_count }} informe{{ selected.reports_count > 1 ? 's' : '' }}
+                    {{ chosenCount ? `Se firmarán ${countLabel(chosenCount)}` : 'Elige al menos un día' }}
+                    <span v-if="selected.visits.length > 1"> · una sola firma para todo</span>
                 </div>
-                <div v-for="r in selected.reports" :key="r.id" class="report-row">
-                    <span class="report-row__num">{{ r.report_number }}</span>
-                    <span class="report-row__type">{{ typeLabel(r.report_type) }}</span>
-                    <span class="report-row__equip">{{ r.equipment_code || '—' }}</span>
+
+                <!-- Un bloque por día. Con varios días, cada uno se puede dejar fuera. -->
+                <div v-for="v in selected.visits" :key="v.visit_uuid" class="day-block"
+                     :class="{ 'day-block--off': !isChosen(v) }">
+                    <label v-if="selected.visits.length > 1" class="day-check">
+                        <input type="checkbox" :checked="isChosen(v)" @change="toggleDay(v)" />
+                        <span class="day-check__date">{{ formatDate(v.service_date) }}</span>
+                        <span class="day-check__count">{{ countLabel(v.reports_count) }}</span>
+                    </label>
+                    <div v-for="r in v.reports" :key="r.id" class="report-row">
+                        <span class="report-row__num">{{ r.report_number }}</span>
+                        <span class="report-row__type">{{ typeLabel(r.report_type) }}</span>
+                        <span class="report-row__equip">{{ r.equipment_code || '—' }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -45,9 +56,9 @@
                 <SignaturePad ref="pad" />
             </div>
 
-            <button class="sign-btn" :disabled="signing" @click="submit">
+            <button class="sign-btn" :disabled="signing || !chosenCount" @click="submit">
                 <i v-if="signing" class="fa fa-spinner fa-spin"></i>
-                <template v-else><i class="fa fa-check-circle"></i> Firmar {{ selected.reports_count }} informe{{ selected.reports_count > 1 ? 's' : '' }}</template>
+                <template v-else><i class="fa fa-check-circle"></i> Firmar {{ countLabel(chosenCount) }}</template>
             </button>
         </div>
 
@@ -57,20 +68,51 @@
                 <i class="fa fa-wifi"></i> Sin conexión — la firma se guardará y se enviará al reconectar.
             </p>
 
-            <!-- Visitas pendientes de firmar -->
-            <div v-for="v in visits" :key="v.visit_uuid" class="visit-card" @click="select(v)">
-                <div class="visit-card__icon"><i class="fa fa-file-signature"></i></div>
-                <div class="visit-card__body">
-                    <div class="visit-card__title">{{ v.client_name || 'Cliente' }}</div>
-                    <div class="visit-card__subtitle">{{ v.site_name || '—' }}</div>
-                    <div class="visit-card__meta">
-                        <span class="badge">{{ v.reports_count }} informe{{ v.reports_count > 1 ? 's' : '' }}</span>
-                        <span class="date">{{ formatDate(v.service_date) }}</span>
-                        <span v-if="v.hasLocal" class="badge badge--local">sin subir</span>
+            <!-- Pendientes de firmar, por sede -->
+            <template v-for="g in groups" :key="g.key">
+                <!-- Un solo día pendiente en la sede -->
+                <div v-if="g.visits.length === 1" class="visit-card" @click="select(g.visits)">
+                    <div class="visit-card__icon"><i class="fa fa-file-signature"></i></div>
+                    <div class="visit-card__body">
+                        <div class="visit-card__title">{{ g.client_name || 'Cliente' }}</div>
+                        <div class="visit-card__subtitle">{{ g.site_name || '—' }}</div>
+                        <div class="visit-card__meta">
+                            <span class="badge">{{ countLabel(g.reports_count) }}</span>
+                            <span class="date">{{ formatDate(g.visits[0].service_date) }}</span>
+                            <span v-if="g.hasLocal" class="badge badge--local">sin subir</span>
+                        </div>
                     </div>
+                    <i class="fa fa-chevron-right visit-card__chevron"></i>
                 </div>
-                <i class="fa fa-chevron-right visit-card__chevron"></i>
-            </div>
+
+                <!-- Varios días: se firman todos juntos o cada día por separado -->
+                <div v-else class="site-group">
+                    <div class="site-group__head">
+                        <div class="visit-card__icon"><i class="fa fa-file-signature"></i></div>
+                        <div class="visit-card__body">
+                            <div class="visit-card__title">{{ g.client_name || 'Cliente' }}</div>
+                            <div class="visit-card__subtitle">{{ g.site_name || '—' }}</div>
+                            <div class="visit-card__meta">
+                                <span class="badge">{{ countLabel(g.reports_count) }}</span>
+                                <span class="date">{{ g.visits.length }} días</span>
+                                <span v-if="g.hasLocal" class="badge badge--local">sin subir</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="site-group__all" @click="select(g.visits)">
+                        <i class="fa fa-layer-group"></i> Firmar los {{ g.visits.length }} días juntos
+                    </button>
+
+                    <div class="site-group__hint">O un solo día:</div>
+                    <button v-for="v in g.visits" :key="v.visit_uuid" class="day-row" @click="select([v])">
+                        <span class="day-row__date">{{ formatDate(v.service_date) }}</span>
+                        <span class="day-row__count">{{ countLabel(v.reports_count) }}</span>
+                        <span v-if="v.hasLocal" class="badge badge--local">sin subir</span>
+                        <i class="fa fa-chevron-right visit-card__chevron"></i>
+                    </button>
+                </div>
+            </template>
 
             <!-- Firmas ya capturadas, esperando conexión -->
             <div v-for="s in queuedSignatures" :key="`q-${s.localId}`" class="visit-card visit-card--queued">
@@ -80,6 +122,7 @@
                     <div class="visit-card__subtitle">{{ s.site_name || '—' }} · Firmó {{ s.signer_name }}</div>
                     <div class="visit-card__meta">
                         <span class="badge badge--queued">Firma en cola</span>
+                        <span v-if="s.visit_uuids?.length > 1" class="date">{{ s.visit_uuids.length }} días</span>
                         <span v-if="s.status === 'error'" class="err">{{ s.lastError }}</span>
                     </div>
                 </div>
@@ -112,12 +155,44 @@ export default {
             signing: false,
             visits: [],
             queuedSignatures: [],
+            // { client_name, site_name, visits: [...] } — uno o varios días de una sede.
             selected: null,
+            // visit_uuid de los días marcados para firmar.
+            chosen: [],
             signer: { name: '', document: '' },
         };
     },
 
     computed: {
+        /** Las visitas pendientes agrupadas por sede, con sus días en orden. */
+        groups() {
+            const bySite = new Map();
+            this.visits.forEach(v => {
+                const key = v.site_id ? `s${v.site_id}` : `n${v.client_name}|${v.site_name}`;
+                if (!bySite.has(key)) {
+                    bySite.set(key, { key, client_name: v.client_name, site_name: v.site_name, visits: [] });
+                }
+                bySite.get(key).visits.push(v);
+            });
+
+            return [...bySite.values()].map(g => {
+                g.visits.sort((a, b) => String(a.service_date).localeCompare(String(b.service_date)));
+                g.reports_count = g.visits.reduce((sum, v) => sum + v.reports_count, 0);
+                g.hasLocal = g.visits.some(v => v.hasLocal);
+                return g;
+            });
+        },
+        chosenVisits() {
+            return this.selected ? this.selected.visits.filter(v => this.chosen.includes(v.visit_uuid)) : [];
+        },
+        chosenCount() {
+            return this.chosenVisits.reduce((sum, v) => sum + v.reports_count, 0);
+        },
+        selectedDatesLabel() {
+            const visits = this.selected?.visits || [];
+            if (visits.length <= 1) return this.formatDate(visits[0]?.service_date);
+            return `${this.formatDate(visits[0].service_date)} al ${this.formatDate(visits[visits.length - 1].service_date)}`;
+        },
         offlineState() {
             return offlineManager.state;
         },
@@ -149,9 +224,29 @@ export default {
             }
         },
 
-        select(visit) {
-            this.selected = visit;
+        /** Abre el panel de firma para uno o varios días de la misma sede. */
+        select(visits) {
+            this.selected = {
+                client_name: visits[0].client_name,
+                site_name: visits[0].site_name,
+                visits,
+            };
+            this.chosen = visits.map(v => v.visit_uuid);
             this.signer = { name: '', document: '' };
+        },
+
+        isChosen(visit) {
+            return this.chosen.includes(visit.visit_uuid);
+        },
+
+        toggleDay(visit) {
+            this.chosen = this.isChosen(visit)
+                ? this.chosen.filter(uuid => uuid !== visit.visit_uuid)
+                : [...this.chosen, visit.visit_uuid];
+        },
+
+        countLabel(count) {
+            return `${count} informe${count === 1 ? '' : 's'}`;
         },
 
         typeLabel(type) {
@@ -173,19 +268,26 @@ export default {
                 this.$swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Ingrese el documento del firmante.', confirmButtonText: 'Entendido' });
                 return;
             }
+            if (!this.chosenVisits.length) {
+                this.$swal.fire({ icon: 'warning', title: 'Sin días elegidos', text: 'Marque al menos un día para firmar.', confirmButtonText: 'Entendido' });
+                return;
+            }
             const signature = this.$refs.pad?.toDataURL();
             if (!signature) {
                 this.$swal.fire({ icon: 'warning', title: 'Firma requerida', text: 'El cliente debe firmar.', confirmButtonText: 'Entendido' });
                 return;
             }
 
-            const visit = this.selected;
+            const visits = this.chosenVisits;
+            const visitUuids = visits.map(v => v.visit_uuid);
             const payload = {
-                visit_uuid: visit.visit_uuid,
+                // Un día viaja como siempre; varios días, en una sola firma.
+                ...(visitUuids.length > 1 ? { visit_uuids: visitUuids } : { visit_uuid: visitUuids[0] }),
                 signature,
                 signer_name: this.signer.name,
                 signer_document: this.signer.document,
-                // Hora real de la firma: es la salida del técnico aunque suba después.
+                // Hora real de la firma, aunque suba después. La salida de cada
+                // equipo ya quedó en su reporte: esta solo cubre al que no la tenga.
                 signed_at: new Date().toISOString(),
             };
 
@@ -193,28 +295,28 @@ export default {
             try {
                 // Sin conexión, o con reportes de la visita todavía en cola, la firma
                 // se encola: el syncEngine la aplica cuando los reportes ya existan.
-                if (!this.isOnline || visit.hasLocal) {
-                    await this.queueSignature(visit, payload);
+                if (!this.isOnline || visits.some(v => v.hasLocal)) {
+                    await this.queueSignature(visits, payload);
                     return;
                 }
 
                 const { data } = await visitService.signCustomer(payload);
 
                 // La visita quedó cerrada: el próximo reporte abre una visita nueva.
-                clearCurrentVisit(visit.visit_uuid);
+                visitUuids.forEach(uuid => clearCurrentVisit(uuid));
                 this.selected = null;
                 await this.load();
 
                 this.$swal.fire({
                     icon: 'success',
-                    title: 'Visita firmada',
-                    text: `Se firmaron ${data.signed} informe${data.signed === 1 ? '' : 's'}.`,
+                    title: visitUuids.length > 1 ? 'Visitas firmadas' : 'Visita firmada',
+                    text: `Se firmaron ${this.countLabel(data.signed)}.`,
                     confirmButtonText: 'Aceptar',
                 });
             } catch (err) {
                 // Fallo de red al enviar: no perder la firma, encolarla.
                 if (!err.response) {
-                    await this.queueSignature(visit, payload);
+                    await this.queueSignature(visits, payload);
                     return;
                 }
                 this.$swal.fire({
@@ -228,15 +330,16 @@ export default {
             }
         },
 
-        async queueSignature(visit, payload) {
+        async queueSignature(visits, payload) {
             await offlineManager.queueVisitSignature({
                 ...payload,
-                client_name: visit.client_name,
-                site_name: visit.site_name,
-                service_date: visit.service_date,
+                visit_uuids: visits.map(v => v.visit_uuid),
+                client_name: visits[0].client_name,
+                site_name: visits[0].site_name,
+                service_date: visits[0].service_date,
             });
 
-            clearCurrentVisit(visit.visit_uuid);
+            visits.forEach(v => clearCurrentVisit(v.visit_uuid));
             this.selected = null;
             await this.load();
 
@@ -407,6 +510,102 @@ export default {
 .date {
     font-size: 0.75rem;
     color: #94a3b8;
+}
+
+/* Sede con varios días pendientes */
+.site-group {
+    background: white;
+    border-radius: 12px;
+    padding: 0.875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.site-group__head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.site-group__all {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #30ab0a, #279208);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.site-group__hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+}
+
+.day-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.6rem 0.25rem;
+    background: none;
+    border: none;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.day-row__date {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.day-row__count {
+    color: #606060;
+    margin-right: auto;
+}
+
+/* Días dentro del panel de firma */
+.day-block + .day-block {
+    margin-top: 0.5rem;
+}
+
+.day-block--off .report-row {
+    opacity: 0.4;
+}
+
+.day-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.day-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: #30ab0a;
+}
+
+.day-check__date {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.day-check__count {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 0.78rem;
 }
 
 /* Panel de firma */

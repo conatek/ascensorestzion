@@ -19,6 +19,9 @@ use Illuminate\Support\Str;
  * Firma diferida: cuando una sede tiene varios equipos, el tecnico deja cada
  * reporte firmado solo por el (estado firmado_tecnico) agrupado por visit_uuid,
  * y al terminar la visita una unica firma del cliente los cierra todos.
+ *
+ * Una visita es sede + dia. La firma puede cubrir una sola o varias visitas del
+ * mismo cliente (varios dias de trabajo que se entregan juntos).
  */
 class VisitSignatureController extends Controller
 {
@@ -81,16 +84,22 @@ class VisitSignatureController extends Controller
         abort_if(! $user->can('sign_report_customer') && ! $user->can('sign_report_technician'), 403, 'No autorizado.');
 
         $data = $request->validate([
-            'visit_uuid' => ['required', 'uuid'],
+            // Una visita (visit_uuid, lo que mandan las firmas ya encoladas en los
+            // telefonos) o varios dias del mismo cliente (visit_uuids).
+            'visit_uuid' => ['required_without:visit_uuids', 'uuid'],
+            'visit_uuids' => ['required_without:visit_uuid', 'array', 'min:1', 'max:60'],
+            'visit_uuids.*' => ['uuid', 'distinct'],
             'signature' => ['required', 'string'],
             'signer_name' => ['required', 'string', 'max:255'],
             'signer_document' => ['required', 'string', 'max:50'],
-            // Hora del telefono al firmar: si la firma sube despues desde la cola
-            // sin conexion, la salida no debe quedar con la hora de la subida.
+            // Hora del telefono al firmar. Solo se usa como salida de un reporte
+            // que no tenga la suya (ver abajo).
             'signed_at' => ['nullable', 'date'],
         ]);
 
-        $query = ServiceReport::where('visit_uuid', $data['visit_uuid']);
+        $visitUuids = array_values(array_unique($data['visit_uuids'] ?? [$data['visit_uuid']]));
+
+        $query = ServiceReport::whereIn('visit_uuid', $visitUuids);
 
         if (! $user->can('edit_any_report')) {
             $query->where('technician_id', $user->id);
@@ -100,12 +109,20 @@ class VisitSignatureController extends Controller
 
         abort_if($visitReports->isEmpty(), 404, 'No se encontraron reportes para esta visita.');
 
+        // Una firma, un cliente: quien firma responde por los informes de su empresa.
+        abort_if(
+            $visitReports->pluck('client_id')->unique()->count() > 1,
+            422,
+            'Los informes seleccionados son de clientes distintos y no se pueden firmar juntos.'
+        );
+
         $pending = $visitReports->where('status', 'firmado_tecnico');
 
         // Idempotencia para el sync offline: si ya se firmo, devolver el resultado.
         if ($pending->isEmpty()) {
             return response()->json([
-                'visit_uuid' => $data['visit_uuid'],
+                'visit_uuid' => $visitUuids[0],
+                'visit_uuids' => $visitUuids,
                 'signed' => 0,
                 'reports' => $visitReports->values(),
             ]);
@@ -120,7 +137,10 @@ class VisitSignatureController extends Controller
                 $request
             );
 
-            // La firma del cliente en lote es la salida del tecnico de la sede.
+            // La salida es de cada equipo: la deja el tecnico al cerrar su reporte
+            // y la firma no la toca, porque puede llegar horas o dias despues.
+            // Solo se rellena, con la hora de la firma, la del reporte que no la
+            // tenga (decision 2026-11-18; antes la firma la pisaba en todos).
             $signedAt = ! empty($data['signed_at'])
                 ? Carbon::parse($data['signed_at'])->setTimezone(config('app.timezone'))
                 : now();
@@ -131,7 +151,7 @@ class VisitSignatureController extends Controller
             foreach ($pending as $report) {
                 $report->update([
                     'reception_token' => Str::random(64),
-                    'time_out' => $signedAt->format('H:i'),
+                    'time_out' => $report->time_out ?: $signedAt->format('H:i'),
                 ]);
             }
         });
@@ -143,14 +163,16 @@ class VisitSignatureController extends Controller
         $this->notifyVisitCompleted($pending);
 
         return response()->json([
-            'visit_uuid' => $data['visit_uuid'],
+            'visit_uuid' => $visitUuids[0],
+            'visit_uuids' => $visitUuids,
             'signed' => $pending->count(),
             'reports' => ServiceReport::whereIn('id', $pending->pluck('id'))->get(),
         ]);
     }
 
     /**
-     * Un unico aviso agrupado por visita, en lugar de N avisos por reporte.
+     * Un unico aviso para todo lo firmado (una visita o varios dias), en lugar
+     * de N avisos por reporte.
      *
      * @param  \Illuminate\Support\Collection<int, ServiceReport>  $reports
      */

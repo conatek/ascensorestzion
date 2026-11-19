@@ -21,7 +21,7 @@ class StatsController extends Controller
         $reportQuery = ServiceReport::query();
 
         // Scope para cliente externo
-        if ($user->hasRole('admin') && $user->client_id) {
+        if ($user->isClientUser()) {
             $equipmentQuery->whereHas('site', fn ($q) => $q->where('client_id', $user->client_id));
             $reportQuery->where('client_id', $user->client_id);
         }
@@ -60,7 +60,7 @@ class StatsController extends Controller
             ->where('service_reports.report_type', 'RSTC')
             ->whereNotNull('service_report_rstc_details.call_time')
             ->whereNotNull('service_report_rstc_details.entry_time')
-            ->when($user->hasRole('admin') && $user->client_id, fn ($q) => $q->where('service_reports.client_id', $user->client_id))
+            ->when($user->isClientUser(), fn ($q) => $q->where('service_reports.client_id', $user->client_id))
             ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, service_report_rstc_details.call_time, service_report_rstc_details.entry_time)) as avg_minutes')
             ->value('avg_minutes');
 
@@ -82,7 +82,7 @@ class StatsController extends Controller
 
         $query = ServiceReport::query()
             ->where('service_date', '>=', now()->subMonths(12)->startOfMonth())
-            ->when($user->hasRole('admin') && $user->client_id, fn ($q) => $q->where('client_id', $user->client_id));
+            ->when($user->isClientUser(), fn ($q) => $q->where('client_id', $user->client_id));
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
@@ -127,7 +127,7 @@ class StatsController extends Controller
 
         $query = ServiceReport::where('report_type', 'RSTC')
             ->where('service_date', '>=', now()->subDays(90))
-            ->when($user->hasRole('admin') && $user->client_id, fn ($q) => $q->where('client_id', $user->client_id));
+            ->when($user->isClientUser(), fn ($q) => $q->where('client_id', $user->client_id));
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
@@ -157,7 +157,7 @@ class StatsController extends Controller
         abort_if(! $user->can('view_reports'), 403, 'No autorizado.');
 
         $query = ServiceReportFaultCode::query()
-            ->when($user->hasRole('admin') && $user->client_id, function ($q) use ($user) {
+            ->when($user->isClientUser(), function ($q) use ($user) {
                 $q->whereHas('serviceReport', fn ($sr) => $sr->where('client_id', $user->client_id));
             });
 
@@ -189,7 +189,7 @@ class StatsController extends Controller
         $dateTo = $request->input('date_to', now()->toDateString());
 
         $results = ServiceReport::whereBetween('service_date', [$dateFrom, $dateTo])
-            ->when($user->hasRole('admin') && $user->client_id, fn ($q) => $q->where('client_id', $user->client_id))
+            ->when($user->isClientUser(), fn ($q) => $q->where('client_id', $user->client_id))
             ->select(
                 'technician_id',
                 DB::raw("SUM(CASE WHEN report_type='RSTP' THEN 1 ELSE 0 END) as rstp_count"),
@@ -218,7 +218,7 @@ class StatsController extends Controller
 
         $clients = Client::with(['equipment' => function ($q) {
             $q->where('status', 'activo')->whereNotNull('contract_type');
-        }])->when($user->hasRole('admin') && $user->client_id, fn ($q) => $q->where('id', $user->client_id))
+        }])->when($user->isClientUser(), fn ($q) => $q->where('id', $user->client_id))
             ->when($request->filled('client_id'), fn ($q) => $q->where('id', $request->client_id))
             ->get();
 

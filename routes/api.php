@@ -99,11 +99,12 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
         Route::delete('users/{user}', [UserAdminController::class, 'destroy']);
     });
 
-    // Clientes
-    Route::apiResource('clients', ClientController::class);
-
-    // Sedes (anidadas bajo cliente)
-    Route::apiResource('clients.sites', SiteController::class);
+    // Clientes y sedes: oficina y el propio cliente (acotado a su empresa en el
+    // controlador). El técnico no entra: su app no consulta la ficha del cliente.
+    Route::middleware('role:master|super|coordinator|admin')->group(function () {
+        Route::apiResource('clients', ClientController::class);
+        Route::apiResource('clients.sites', SiteController::class);
+    });
 
     // Equipos (flat con filtros)
     Route::get('equipment/qr-codes-pdf', [EquipmentController::class, 'qrCodesPdf'])
@@ -132,8 +133,8 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
         Route::get('supply-items/units', [SupplyItemController::class, 'units']);
     });
 
-    // Check-in de técnicos
-    Route::prefix('tech')->group(function () {
+    // Check-in de técnicos (el usuario del cliente no tiene nada que hacer aquí)
+    Route::middleware('role:master|super|coordinator|technician')->prefix('tech')->group(function () {
         Route::post('checkin', [TechnicianCheckinController::class, 'store']);
         Route::get('access-agenda', [TechnicianCheckinController::class, 'accessAgenda']);
         Route::get('checkins', [TechnicianCheckinController::class, 'index']);
@@ -196,10 +197,13 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
     Route::get('service-reports/{service_report}/pdf', [ServiceReportController::class, 'pdf']);
     Route::post('service-reports/{service_report}/send-email', [ServiceReportController::class, 'sendEmail'])->middleware('throttle:5,1');
     Route::post('service-reports/{service_report}/attachments', [ServiceReportController::class, 'uploadAttachment']);
-    Route::get('service-reports-export', [ServiceReportController::class, 'export']);
+    // Exportación y estadísticas: oficina y cliente (acotado a su empresa). El
+    // técnico no: son cifras de toda la operación.
+    Route::get('service-reports-export', [ServiceReportController::class, 'export'])
+        ->middleware('role:master|super|coordinator|admin');
 
     // Estadísticas
-    Route::prefix('stats')->group(function () {
+    Route::middleware('role:master|super|coordinator|admin')->prefix('stats')->group(function () {
         Route::get('overview', [StatsController::class, 'overview']);
         Route::get('reports-by-month', [StatsController::class, 'reportsByMonth']);
         Route::get('top-equipment-faults', [StatsController::class, 'topEquipmentFaults']);
@@ -235,7 +239,7 @@ Route::middleware(['app.access', 'auth:sanctum'])->group(function () {
     });
 
     // Tarjetas de presentación Ascensores Tzion (company.access)
-    Route::middleware('company.access')->group(function () {
+    Route::middleware(['role:master|super|coordinator', 'company.access'])->group(function () {
         Route::get('companies/{company}', [CompanyController::class, 'show']);
         Route::put('companies/{company}', [CompanyController::class, 'update']);
 

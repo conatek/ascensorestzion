@@ -96,7 +96,7 @@
                 <router-link
                     v-if="lastReport"
                     class="visit-report"
-                    :to="{ name: 'reports.show', params: { id: lastReport.id } }"
+                    :to="{ name: 'tech.report.show', params: { id: lastReport.id } }"
                 >
                     <span class="visit-report__type" :class="`type-${lastReport.report_type}`">
                         {{ lastReport.report_type }}

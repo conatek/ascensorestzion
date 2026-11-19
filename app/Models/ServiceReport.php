@@ -141,4 +141,49 @@ class ServiceReport extends Model
     {
         return $this->hasMany(ServiceReportAuditLog::class)->orderByDesc('created_at');
     }
+
+    /**
+     * Reportes a los que llega el usuario (ver HasAccessScope): el personal ve
+     * todos, el tecnico los suyos (como titular, segundo tecnico o autor) y el
+     * usuario del cliente los de su cliente.
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        if ($user->isStaff()) {
+            return $query;
+        }
+
+        if ($user->isFieldTechnician()) {
+            return $query->where(function ($q) use ($user) {
+                $q->where('service_reports.technician_id', $user->id)
+                    ->orWhere('service_reports.secondary_technician_id', $user->id)
+                    ->orWhere('service_reports.created_by', $user->id);
+            });
+        }
+
+        if ($user->isClientUser() && $user->client_id) {
+            return $query->where('service_reports.client_id', $user->client_id);
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function isVisibleTo(User $user): bool
+    {
+        if ($user->isStaff()) {
+            return true;
+        }
+
+        if ($user->isFieldTechnician()) {
+            return in_array((int) $user->id, [
+                (int) $this->technician_id,
+                (int) $this->secondary_technician_id,
+                (int) $this->created_by,
+            ], true);
+        }
+
+        return $user->isClientUser()
+            && $user->client_id
+            && (int) $this->client_id === (int) $user->client_id;
+    }
 }

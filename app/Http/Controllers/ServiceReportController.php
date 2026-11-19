@@ -40,15 +40,8 @@ class ServiceReportController extends Controller
             'technician:id,name',
         ]);
 
-        // admin (externo): solo reportes de su cliente
-        if ($user->hasRole('admin') && $user->client_id) {
-            $query->where('client_id', $user->client_id);
-        }
-
-        // technician: solo sus reportes
-        if ($user->hasRole('technician')) {
-            $query->where('technician_id', $user->id);
-        }
+        // Cada rol llega solo a lo suyo: cliente → su cliente; tecnico → sus reportes.
+        $query->visibleTo($user);
 
         if ($request->filled('report_type')) {
             $query->where('report_type', $request->report_type);
@@ -198,10 +191,7 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('view_reports'), 403, 'No autorizado.');
-
-        if ($user->hasRole('admin') && $user->client_id !== $serviceReport->client_id) {
-            abort(403, 'No autorizado.');
-        }
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         $relations = [
             'equipment.site.client',
@@ -237,11 +227,12 @@ class ServiceReportController extends Controller
     public function update(StoreServiceReportRequest $request, ServiceReport $serviceReport): JsonResponse
     {
         $user = $request->user();
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         if ($serviceReport->status !== 'borrador' && ! $user->can('edit_any_report')) {
             abort(403, 'Solo se pueden editar reportes en borrador.');
         }
-        if ($serviceReport->status === 'borrador' && $serviceReport->created_by !== $user->id && ! $user->can('edit_any_report')) {
+        if ($serviceReport->status === 'borrador' && (int) $serviceReport->created_by !== (int) $user->id && ! $user->can('edit_any_report')) {
             abort(403, 'No autorizado.');
         }
 
@@ -377,7 +368,7 @@ class ServiceReportController extends Controller
             abort(403, 'Solo se pueden eliminar reportes en borrador.');
         }
 
-        abort_if(! $user->can('edit_any_report') && $serviceReport->created_by !== $user->id, 403, 'No autorizado.');
+        abort_if(! $user->can('edit_any_report') && (int) $serviceReport->created_by !== (int) $user->id, 403, 'No autorizado.');
 
         $serviceReport->delete();
 
@@ -388,6 +379,8 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('sign_report_technician'), 403, 'No autorizado.');
+        // Un tecnico firma sus reportes, no los de un compañero.
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         $request->validate([
             'signature' => ['required', 'string'],
@@ -410,6 +403,8 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('sign_report_customer') && ! $user->can('sign_report_technician'), 403, 'No autorizado.');
+        // El cliente firma lo de su empresa; el tecnico, lo que el atendio.
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         $request->validate([
             'signature' => ['required', 'string'],
@@ -465,10 +460,7 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('export_report_pdf'), 403, 'No autorizado.');
-
-        if ($user->hasRole('admin') && $user->client_id !== $serviceReport->client_id) {
-            abort(403, 'No autorizado.');
-        }
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         $serviceReport->load([
             'equipment.site.client',
@@ -499,6 +491,9 @@ class ServiceReportController extends Controller
     {
         $user = $request->user();
         abort_if(! $user->can('export_report_pdf'), 403, 'No autorizado.');
+        // Sin esto cualquier usuario con permiso de PDF se enviaba a su correo
+        // el reporte de otro cliente con solo cambiar el id.
+        abort_if(! $serviceReport->isVisibleTo($user), 403, 'No autorizado.');
 
         $serviceReport->load(['equipment.site.client', 'technician', 'initialConditions', 'rstpActivities', 'rstpMonth', 'rstcDetails', 'faultCodes', 'rsteWorks', 'attachments']);
 
@@ -523,9 +518,8 @@ class ServiceReportController extends Controller
 
         $query = ServiceReport::with(['equipment:id,internal_code', 'client:id,business_name', 'technician:id,name']);
 
-        if ($user->hasRole('admin') && $user->client_id) {
-            $query->where('client_id', $user->client_id);
-        }
+        $query->visibleTo($user);
+
         if ($request->filled('report_type')) {
             $query->where('report_type', $request->report_type);
         }

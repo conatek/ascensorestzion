@@ -113,6 +113,13 @@ export function useAuth() {
                 return null;
             }
 
+            // Y solo con un 401 (sesión inválida o acceso apagado). Un 429 por
+            // recargar varias veces seguidas, o un 500 pasajero, no es motivo
+            // para sacar a nadie: el técnico perdía el token con el que sincroniza.
+            if (error.response.status !== 401) {
+                return null;
+            }
+
             state.token = null;
             state.user = null;
             state.permissions = [];

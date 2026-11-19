@@ -15,7 +15,7 @@ class SiteController extends Controller
         $user = $request->user();
         abort_if(! $user->can('view_sites'), 403, 'No autorizado.');
 
-        if ($user->hasRole('admin') && $user->client_id !== $client->id) {
+        if (($clientId = $user->clientScopeId()) && $clientId !== (int) $client->id) {
             abort(403, 'No autorizado.');
         }
 
@@ -42,7 +42,7 @@ class SiteController extends Controller
         $user = $request->user();
         abort_if(! $user->can('view_sites'), 403, 'No autorizado.');
 
-        if ($user->hasRole('admin') && $user->client_id !== $client->id) {
+        if (($clientId = $user->clientScopeId()) && $clientId !== (int) $client->id) {
             abort(403, 'No autorizado.');
         }
 

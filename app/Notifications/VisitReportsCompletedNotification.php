@@ -10,8 +10,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Notificacion agrupada de una visita firmada en lote (firma diferida):
- * un solo mensaje para los N informes de la misma sede y dia.
+ * Notificacion agrupada de una firma en lote (firma diferida): un solo mensaje
+ * para los N informes firmados juntos, sean de un dia o de varios.
  */
 class VisitReportsCompletedNotification extends Notification implements ShouldQueue
 {
@@ -47,8 +47,35 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
     {
         return ServiceReport::with(['equipment:id,internal_code', 'client:id,business_name', 'site:id,name', 'technician:id,name'])
             ->whereIn('id', $this->reportIds)
+            ->orderBy('service_date')
             ->orderBy('report_number')
             ->get();
+    }
+
+    /**
+     * "18/11/2026", o "16/11/2026 al 18/11/2026" si la firma cubrio varios dias.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, ServiceReport>  $reports
+     */
+    private function dateLabel($reports): string
+    {
+        $dates = $reports->pluck('service_date')->filter()->map->format('d/m/Y')->unique()->values();
+
+        return match (true) {
+            $dates->isEmpty() => '—',
+            $dates->count() === 1 => $dates->first(),
+            default => $dates->first().' al '.$dates->last(),
+        };
+    }
+
+    /**
+     * Sedes de los informes: normalmente una, pero el cliente puede firmar varias.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, ServiceReport>  $reports
+     */
+    private function siteLabel($reports): string
+    {
+        return $reports->map(fn ($r) => $r->site?->name)->filter()->unique()->implode(', ') ?: '—';
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -58,9 +85,10 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
         $count = $reports->count();
 
         $clientName = $first?->client?->business_name ?? '—';
-        $siteName = $first?->site?->name ?? '—';
-        $techName = $first?->technician?->name ?? '—';
-        $serviceDate = $first?->service_date?->format('d/m/Y') ?? '—';
+        $siteName = $this->siteLabel($reports);
+        $techName = $reports->map(fn ($r) => $r->technician?->name)->filter()->unique()->implode(', ') ?: '—';
+        $serviceDate = $this->dateLabel($reports);
+        $severalDays = $reports->pluck('service_date')->filter()->map->format('Y-m-d')->unique()->count() > 1;
 
         $mail = (new MailMessage)
             ->subject("{$count} informes de servicio — {$siteName} — Ascensores Tzion")
@@ -76,6 +104,10 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
         foreach ($reports as $report) {
             $typeLabel = self::TYPE_LABELS[$report->report_type] ?? $report->report_type;
             $equipCode = $report->equipment?->internal_code ?? '—';
+            // Con varios dias cada informe dice el suyo.
+            if ($severalDays && $report->service_date) {
+                $equipCode .= ' · '.$report->service_date->format('d/m/Y');
+            }
 
             if ($this->recipientRole === 'client' && $report->reception_token) {
                 $pdfUrl = url("/api/report-confirmation/{$report->reception_token}/pdf");
@@ -102,7 +134,7 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
         $reports = $this->reports();
         $first = $reports->first();
         $count = $reports->count();
-        $siteName = $first?->site?->name ?? '—';
+        $siteName = $this->siteLabel($reports);
 
         return [
             // Se reutiliza el tipo report_completed para que la campana de
@@ -129,10 +161,10 @@ class VisitReportsCompletedNotification extends Notification implements ShouldQu
             'template' => 'visit_reports_completed',
             'parameters' => [
                 (string) $reports->count(),
-                $first?->site?->name ?? '',
+                $this->siteLabel($reports),
                 $first?->client?->business_name ?? '',
                 $first?->technician?->name ?? '',
-                $first?->service_date?->format('d/m/Y') ?? '',
+                $this->dateLabel($reports),
             ],
         ];
     }

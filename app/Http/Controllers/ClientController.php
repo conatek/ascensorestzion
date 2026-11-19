@@ -17,9 +17,9 @@ class ClientController extends Controller
 
         $query = Client::withCount(['sites', 'equipment']);
 
-        // admin (externo): solo su cliente
-        if ($user->hasRole('admin') && $user->client_id) {
-            $query->where('id', $user->client_id);
+        // Usuario del cliente: solo su cliente (403 si no tiene uno asignado).
+        if ($clientId = $user->clientScopeId()) {
+            $query->where('id', $clientId);
         }
 
         if ($request->filled('search')) {
@@ -54,7 +54,7 @@ class ClientController extends Controller
         $user = $request->user();
         abort_if(! $user->can('view_clients'), 403, 'No autorizado.');
 
-        if ($user->hasRole('admin') && $user->client_id !== $client->id) {
+        if (($clientId = $user->clientScopeId()) && $clientId !== (int) $client->id) {
             abort(403, 'No autorizado.');
         }
 

@@ -75,6 +75,13 @@ import TechReportTypeSelect from '../js/views/tech/TechReportTypeSelect.vue';
 import CompanyPublic from '../js/views/public/CompanyPublic.vue';
 import CardPublic    from '../js/views/public/CardPublic.vue';
 
+// Quién entra a qué. El panel (menú lateral) es del personal de oficina; el
+// técnico vive en /tech y el usuario del cliente en /portal. Toda ruta con sesión
+// declara sus roles: una ruta sin roles queda abierta a cualquiera que escriba la URL.
+const STAFF = ['master', 'super', 'coordinator'];
+// Detalles que el cliente también abre (dentro del layout del portal).
+const STAFF_AND_CLIENT = [...STAFF, 'admin'];
+
 const routes = [
     // --- Landing ---
     {
@@ -134,7 +141,7 @@ const routes = [
         path: '/',
         name: 'home',
         component: Home,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
 
     // --- Panel Admin (master y super) ---
@@ -177,7 +184,7 @@ const routes = [
         path: '/clientes',
         name: 'clients.index',
         component: ClientIndex,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/clientes/crear',
@@ -189,7 +196,7 @@ const routes = [
         path: '/clientes/:id',
         name: 'clients.show',
         component: ClientShow,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/clientes/:id/editar',
@@ -243,7 +250,7 @@ const routes = [
         path: '/equipos',
         name: 'equipment.index',
         component: EquipmentIndex,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/equipos/crear',
@@ -255,7 +262,7 @@ const routes = [
         path: '/equipos/:id',
         name: 'equipment.show',
         component: EquipmentDetail,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF_AND_CLIENT },
     },
     {
         path: '/equipos/:id/editar',
@@ -277,25 +284,25 @@ const routes = [
         path: '/reportes',
         name: 'reports.index',
         component: ServiceReportIndex,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/reportes/nuevo',
         name: 'reports.create',
         component: ServiceReportForm,
-        meta: { requiresAuth: true, roles: ['master', 'super', 'coordinator', 'technician'] },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/reportes/:id',
         name: 'reports.show',
         component: ServiceReportDetail,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF_AND_CLIENT },
     },
     {
         path: '/reportes/:id/editar',
         name: 'reports.edit',
         component: ServiceReportForm,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
 
     // --- Portal Cliente ---
@@ -343,55 +350,55 @@ const routes = [
         path: '/tarjetas',
         name: 'companies.show',
         component: CompanyShow,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/editar',
         name: 'companies.edit',
         component: CompanyEdit,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/crear',
         name: 'cards.create',
         component: CardCreate,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/:cardId/editar',
         name: 'cards.edit',
         component: CardEdit,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/productos/crear',
         name: 'products.create',
         component: ProductCreate,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/productos/:productId/editar',
         name: 'products.edit',
         component: ProductEdit,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/servicios/crear',
         name: 'services.create',
         component: ServiceCreate,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/servicios/:serviceId/editar',
         name: 'services.edit',
         component: ServiceEdit,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
     {
         path: '/tarjetas/plantilla',
         name: 'settings.editor',
         component: TemplateEditor,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, roles: STAFF },
     },
 
     // --- Confirmacion de recepcion (publica) ---
@@ -431,6 +438,13 @@ const routes = [
         path: '/tech/reporte/nuevo',
         name: 'tech.report.create',
         component: () => import('../js/views/tech/TechReportForm.vue'),
+        meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
+    },
+    {
+        // Detalle (solo lectura) de un reporte propio, sin salir de su pantalla.
+        path: '/tech/reporte/:id(\\d+)',
+        name: 'tech.report.show',
+        component: ServiceReportDetail,
         meta: { requiresAuth: true, roles: ['technician'], layout: 'tech' },
     },
     {
@@ -535,6 +549,22 @@ router.beforeEach((to, from, next) => {
 
         const hasRequiredRole = to.meta.roles.some(role => userRoles.includes(role));
         if (!hasRequiredRole) {
+            // Cada rol vuelve a su casa en vez de quedarse en una pantalla ajena.
+            const isStaff = STAFF.some(role => userRoles.includes(role));
+            if (!isStaff && userRoles.includes('technician')) {
+                // Enlaces viejos y avisos de la campana apuntan al panel: se
+                // traducen a la pantalla equivalente del técnico.
+                if (to.name === 'reports.show') {
+                    return next({ name: 'tech.report.show', params: { id: to.params.id } });
+                }
+                if (to.name === 'equipment.show') {
+                    return next({ name: 'tech.equipment', params: { id: to.params.id } });
+                }
+                return next({ name: 'tech.dashboard' });
+            }
+            if (!isStaff && userRoles.includes('admin')) {
+                return next({ name: 'portal.dashboard' });
+            }
             return next({ name: 'forbidden' });
         }
     }

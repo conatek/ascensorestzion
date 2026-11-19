@@ -27,11 +27,11 @@
                         </div>
                     </div>
                     <div class="page-title-actions d-flex gap-2">
-                        <router-link :to="{ path: '/reportes' }" class="btn-action btn-back">
+                        <router-link :to="backTo" class="btn-action btn-back">
                             <i class="fa fa-arrow-left me-1"></i> Volver
                         </router-link>
                         <router-link
-                            v-if="report.status === 'borrador'"
+                            v-if="report.status === 'borrador' && isStaff"
                             :to="{ path: '/reportes/' + report.id + '/editar' }"
                             class="btn-action btn-edit-action"
                         >
@@ -584,6 +584,7 @@
 
 <script>
 import reportService from '@/services/reportService.js';
+import { useAuth } from '@/stores/auth.js';
 
 export default {
     name: 'ServiceReportDetail',
@@ -747,6 +748,17 @@ export default {
     },
 
     computed: {
+        // El detalle lo abren tres públicos, cada uno desde su propia pantalla.
+        isStaff() {
+            const auth = useAuth();
+            return auth.isMasterOrSuper() || auth.isCoordinator();
+        },
+        backTo() {
+            const auth = useAuth();
+            if (this.isStaff) return { path: '/reportes' };
+            if (auth.isTechnician()) return { name: 'tech.dashboard' };
+            return { path: '/portal/reportes' };
+        },
         leftConditions() {
             if (!this.report.initial_conditions) return [];
             return this.report.initial_conditions.filter(

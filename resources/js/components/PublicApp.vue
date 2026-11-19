@@ -287,7 +287,11 @@ export default {
             return this.$route.meta?.layout === 'public';
         },
         isTechLayout() {
-            return this.$route.meta?.layout === 'tech';
+            if (this.$route.meta?.layout === 'tech') return true;
+            // Un técnico nunca ve el panel con menú lateral, tampoco en pantallas
+            // sin layout propio (p. ej. "acceso denegado").
+            const auth = useAuth();
+            return auth.isTechnician() && !auth.isMasterOrSuper() && !auth.isCoordinator();
         },
         isPortalLayout() {
             if (this.$route.meta?.layout === 'portal') return true;

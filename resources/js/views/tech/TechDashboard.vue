@@ -192,7 +192,7 @@ export default {
                     query: { report_id: report.id, type: report.report_type },
                 };
             }
-            return { name: 'reports.show', params: { id: report.id } };
+            return { name: 'tech.report.show', params: { id: report.id } };
         },
     },
 };

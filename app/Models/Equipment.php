@@ -74,4 +74,35 @@ class Equipment extends Model
     {
         return $this->site?->client;
     }
+
+    /**
+     * Equipos a los que llega el usuario (ver HasAccessScope). Para el tecnico,
+     * "los suyos" son los que atiende: tiene una visita asignada, hizo check-in
+     * o hizo un reporte ahi.
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        if ($user->isStaff()) {
+            return $query;
+        }
+
+        if ($user->isFieldTechnician()) {
+            return $query->where(function ($q) use ($user) {
+                $q->whereIn('equipment.id', ScheduledVisit::query()->select('equipment_id')->where('technician_id', $user->id))
+                    ->orWhereIn('equipment.id', TechnicianCheckin::query()->select('equipment_id')->where('technician_id', $user->id))
+                    ->orWhereIn('equipment.id', ServiceReport::query()->select('equipment_id')->visibleTo($user));
+            });
+        }
+
+        if ($user->isClientUser() && $user->client_id) {
+            return $query->whereHas('site', fn ($q) => $q->where('client_id', $user->client_id));
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function isVisibleTo(User $user): bool
+    {
+        return $user->isStaff() || static::query()->whereKey($this->getKey())->visibleTo($user)->exists();
+    }
 }

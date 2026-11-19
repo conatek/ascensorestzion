@@ -400,17 +400,36 @@ async function updatePendingAttachment(item) {
 // --- Firmas de visita pendientes (firma diferida) ---
 
 /**
- * Encola la firma única del cliente para una visita. La firma se aplica en el
- * servidor a todos los reportes que compartan visit_uuid, así que no necesita
+ * Visitas que cubre una firma encolada. Una firma puede cerrar una visita (lo
+ * que guardaban las versiones anteriores: solo visit_uuid) o varios días.
+ */
+function signatureVisitUuids(item) {
+    return item?.visit_uuids?.length ? item.visit_uuids : [item?.visit_uuid].filter(Boolean);
+}
+
+/**
+ * Encola la firma única del cliente para una o varias visitas. La firma se aplica
+ * en el servidor a todos los reportes de esas visitas, así que no necesita
  * conocer los ids de los reportes (pueden no existir todavía).
  */
 async function queueVisitSignature(signatureData) {
     const db = await getDb();
-    // Una sola firma por visita: si ya había una encolada, se reemplaza.
-    const existing = await db.getFromIndex(STORES.VISIT_SIGNATURES_PENDING, 'by-visit', signatureData.visit_uuid);
+    const visitUuids = signatureVisitUuids(signatureData);
+
+    // Una sola firma por visita: la que ya hubiera encolada para cualquiera de
+    // estas visitas se reemplaza (p. ej. al recapturar una firma en error).
+    const queued = await db.getAll(STORES.VISIT_SIGNATURES_PENDING);
+    for (const old of queued) {
+        if (signatureVisitUuids(old).some(uuid => visitUuids.includes(uuid))) {
+            await db.delete(STORES.VISIT_SIGNATURES_PENDING, old.localId);
+        }
+    }
+
     await db.put(STORES.VISIT_SIGNATURES_PENDING, {
-        ...(existing ? { localId: existing.localId } : {}),
         ...signatureData,
+        // visit_uuid se conserva (es la clave del índice by-visit) con la primera.
+        visit_uuid: visitUuids[0],
+        visit_uuids: visitUuids,
         status: 'pending',
         attempts: 0,
         lastError: null,
@@ -580,6 +599,7 @@ export default {
 
     // Firmas de visita (firma diferida)
     queueVisitSignature,
+    signatureVisitUuids,
     getPendingVisitSignatures,
     removePendingVisitSignature,
     updatePendingVisitSignature,

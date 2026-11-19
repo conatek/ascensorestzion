@@ -212,6 +212,7 @@ class TechnicianCheckinController extends Controller
 
         $lastReport = $equipment
             ? $equipment->serviceReports()
+                ->visibleTo(request()->user())
                 ->select('id', 'report_number', 'report_type', 'service_date', 'technician_id', 'status')
                 ->with('technician:id,name')
                 ->orderByDesc('service_date')
@@ -229,6 +230,7 @@ class TechnicianCheckinController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        abort_if(! $user->can('checkin_equipment'), 403, 'No autorizado.');
 
         $query = TechnicianCheckin::with([
             'equipment:id,internal_code,equipment_type,brand,model',
@@ -236,8 +238,8 @@ class TechnicianCheckinController extends Controller
             'equipment.site.client:id,business_name',
         ]);
 
-        // Tecnicos solo ven sus propios check-ins
-        if ($user->hasRole('technician')) {
+        // Solo el personal de oficina ve los check-ins de todos.
+        if (! $user->isStaff()) {
             $query->where('technician_id', $user->id);
         }
 
@@ -255,8 +257,10 @@ class TechnicianCheckinController extends Controller
     {
         $user = $request->user();
 
-        // Tecnicos solo ven sus propios check-ins
-        if ($user->hasRole('technician') && (int) $checkin->technician_id !== (int) $user->id) {
+        abort_if(! $user->can('checkin_equipment'), 403, 'No autorizado.');
+
+        // Solo el personal de oficina ve los check-ins de todos.
+        if (! $user->isStaff() && (int) $checkin->technician_id !== (int) $user->id) {
             abort(403, 'No autorizado.');
         }
 

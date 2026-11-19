@@ -61,6 +61,7 @@ class TechScheduleController extends Controller
 
         $lastReport = $scheduledVisit->equipment
             ? $scheduledVisit->equipment->serviceReports()
+                ->visibleTo($user)
                 ->select('id', 'equipment_id', 'report_number', 'report_type', 'service_date', 'technician_id', 'status')
                 ->with('technician:id,name')
                 ->orderByDesc('service_date')

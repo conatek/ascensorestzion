@@ -3,7 +3,8 @@ import offlineManager from '@/utils/offlineManager.js';
 
 /**
  * Firma diferida: una visita agrupa los reportes de la misma sede y dia que
- * quedaron firmados solo por el tecnico, a la espera de una unica firma del cliente.
+ * quedaron firmados solo por el tecnico, a la espera de una unica firma del
+ * cliente. Esa firma puede cerrar un dia o varios dias de la sede de una vez.
  */
 export default {
     pendingSignature() {
@@ -32,6 +33,7 @@ export async function loadPendingVisits() {
             local[meta.visit_uuid] = {
                 visit_uuid: meta.visit_uuid,
                 client_name: meta.client_name,
+                site_id: meta.site_id,
                 site_name: meta.site_name,
                 service_date: meta.service_date,
                 reports: [],
@@ -76,7 +78,7 @@ export async function loadPendingVisits() {
     // Una firma en error no bloquea la visita: vuelve a la lista para poder
     // recapturarla (al reencolar se reemplaza el registro fallido).
     const queuedSignatures = (signatures || []).filter(s => s.status !== 'error');
-    const signed = new Set(queuedSignatures.map(s => s.visit_uuid));
+    const signed = new Set(queuedSignatures.flatMap(s => offlineManager.signatureVisitUuids(s)));
 
     return {
         visits: [...byUuid.values()].filter(v => !signed.has(v.visit_uuid)),

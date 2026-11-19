@@ -54,13 +54,15 @@
 @if($report->rstpMonth)
 <table class="grid" style="margin-top:6px;">
     <tr>
-        <th colspan="6" style="text-align:center;">Mantenimiento Preventivo — Mes</th>
+        <th colspan="12" style="text-align:center;">Mantenimiento Preventivo — Mes</th>
     </tr>
     <tr>
         @php $months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; @endphp
         @foreach($months as $i => $m)
-        <td style="text-align:center; width:8.33%; {{ ($report->rstpMonth->month === $i+1) ? 'background:#30ab0a;color:#fff;font-weight:bold;' : '' }}">
-            {{ $m }}
+        @php $isServiceMonth = $report->rstpMonth->month === $i + 1; @endphp
+        <td style="text-align:center; width:8.33%; white-space:nowrap; {{ $isServiceMonth ? 'background:#30ab0a;color:#fff;font-weight:bold;' : '' }}">
+            {{-- El mes del servicio lleva tambien el dia: "Nov - 18" --}}
+            {{ $m }}{{ $isServiceMonth && $report->service_date ? ' - '.$report->service_date->format('d') : '' }}
         </td>
         @endforeach
     </tr>
