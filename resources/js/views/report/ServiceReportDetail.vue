@@ -121,8 +121,8 @@
                             <span class="detail-value">{{ formatDate(report.service_date) }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Ped. Cliente</span>
-                            <span class="detail-value">{{ report.customer_order_ref || '-' }}</span>
+                            <span class="detail-label">Cód. Cliente</span>
+                            <span class="detail-value">{{ report.equipment?.customer_code || '-' }}</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Técnico</span>

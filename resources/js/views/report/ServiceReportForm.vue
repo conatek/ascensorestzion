@@ -126,11 +126,6 @@
                                    :class="{ 'has-error': stepErrors.service_date }" />
                             <span v-if="stepErrors.service_date" class="error-text">{{ stepErrors.service_date }}</span>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Ped. del cliente</label>
-                            <input v-model="form.customer_request" type="text" class="form-input"
-                                   placeholder="Pedido o solicitud del cliente" />
-                        </div>
                     </div>
                 </div>
             </div>

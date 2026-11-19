@@ -261,11 +261,6 @@
                 </div>
 
                 <div class="conclusion-notes">
-                    <label class="field-label">N.º de pedido del cliente (opcional)</label>
-                    <input v-model="customerOrderRef" class="field-input" maxlength="100" inputmode="text" autocomplete="off" placeholder="Ej.: OC-1234" />
-                </div>
-
-                <div class="conclusion-notes">
                     <label class="field-label">Notas de conclusión</label>
                     <textarea v-model="conclusion.notes" class="field-textarea" rows="4" spellcheck="true" lang="es" placeholder="Escriba las notas de conclusión..."></textarea>
                 </div>

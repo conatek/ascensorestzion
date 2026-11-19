@@ -387,6 +387,16 @@ class EquipmentAccessTest extends TestCase
 
         $fresh = ServiceReport::with('rstcDetails')->find($report['id']);
         $this->assertSame('OC-1234', $fresh->customer_order_ref);
+
+        // El PDF muestra el codigo que el cliente le da al equipo, no el pedido.
+        $this->equipment->update(['customer_code' => 'ASC-CLI-07']);
+        foreach (['rstp', 'rste', 'rstc'] as $view) {
+            $html = view("pdf.$view", ['report' => $fresh->fresh()])->render();
+            $this->assertStringContainsString('Cód. Cliente:', $html);
+            $this->assertStringContainsString('ASC-CLI-07', $html);
+            $this->assertStringNotContainsString('Ped. Cliente', $html);
+            $this->assertStringNotContainsString('OC-1234', $html);
+        }
         $this->assertSame('09:15', substr($fresh->time_out, 0, 5));
         $this->assertSame('2026-11-09 06:30', $fresh->rstcDetails->call_time->format('Y-m-d H:i'));
         $this->assertSame(1, $fresh->rstcDetails->response_time_hh);

@@ -14,8 +14,8 @@
     <tr>
         <td style="width:15%;"><strong>Cliente:</strong></td>
         <td style="width:35%;">{{ $report->client->business_name ?? '' }}</td>
-        <td style="width:15%;"><strong>Ped. Cliente:</strong></td>
-        <td style="width:35%;">{{ $report->customer_order_ref ?? '' }}</td>
+        <td style="width:15%;"><strong>Cód. Cliente:</strong></td>
+        <td style="width:35%;">{{ $report->equipment->customer_code ?? '' }}</td>
     </tr>
     <tr>
         <td><strong>Obra:</strong></td>
