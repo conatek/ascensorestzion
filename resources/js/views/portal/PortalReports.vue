@@ -119,6 +119,7 @@
                                         <i v-if="pdfLoading === report.id" class="fa fa-spinner fa-spin"></i>
                                         <i v-else class="fa fa-file-pdf"></i>
                                     </button>
+                                    <ReportShareButton :report="report" class="action-btn" title="Compartir" />
                                 </div>
                             </td>
                         </tr>
@@ -132,9 +133,11 @@
 <script>
 import portalService from '@/services/portalService.js';
 import reportService from '@/services/reportService.js';
+import ReportShareButton from '@/components/shared/ReportShareButton.vue';
 
 export default {
     name: 'PortalReports',
+    components: { ReportShareButton },
 
     data() {
         return {

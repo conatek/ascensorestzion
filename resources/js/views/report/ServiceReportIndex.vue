@@ -172,6 +172,7 @@
                                         <i v-if="pdfLoading === report.id" class="fa fa-spinner fa-spin"></i>
                                         <i v-else class="fa fa-file-pdf"></i>
                                     </button>
+                                    <ReportShareButton :report="report" class="action-btn" title="Compartir" />
                                     <button v-if="report.status === 'borrador'"
                                             @click="confirmDelete(report)"
                                             class="action-btn action-delete" title="Eliminar">
@@ -189,10 +190,12 @@
 
 <script>
 import reportService from '@/services/reportService.js';
+import ReportShareButton from '@/components/shared/ReportShareButton.vue';
 import clientService from '@/services/clientService.js';
 
 export default {
     name: 'ServiceReportIndex',
+    components: { ReportShareButton },
 
     data() {
         return {

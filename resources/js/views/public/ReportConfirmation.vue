@@ -34,6 +34,9 @@
                 <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
                     <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
                 </a>
+                <ReportShareButton :report="report" :fetcher="fetchPdf" class="download-btn share-btn" v-slot="{ busy }">
+                    <i :class="busy ? 'fa fa-spinner fa-spin' : 'fa fa-share-alt'"></i> Compartir el informe
+                </ReportShareButton>
             </div>
 
             <!-- Pendiente de confirmar -->
@@ -78,6 +81,9 @@
                 <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
                     <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
                 </a>
+                <ReportShareButton :report="report" :fetcher="fetchPdf" class="download-btn share-btn" v-slot="{ busy }">
+                    <i :class="busy ? 'fa fa-spinner fa-spin' : 'fa fa-share-alt'"></i> Compartir el informe
+                </ReportShareButton>
 
                 <button
                     class="confirm-btn"
@@ -102,6 +108,9 @@
                 <a class="download-btn" :href="pdfUrl" target="_blank" rel="noopener">
                     <i class="fa fa-file-pdf"></i> Descargar el informe (PDF)
                 </a>
+                <ReportShareButton :report="report" :fetcher="fetchPdf" class="download-btn share-btn" v-slot="{ busy }">
+                    <i :class="busy ? 'fa fa-spinner fa-spin' : 'fa fa-share-alt'"></i> Compartir el informe
+                </ReportShareButton>
             </div>
         </div>
 
@@ -113,10 +122,12 @@
 </template>
 
 <script>
+import ReportShareButton from '@/components/shared/ReportShareButton.vue';
 import api from '@/services/api.js';
 
 export default {
     name: 'ReportConfirmation',
+    components: { ReportShareButton },
 
     data() {
         return {
@@ -141,6 +152,13 @@ export default {
     },
 
     methods: {
+        // Ruta pública: va con fetch, sin el token de sesión que añade axios.
+        async fetchPdf() {
+            const response = await fetch(this.pdfUrl);
+            if (!response.ok) throw new Error('pdf');
+            return response.blob();
+        },
+
         async loadReport() {
             const token = this.$route.params.token;
             this.loading = true;
@@ -360,6 +378,16 @@ export default {
 
 .download-btn:hover {
     background: #fef2f2;
+}
+
+.share-btn {
+    color: #30ab0a;
+    border-color: #30ab0a;
+    cursor: pointer;
+}
+
+.share-btn:hover {
+    background: #f0fdf4;
 }
 
 /* Success */

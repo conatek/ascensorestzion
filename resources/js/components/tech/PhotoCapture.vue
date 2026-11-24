@@ -43,8 +43,9 @@
                     <button type="button" class="crop-btn crop-btn--secondary" @click="cancelCrop">
                         Cancelar
                     </button>
-                    <button type="button" class="crop-btn crop-btn--primary" @click="confirmCrop">
-                        <i class="fa fa-check"></i> Aceptar
+                    <button type="button" class="crop-btn crop-btn--primary" :disabled="saving" @click="confirmCrop">
+                        <i :class="saving ? 'fa fa-spinner fa-spin' : 'fa fa-check'"></i>
+                        {{ saving ? 'Guardando…' : 'Aceptar' }}
                     </button>
                 </div>
             </div>
@@ -55,6 +56,7 @@
 <script>
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
+import { drawPhotoStamp, resolveStampLocation } from '@/utils/photoStamp.js';
 
 /** Lado mayor de la foto guardada: de sobra para leer una placa o ver un desgaste. */
 const MAX_SIDE = 1600;
@@ -68,6 +70,8 @@ export default {
         aspectRatio: { type: Number, default: 1 },
         maxSizeKb: { type: Number, default: 500 },
         label: { type: String, default: '' },
+        // Sello con fecha, hora y coordenadas grabado en la imagen.
+        stamp: { type: Boolean, default: true },
     },
 
     emits: ['update:modelValue'],
@@ -77,6 +81,7 @@ export default {
             preview: null,
             showCropper: false,
             cropperSrc: null,
+            saving: false,
         };
     },
 
@@ -110,13 +115,27 @@ export default {
             // MB de texto en memoria, y en móviles modestos eso tumba la pestaña.
             this.cropperSrc = URL.createObjectURL(file);
             this.showCropper = true;
+
+            // El sello lleva el momento y el lugar en que se adjunta la foto. El GPS
+            // se pide ya, para que esté resuelto cuando el técnico termine de recortar.
+            this.stampDate = new Date();
+            this.stampLocation = this.stamp ? resolveStampLocation() : null;
         },
 
         async confirmCrop() {
             const { canvas } = this.$refs.cropper.getResult();
-            if (!canvas) return;
+            if (!canvas || this.saving) return;
 
-            const blob = await this.compress(canvas);
+            this.saving = true;
+            let blob = null;
+            try {
+                const stamp = this.stamp
+                    ? { date: this.stampDate || new Date(), location: await this.stampLocation }
+                    : null;
+                blob = await this.compress(canvas, stamp);
+            } finally {
+                this.saving = false;
+            }
             if (!blob) return;
 
             this.preview = URL.createObjectURL(blob);
@@ -131,7 +150,7 @@ export default {
          * baja la calidad hasta entrar en maxSizeKb; si ni con la más baja cabe,
          * se queda con esa, que ya es pequeña.
          */
-        async compress(source) {
+        async compress(source, stamp = null) {
             const scale = Math.min(1, MAX_SIDE / Math.max(source.width, source.height));
             let canvas = source;
             if (scale < 1) {
@@ -140,6 +159,9 @@ export default {
                 canvas.height = Math.round(source.height * scale);
                 canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
             }
+
+            // Sobre la imagen ya reducida, para que el sello mida lo mismo en todas.
+            if (stamp) await drawPhotoStamp(canvas, stamp);
 
             let blob = null;
             for (const quality of [0.82, 0.72, 0.6, 0.5]) {

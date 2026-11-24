@@ -40,6 +40,9 @@
                         <button class="btn-action btn-pdf" @click="downloadPdf">
                             <i class="fa fa-file-pdf me-1"></i> Descargar PDF
                         </button>
+                        <ReportShareButton :report="report" class="btn-action btn-share" v-slot="{ busy }">
+                            <i :class="busy ? 'fa fa-spinner fa-spin me-1' : 'fa fa-share-alt me-1'"></i> Compartir
+                        </ReportShareButton>
                         <button class="btn-action btn-email" @click="sendEmail" :disabled="sendingEmail">
                             <i class="fa fa-envelope me-1"></i> {{ sendingEmail ? 'Enviando…' : 'Enviar por Email' }}
                         </button>
@@ -583,11 +586,13 @@
 </template>
 
 <script>
+import ReportShareButton from '@/components/shared/ReportShareButton.vue';
 import reportService from '@/services/reportService.js';
 import { useAuth } from '@/stores/auth.js';
 
 export default {
     name: 'ServiceReportDetail',
+    components: { ReportShareButton },
 
     data() {
         return {
@@ -1024,6 +1029,17 @@ export default {
 
 .btn-pdf:hover {
     background: #9e2029;
+    color: white;
+}
+
+.btn-share {
+    background: #30ab0a;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-share:hover {
+    background: #278c08;
     color: white;
 }
 
@@ -1671,6 +1687,18 @@ export default {
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* Cuatro acciones no caben en una fila del móvil: dos por línea. */
+    .page-title-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-title-actions .btn-action {
+        flex: 1 1 calc(50% - 0.5rem);
+        justify-content: center;
+        white-space: nowrap;
+    }
+
     .detail-grid {
         grid-template-columns: 1fr;
     }

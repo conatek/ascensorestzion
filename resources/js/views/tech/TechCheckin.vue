@@ -276,6 +276,8 @@ export default {
                         equipment_id: cached.id,
                         checked_in_at: checkedInAt,
                         is_emergency: this.isEmergency,
+                        latitude: payload.latitude,
+                        longitude: payload.longitude,
                         call_received_at: this.callReceivedAt || null,
                     }));
                 } else {
@@ -300,6 +302,9 @@ export default {
                     equipment_id: data.equipment.id,
                     checked_in_at: data.checkin.checked_in_at,
                     is_emergency: data.checkin.is_emergency,
+                    // Respaldo del sello de las fotos cuando el GPS no responde.
+                    latitude: payload.latitude,
+                    longitude: payload.longitude,
                     response_time_minutes: data.checkin.response_time_minutes,
                 }));
             } catch (err) {
